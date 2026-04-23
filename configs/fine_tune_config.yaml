@@ -1,0 +1,74 @@
+project:
+  name: greek-privacy-filter-ft
+  model: openai/privacy-filter
+  task: opf-token-classification
+  language: el
+
+opf:
+  upstream_repo_url: https://github.com/openai/privacy-filter.git
+  upstream_pinned_commit: f7f00ca7fb869683eb732c010299d901457f19c3
+  upstream_local_dir: external/privacy-filter
+  hf_repo_id: openai/privacy-filter
+  hf_revision: 7ffa9a043d54d1be65afb281eddf0ffbe629385b
+  checkpoint_local_dir: checkpoints/base/privacy-filter
+  device: cuda
+  # Mean train text ~156 chars (~50 tokens). 256 tokens is plenty and ~4x
+  # faster than 512 on A10G/L4. Raise to 512 only if you add longer
+  # documents (legal text, long CVs, chat logs >300 chars).
+  n_ctx: 256
+
+data:
+  train_file: data/processed/train.jsonl
+  validation_file: data/processed/validation.jsonl
+  test_file: data/processed/test.jsonl
+  hard_test_file: data/processed/hard_test_2000.jsonl
+  schema_note: "OPF expects JSONL with text + spans/label following upstream docs."
+
+# Custom label space: 8 upstream categories + 4 Greek-specific
+# (amka, afm, adt, iban_gr). MUST be passed via --label-space-json
+# or the new heads silently fall back to the default 8-class taxonomy.
+label_space:
+  path: configs/label_space.json
+
+training:
+  # 3 epochs is the sweet spot for 8k examples with 4 new categories.
+  # Run hyperparameter sweep (2 / 3 / 5) on validation before locking in.
+  epochs: 3
+  # On a 24 GB A10G / L4 with n_ctx=256 we fit batch_size=4 comfortably.
+  # Effective batch = batch_size * grad_accum_steps = 4 * 4 = 16.
+  batch_size: 4
+  grad_accum_steps: 4
+  # Base model weights barely move at 2e-5 in a single epoch. 5e-5 is the
+  # conservative-but-effective default for this dataset size; try 1e-4
+  # as an upper sweep point if validation F1 on the 4 new classes plateaus.
+  learning_rate: 5.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  seed: 1337
+  overwrite_output: true
+  # 'bf16' writes the final safetensors in bfloat16 (~half the disk,
+  # matches base model dtype). Use 'fp32' only if you need CPU inference.
+  output_param_dtype: bf16
+
+output:
+  checkpoints_dir: artifacts/checkpoints
+  final_model_dir: artifacts/model/finetuned-opf
+  baseline_metrics_file: artifacts/metrics/baseline_test_metrics.json
+  finetuned_metrics_file: artifacts/metrics/finetuned_test_metrics.json
+  hard_test_metrics_file: artifacts/metrics/finetuned_hard_test_metrics.json
+  train_log: artifacts/logs/train.log
+
+evaluation:
+  eval_mode: typed
+
+# Cost & time targets when running on AWS (g5.xlarge spot, A10G 24GB):
+#   - 1 epoch over 8k examples @ n_ctx=256, bs=4, gas=4 ~ 25-40 min
+#   - 3 epochs ~ 1.5-2 hours -> ~$0.70-$1.50 per run at spot pricing
+#   - Budget for $100 credit: ~20 runs incl. hyperparameter sweep
+aws:
+  recommended_instance: ml.g5.xlarge  # 1x A10G 24GB
+  use_spot: true
+  region: us-east-1
+  s3_data_prefix: s3://YOUR_BUCKET/greek-privacy-filter/data
+  s3_output_prefix: s3://YOUR_BUCKET/greek-privacy-filter/output
+# End of config.

@@ -1,0 +1,33 @@
+This repository is dual-licensed.
+
+1. SOURCE CODE (everything under src/, scripts/, configs/, and all *.py,
+   *.yaml, *.sh, *.md files authored by this project) is licensed under
+   the Apache License, Version 2.0. See LICENSE-CODE for the full text.
+
+2. FINE-TUNED MODEL WEIGHTS produced by this repository (anything saved
+   under artifacts/model/ or distributed as a .safetensors / .gguf /
+   similar checkpoint) are offered under TWO licenses, at the recipient's
+   choice:
+
+     (a) The Greek Privacy Filter Non-Commercial License v1.0
+         (see LICENSE-MODEL-NC). Free for academic, research, personal,
+         evaluation, and other non-commercial use. Redistribution and
+         modification allowed under the same terms. No fee required.
+
+     (b) A commercial license granted by the copyright holder
+         (Chariton, haritos19@gmail.com) on request. Contact the author
+         for commercial licensing terms.
+
+   The copyright holder themselves retains the right to use the weights
+   commercially without restriction.
+
+3. THIRD-PARTY CONTENT. The base model (`openai/privacy-filter`) is
+   distributed by OpenAI under Apache 2.0; that license continues to
+   apply to the base weights and any derivative weights produced here.
+   Training-data and dataset licenses are enumerated in LICENSING.md.
+
+See LICENSING.md for the full provenance chain and attribution
+requirements.
+
+Copyright (c) 2026 Chariton. All rights reserved to the extent not
+granted by the licenses above.

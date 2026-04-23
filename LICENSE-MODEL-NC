@@ -1,0 +1,64 @@
+Greek Privacy Filter — Non-Commercial License v1.0
+===================================================
+
+Copyright (c) 2026 Chariton (haritos19@gmail.com).
+
+THIS LICENSE APPLIES TO THE FINE-TUNED MODEL WEIGHTS produced by this
+repository (the "Model"), including any derivative weights and
+derivative adapters, but NOT to the base model `openai/privacy-filter`
+(which remains under its own Apache 2.0 license).
+
+1. Grant of Rights (Non-Commercial Only)
+
+   Subject to the terms below, the copyright holder grants you a
+   worldwide, non-exclusive, royalty-free, revocable license to use,
+   reproduce, prepare derivative works of, publicly display, publicly
+   perform, sublicense (under these same terms), and distribute the
+   Model for NON-COMMERCIAL purposes only.
+
+2. Non-Commercial Definition
+
+   "Non-Commercial" means use that is not primarily intended for or
+   directed toward commercial advantage or monetary compensation. This
+   includes academic research, classroom teaching, personal experimentation,
+   evaluation, and open-source contribution, provided that no fees,
+   subscriptions, or other monetary consideration are received in
+   exchange for the Model or any service principally powered by it.
+
+3. Attribution
+
+   You must retain this license file and a conspicuous notice that the
+   Model is derived from:
+   (a) OpenAI Privacy Filter (Apache 2.0), and
+   (b) the Greek Privacy Filter project by Chariton
+       (https://github.com/...  — fill in final URL).
+
+   You must also retain any attribution notices required by the
+   training-data licenses listed in LICENSING.md.
+
+4. Restrictions
+
+   You may NOT:
+     (a) use the Model, or any derivative thereof, for commercial
+         purposes without obtaining a separate commercial license from
+         the copyright holder;
+     (b) sublicense the Model under terms more permissive than this
+         license;
+     (c) remove or obscure copyright, trademark, or attribution notices.
+
+5. Commercial Licensing
+
+   A commercial license is available from the copyright holder on
+   request. Contact haritos19@gmail.com.
+
+6. No Warranty / Limitation of Liability
+
+   THE MODEL IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+   CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OF THE MODEL.
+
+7. Termination
+
+   This license terminates automatically if you breach any of its terms.
+   Upon termination you must cease all use of the Model and destroy all
+   copies in your possession.

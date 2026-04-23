@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Data artifacts
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/interim/*
+
+# Archived datasets (pre-Meltemi Codex/Gemini data, quarantined, DO NOT reuse)
+data/archive_*/
+
+# Environment and secrets
+.env
+.env.*
+
+# External model/runtime assets
+external/privacy-filter/
+checkpoints/base/
+artifacts/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Claude Code per-user settings
+.claude/settings.local.json
