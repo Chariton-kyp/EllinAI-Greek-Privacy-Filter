@@ -41,12 +41,21 @@
 # Optional:
 #   SAMPLE_COUNT        — main-gen count, default 100000
 #   HARDNEG_COUNT       — hard-neg count, default SAMPLE_COUNT/67 (~1.5%)
+#   TIER1_COUNT         — per-class deterministic Tier-1 record count, default 0
+#                         (disabled). Set e.g. 5000 to emit 5000 records per
+#                         class for the twelve Tier-1 PII classes
+#                         (passport, license_plate, vehicle_vin, gemi, ama,
+#                         card_pan, cvv, imei, ip_address, mac_address,
+#                         driver_license, pcn). The CPU-only stage runs on
+#                         the same instance and adds <2 minutes wall-clock
+#                         even at 10000 per class.
 #   QUANT               — default UD-Q8_K_XL (alt: UD-Q4_K_S)
 #   SPOT_MAX_PRICE      — default 1.00 ($/h ceiling)
 #   SEED_MAIN           — default 2024
 #   SEED_HARDNEG        — default 2024
 #   SEED_LATINIZE       — default 1337
 #   SEED_CURATE         — default 1337
+#   SEED_TIER1          — default 2024
 #   SSH_KEY_NAME        — if set, attaches an EC2 keypair for debug SSH
 #
 # Usage:
@@ -60,12 +69,14 @@ REGION="${AWS_REGION:-us-east-1}"
 INSTANCE_TYPE="${INSTANCE_TYPE:-g6e.xlarge}"
 SAMPLE_COUNT="${SAMPLE_COUNT:-100000}"
 HARDNEG_COUNT="${HARDNEG_COUNT:-$(( SAMPLE_COUNT / 67 ))}"
+TIER1_COUNT="${TIER1_COUNT:-0}"
 SPOT_MAX_PRICE="${SPOT_MAX_PRICE:-1.00}"
 QUANT="${QUANT:-UD-Q8_K_XL}"
 SEED_MAIN="${SEED_MAIN:-2024}"
 SEED_HARDNEG="${SEED_HARDNEG:-2024}"
 SEED_LATINIZE="${SEED_LATINIZE:-1337}"
 SEED_CURATE="${SEED_CURATE:-1337}"
+SEED_TIER1="${SEED_TIER1:-2024}"
 
 : "${BUCKET:?BUCKET env var required (S3 bucket name)}"
 : "${IAM_INSTANCE_PROFILE:?IAM_INSTANCE_PROFILE env var required}"
@@ -177,6 +188,8 @@ trap _gpf_finalize EXIT INT TERM
 RUN_GIT_COMMIT="${GIT_COMMIT}"
 SAMPLE_COUNT=${SAMPLE_COUNT}
 HARDNEG_COUNT=${HARDNEG_COUNT}
+TIER1_COUNT=${TIER1_COUNT}
+SEED_TIER1=${SEED_TIER1}
 QUANT="${QUANT}"
 SEED_MAIN=${SEED_MAIN}
 SEED_HARDNEG=${SEED_HARDNEG}
@@ -351,6 +364,26 @@ python3 scripts/hash_manifest.py \\
              data/processed/test.jsonl data/processed/hard_test.jsonl
 _gpf_checkpoint "after_manifest"
 
+# 12.5 Optional Tier-1 deterministic record pack (CPU-only stage).
+# Runs alongside the main pipeline output but lives in its own JSONL
+# file (data/processed/tier1_records.jsonl). The downstream training
+# launcher decides whether to merge it into the train set; the v1
+# label_space (12 classes) does NOT include Tier-1 categories so a
+# v1-style fine-tune ignores this file. Skipped when TIER1_COUNT=0.
+if [ "\${TIER1_COUNT}" -gt 0 ]; then
+  python3 scripts/generate_tier1_records.py \\
+    --classes passport license_plate vehicle_vin gemi ama \\
+              card_pan cvv imei ip_address mac_address \\
+              driver_license pcn \\
+    --count "\${TIER1_COUNT}" --seed "\${SEED_TIER1}" \\
+    --output data/processed/tier1_records.jsonl
+
+  python3 scripts/hash_manifest.py \\
+      --inputs data/processed/tier1_records.jsonl \\
+      --output artifacts/manifest/tier1_manifest.json
+  _gpf_checkpoint "after_tier1"
+fi
+
 # 13. Run metadata
 cat > /tmp/run_metadata.json <<META
 {
@@ -362,11 +395,13 @@ cat > /tmp/run_metadata.json <<META
   "quant": "\${QUANT}",
   "sample_count": \${SAMPLE_COUNT},
   "hardneg_count": \${HARDNEG_COUNT},
+  "tier1_count": \${TIER1_COUNT},
   "seeds": {
     "main": \${SEED_MAIN},
     "hardneg": \${SEED_HARDNEG},
     "latinize": \${SEED_LATINIZE},
-    "curate": \${SEED_CURATE}
+    "curate": \${SEED_CURATE},
+    "tier1": \${SEED_TIER1}
   },
   "llama_cpp_build": "\${LLAMACPP_BUILD}",
   "generator_model": "unsloth/Qwen3.6-35B-A3B-GGUF",
