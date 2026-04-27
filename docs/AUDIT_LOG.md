@@ -314,3 +314,79 @@ Commits introduced on this date, in order:
     above F1 0.94. Lowest typed F1 was `afm` (0.9486); highest
     `private_url` (1.0000). Full per-class breakdown in
     `docs/MODEL_CARD.md` §4 and the four metric JSONs.
+
+## 4. 2026-04-27 — v1.1 dataset relabel and tooling
+
+**Actor:** Chariton Kypraios, with Claude (Anthropic assistant) acting
+as code author and mechanical executor of the data-cleanup utilities
+and the audit verification scripts. Same scope-of-automation
+boundary as §2 applies.
+
+This section records the data-quality fix applied to the v1 production
+splits, the supporting tooling that ships in `scripts/`, and the
+launcher extension that lets the same `ec2_spot_finetune.sh` train
+against the cleaned (v1.1) splits or a future blended dataset
+without re-coding the user-data flow.
+
+Commits introduced on this date, in order:
+
+| Commit | Subject |
+|---|---|
+| `4b7ae8c` | `scripts/relabel_afm_spans.py`: deterministic AFM-span boundary cleaner. |
+| `e098679` | `scripts/eval_per_class_metrics.py`: per-class span-level evaluation harness with confusion matrix. |
+| `bbe7e5b` | `artifacts/manifest/manifest_v1_1.json`: SHA-256 manifest for the v1.1 splits + manifest README disambiguation. |
+| `4532de0` | `scripts/aws/ec2_spot_finetune.sh`: `DATASET_S3_PREFIX` override for relabelled / blended training data. |
+
+### Execution ledger — v1.1 relabel
+
+21. **Label-quality audit of v1 production splits.** Running a
+    boundary-and-shape audit over the v1 train split surfaced a
+    74.3% prefix-noise rate on the `afm` class: of 2,717 AFM spans,
+    only 698 were the canonical 9-digit form; the remaining 2,019
+    included a label prefix inside the span ("ΑΦΜ ", "Α.Φ.Μ.: ",
+    or "EL" for the EU-VAT form). All other eleven classes were
+    boundary-clean (0.3% on `adt`, 0.0% on the rest). Span F1 under
+    that convention rewards a model for learning the prefix as part
+    of the value, which is wrong in deployment; the v1 realworld
+    test (`artifacts/metrics/realworld_inference.json`) confirmed
+    that the v1 model genuinely produces prefix-included spans for
+    AFM at inference time.
+
+22. **AFM relabel utility.** `scripts/relabel_afm_spans.py` (new this
+    section) takes an OPF-format JSONL split and rewrites every span
+    labelled `afm` so the boundaries cover the 9-digit value only.
+    Recognises ten prefix tokens in priority order (Α.Φ.Μ.:,
+    Α.Φ.Μ., ΑΦΜ:, ΑΦΜ., ΑΦΜ, AFM:, AFM., AFM, VAT:, VAT, EL).
+    Idempotent. Non-AFM labels are passed through verbatim.
+
+23. **v1.1 dataset.** Running the relabel utility against the v1
+    production splits reduced 4,440 AFM spans to clean 9-digit form
+    (1,132 already clean + 3,308 relabelled) with zero unparseable
+    records across all four splits (train / validation / test /
+    hard_test). The output lives at `data/processed/v1_1/` and is
+    gitignored; the SHA-256 manifest is committed at
+    `artifacts/manifest/manifest_v1_1.json` so any auditor can
+    verify a downloaded copy.
+
+24. **Per-class eval harness.** `scripts/eval_per_class_metrics.py`
+    (new this section) is a stand-alone evaluation harness that
+    loads a fine-tuned OPF checkpoint, runs span detection over an
+    OPF-format JSONL split, and emits per-class precision / recall /
+    F1, a confusion matrix, and a four-way error categorisation
+    (missed / wrong_class / wrong_boundary / hallucinated). It
+    complements `python -m opf eval` by exposing exactly the
+    breakdowns needed to assess the impact of the v1.1 relabel
+    (specifically, the AFM `wrong_boundary` count is expected to
+    drop sharply when the v1 model is evaluated against v1.1
+    instead of v1).
+
+25. **Launcher extension.** `scripts/aws/ec2_spot_finetune.sh`
+    accepts an optional `DATASET_S3_PREFIX` environment variable
+    that overrides the default `generated/run-${V1_RUN_ID}/data`
+    path. Lets the same launcher train against the v1.1 splits
+    (uploaded to `s3://${BUCKET}/relabelled/v1_1/`) or against any
+    future blended dataset without modifying the user-data script.
+    Default behaviour (no override) is unchanged. `V1_RUN_ID` is
+    still required: the launcher tags every run with it in
+    `run_metadata.json` so an auditor can trace which generation
+    lineage a particular fine-tune came from.
