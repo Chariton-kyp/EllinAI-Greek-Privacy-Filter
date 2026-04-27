@@ -390,3 +390,90 @@ Commits introduced on this date, in order:
     still required: the launcher tags every run with it in
     `run_metadata.json` so an auditor can trace which generation
     lineage a particular fine-tune came from.
+
+## 5. 2026-04-27 — v2 generation pipeline preparation
+
+**Actor:** Chariton Kypraios, with Claude (Anthropic assistant) acting
+as code author and mechanical executor of the generators and the
+launcher extensions. Same scope-of-automation boundary as §2 applies.
+
+This section records the public preparation work that turns the v1
+production pipeline into a single-invocation v2 generation pipeline:
+twelve new deterministic-format PII classes (Tier-1) plus six new
+carrier registers (Phase-2 distribution shift) plus a class-wise
+stratified assembler that merges the relabelled v1.1 base with one
+or more supplementary record packs into a unified training set.
+
+The published material here covers the public utilities. The
+business-strategy framing of the v2 release (cascade architecture,
+Tier-3 contextual extension, roll-out timeline) is held privately
+by the controller per the public/private split documented in
+`private/README.md`.
+
+Commits introduced on this date, in order:
+
+| Commit | Subject |
+|---|---|
+| `14f3b99` | `scripts/generate_tier1_records.py`: deterministic Tier-1 record generator covering twelve PII classes (passport, license_plate, vehicle_vin, gemi, ama, card_pan, cvv, imei, ip_address, mac_address, driver_license, pcn). |
+| `a0e7864` | `scripts/aws/ec2_spot_generate.sh`: optional `TIER1_COUNT` CPU stage; six new Phase-2 carrier registers in `scripts/generate_commercial_safe_greek_pii.py`; auto-Greeklish slot-description switch in the LLM prompts. |
+| `7c62ddc` | `scripts/assemble_v2_dataset.py`: class-wise stratified merger for v1.1 + Tier-1 / Phase-2 packs. |
+
+### Execution ledger — v2 pipeline
+
+26. **Tier-1 deterministic generator.**
+    `scripts/generate_tier1_records.py` (new this section) emits
+    OPF-format JSONL records for twelve deterministic-format PII
+    classes that v1 did not cover. Each record is built from a
+    per-class carrier template plus a deterministically-generated
+    PII value, sampled with a seeded RNG. No network, no LLM, no
+    carrier corpus required. The OPF span boundary covers the
+    value only; the prefix word and any whitespace or punctuation
+    between the prefix and the value are excluded and asserted on
+    every record before write.
+
+27. **Tier-1 stage in the AWS launcher.**
+    `scripts/aws/ec2_spot_generate.sh` learned an optional
+    `TIER1_COUNT` environment variable (default 0; disabled). When
+    set, a CPU-only stage 12.5 invokes the Tier-1 generator for
+    all twelve classes and writes
+    `data/processed/tier1_records.jsonl` plus
+    `artifacts/manifest/tier1_manifest.json`. The stage runs on
+    the same instance after the LLM curation step and adds <2
+    minutes wall-clock at 5,000 records per class. `run_metadata.json`
+    gains `tier1_count` and `seeds.tier1` fields.
+
+28. **Phase-2 distribution-shift registers.**
+    `scripts/generate_commercial_safe_greek_pii.py` extended its
+    `_BATCH_REGISTERS` table from twelve to eighteen entries with
+    six new registers covering the v2 distribution-shift axes:
+    Greeklish SMS / chat (Greek written in Latin letters),
+    polytonic legal / academic text (classical accents),
+    Cretan / Cypriot / Pontic regional dialects, and
+    school / student informal writing. PII slot values themselves
+    remain in their canonical numeric / alphabetic format; only
+    the surrounding prose changes.
+
+29. **Auto-Greeklish slot-description switch.** A new
+    `_GREEKLISH_CATEGORY_DESCRIPTIONS` table provides Latin-
+    transliterated slot descriptions (`afm` → `AFM`,
+    `amka` → `AMKA`, etc.) used in Qwen prompts when the carrier
+    register is Greeklish. The new `_category_descriptions_for`
+    helper auto-detects Greeklish registers by the substring
+    "Greeklish" in the register name; explicit override is
+    available via `script_mode={greek,greeklish}`. Wired into the
+    batch-prompt path so a Greeklish carrier produces internally-
+    consistent Greeklish output rather than mixing scripts.
+
+30. **v2 dataset assembler.** `scripts/assemble_v2_dataset.py`
+    (new this section) merges the AFM-relabelled v1.1 base splits
+    with one or more supplementary record packs (Tier-1, Phase-2,
+    future Tier-2). Class-wise stratification distributes additive
+    records across train / validation / test / hard_test in
+    user-configurable ratios (default 0.80 / 0.10 / 0.05 / 0.05).
+    Exact-text dedup across the entire output prevents leakage
+    between splits via duplicate text. Optional `--write-manifest`
+    emits SHA-256 + line counts for audit-evidence runs.
+    Smoke-test (1,200 Tier-1 records added to v1.1 base): 100% of
+    additive records routed correctly per the stratification
+    ratios; all twelve v1 classes preserved at their original
+    counts; zero dedup drops; zero cross-split leakage.
