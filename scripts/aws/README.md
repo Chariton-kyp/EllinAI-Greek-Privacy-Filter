@@ -132,9 +132,31 @@ export V1_RUN_ID=20260426T092703Z   # whichever generation run you want to train
 bash scripts/aws/ec2_spot_finetune.sh
 ```
 
-The script prints the run ID, instance ID, git commit, the v1 dataset
+The script prints the run ID, instance ID, git commit, the dataset
 S3 path it will pull from, and the S3 prefix under which every
 artefact will land. The instance auto-terminates on completion.
+
+### B.2.1 Training against a relabelled or blended dataset
+
+Set `DATASET_S3_PREFIX` to override the default
+`generated/run-${V1_RUN_ID}/data` path. Useful for fine-tuning
+against the AFM-relabelled v1.1 splits (produced locally by
+`scripts/relabel_afm_spans.py` and uploaded to S3) or against a
+blended dataset assembled from multiple generation runs.
+
+```bash
+# Upload the v1.1 splits once
+aws s3 cp data/processed/v1_1/ \
+    s3://${BUCKET}/relabelled/v1_1/ --recursive --region ${AWS_REGION}
+
+# Train against them
+export DATASET_S3_PREFIX=relabelled/v1_1
+bash scripts/aws/ec2_spot_finetune.sh
+```
+
+`V1_RUN_ID` is still required (the launcher uses it as a tag in
+`run_metadata.json`) but the JSONL splits will come from the
+override prefix instead.
 
 ### B.3 Layout under each run prefix
 

@@ -12,12 +12,19 @@
 #   7. EXIT trap syncs final artefacts + logs, then terminates
 #
 # Required env vars:
-#   BUCKET                 — S3 bucket holding v1 data + base checkpoint
+#   BUCKET                 — S3 bucket holding training data + base checkpoint
 #   IAM_INSTANCE_PROFILE   — EC2 profile with read+write to BUCKET
 #   AWS_REGION             — default eu-north-1
 #   V1_RUN_ID              — required, e.g. 20260426T092703Z (where v1 data lives)
 #
 # Optional:
+#   DATASET_S3_PREFIX      — explicit S3 prefix (under BUCKET) holding the
+#                            train/validation/test/hard_test JSONL splits.
+#                            Overrides the default `generated/run-${V1_RUN_ID}/data`.
+#                            Use this to fine-tune against a relabelled or
+#                            blended dataset (e.g. `relabelled/v1_1` for
+#                            the AFM-cleaned v1.1 splits, or
+#                            `generated/run-<v2-run>/combined` for v2).
 #   INSTANCE_TYPE          — default g6e.xlarge (L40S 48GB)
 #   SPOT_MAX_PRICE         — default 1.00
 #   EPOCHS                 — default 3
@@ -59,7 +66,7 @@ GIT_COMMIT="$(git -C "${REPO_ROOT}" rev-parse HEAD 2>/dev/null || echo 'unknown'
 REPO_KEY="code/gpf-ft-${TIMESTAMP}.tar.gz"
 RUN_PREFIX="finetune/run-${TIMESTAMP}"
 REPO_TAR="/tmp/gpf-ft-${TIMESTAMP}.tar.gz"
-DATA_S3_PREFIX="generated/run-${V1_RUN_ID}/data"
+DATA_S3_PREFIX="${DATASET_S3_PREFIX:-generated/run-${V1_RUN_ID}/data}"
 
 echo "[1/5] Packing repo scripts + configs to ${REPO_TAR}"
 tar -czf "${REPO_TAR}" \
