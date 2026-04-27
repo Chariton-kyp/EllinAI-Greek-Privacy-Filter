@@ -1,0 +1,31 @@
+{
+  "generated_at_utc": "2026-04-27T20:05:53.924670+00:00",
+  "git_commit": "e098679971b3edfd0e6e15d522c49e7ba6c61bd3",
+  "git_dirty": false,
+  "entries": [
+    {
+      "path": "data/processed/v1_1/train.jsonl",
+      "size_bytes": 9452843,
+      "sha256": "2d881e69cdaba36a29309f2b4153d6782abdab31610a406989a77f9bc3c95c24",
+      "line_count": 21124
+    },
+    {
+      "path": "data/processed/v1_1/validation.jsonl",
+      "size_bytes": 1415411,
+      "sha256": "5152ef8a8c2129a5cff94a49160ba23a3cfb4fcf899deda068a6277d67c4f286",
+      "line_count": 3173
+    },
+    {
+      "path": "data/processed/v1_1/test.jsonl",
+      "size_bytes": 1415477,
+      "sha256": "76cc779dae053717165d46fb12c5b77158a6e99300b19c65bdad4046fb31e4ba",
+      "line_count": 3171
+    },
+    {
+      "path": "data/processed/v1_1/hard_test.jsonl",
+      "size_bytes": 2123900,
+      "sha256": "ec3abc394a17adecbfead8b5e7167fc20d91b6328530f1136b22692d85d282e9",
+      "line_count": 4593
+    }
+  ]
+}
