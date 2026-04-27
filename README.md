@@ -61,14 +61,19 @@ To reproduce the v1 metrics on the realworld test passages bundled with
 the repository:
 
 ```bash
+# Drop the downloaded fine-tuned checkpoint under
+# data/processed/aws-ft-<RUN_ID>/model/   (already on the compose mount path)
 docker compose build
-docker compose run --rm gpf-inference --checkpoint /workspace/path/to/model
+docker compose run --rm gpf-inference \
+    --checkpoint /workspace/data/processed/aws-ft-<RUN_ID>/model
 ```
 
-The fine-tuned checkpoint itself is not bundled with this repository
-(2.6 GB); a deployer either reproduces it via the AWS launchers in
-`scripts/aws/` or downloads it from the project's HuggingFace Hub
-release once published.
+The default path the realworld script expects is
+`data/processed/aws-ft-20260426T135853Z/model` (covered by the compose
+`./data` mount). The fine-tuned checkpoint itself is not bundled with
+this repository (2.6 GB); a deployer either reproduces it via the AWS
+launchers in `scripts/aws/` or downloads it from the project's
+HuggingFace Hub release once published.
 
 ## Repository layout
 
@@ -86,7 +91,9 @@ release once published.
 │   ├── generate_qwen_hard_negatives.py         Hard-negative generator
 │   ├── build_golden_seeds.py                   Deterministic golden seeds
 │   ├── curate_generated_dataset.py             5-stage curator + split writer
-│   ├── download_carrier_*.py                   Greek-PD / Common Voice / legal-code pulls
+│   ├── download_carrier_greek_pd.py            Greek public-domain corpus pull
+│   ├── download_carrier_common_voice.py        Mozilla Common Voice Greek pull
+│   ├── download_carrier_legal_code.py          Greek legal-code corpus pull
 │   ├── postprocess_latinize_contacts.py        Latin / Greek email-URL variation
 │   ├── augment_greek_formats.py                Per-class format variation
 │   ├── hash_manifest.py                        SHA-256 manifest writer

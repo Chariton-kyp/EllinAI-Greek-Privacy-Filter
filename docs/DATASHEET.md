@@ -51,7 +51,9 @@ deduplication ratio:
 
 The v1 build is the dataset against which the released fine-tuned
 checkpoint is evaluated. SHA-256 hashes for each split are recorded
-in `artifacts/manifest/manifest.json` of the run prefix.
+in `artifacts/manifest/manifest_v1.json` (committed) and reproducible
+locally with `scripts/hash_manifest.py` against the synced run
+artefacts under `data/processed/aws-v1-20260426T092703Z/`.
 
 Span counts per class in the train split of the reference (smoke)
 build (authoritative source: `artifacts/metrics/curation_report.json`
