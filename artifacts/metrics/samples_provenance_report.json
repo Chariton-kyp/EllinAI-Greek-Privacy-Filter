@@ -1,0 +1,87 @@
+{
+  "files": {
+    "data/samples/train_sample_100.jsonl": {
+      "total": 100,
+      "missing_info": 0,
+      "unknown_strategy": 0,
+      "unknown_source": 0,
+      "unknown_difficulty": 0,
+      "strategies": {
+        "ollama//batch": 64,
+        "templates": 21,
+        "qwen_hard_negative": 15
+      },
+      "sources": {
+        "commercial_safe_generator": 100
+      },
+      "difficulties": {
+        "medium": 42,
+        "hard": 33,
+        "hard_negative": 15,
+        "easy": 10
+      }
+    },
+    "data/samples/validation_sample_100.jsonl": {
+      "total": 100,
+      "missing_info": 0,
+      "unknown_strategy": 0,
+      "unknown_source": 0,
+      "unknown_difficulty": 0,
+      "strategies": {
+        "ollama//batch": 61,
+        "templates": 24,
+        "qwen_hard_negative": 15
+      },
+      "sources": {
+        "commercial_safe_generator": 100
+      },
+      "difficulties": {
+        "medium": 54,
+        "hard": 22,
+        "hard_negative": 15,
+        "easy": 9
+      }
+    },
+    "data/samples/test_sample_100.jsonl": {
+      "total": 100,
+      "missing_info": 0,
+      "unknown_strategy": 0,
+      "unknown_source": 0,
+      "unknown_difficulty": 0,
+      "strategies": {
+        "ollama//batch": 62,
+        "qwen_hard_negative": 19,
+        "templates": 19
+      },
+      "sources": {
+        "commercial_safe_generator": 100
+      },
+      "difficulties": {
+        "medium": 51,
+        "hard": 24,
+        "hard_negative": 19,
+        "easy": 6
+      }
+    },
+    "data/samples/hard_test_sample_100.jsonl": {
+      "total": 100,
+      "missing_info": 0,
+      "unknown_strategy": 0,
+      "unknown_source": 0,
+      "unknown_difficulty": 0,
+      "strategies": {
+        "ollama//batch": 78,
+        "qwen_hard_negative": 13,
+        "templates": 9
+      },
+      "sources": {
+        "commercial_safe_generator": 100
+      },
+      "difficulties": {
+        "hard": 86,
+        "hard_negative": 13,
+        "easy": 1
+      }
+    }
+  }
+}

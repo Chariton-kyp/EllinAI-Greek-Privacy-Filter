@@ -70,19 +70,22 @@ def _reformat_afm(s: str, rng: random.Random) -> str | None:
 
 
 def _reformat_adt(s: str, rng: random.Random) -> str | None:
+    """Reformat an ADT span. The "Α.Δ.Τ." label must stay OUTSIDE the
+    span, so the span always represents only the letters + digits body
+    (or a Latin-transliterated variant)."""
     m = re.match(r"^\s*([Α-ΩA-Z]{1,3})[\s\-]*([0-9]{5,7})\s*$", s)
     if not m:
         return None
     letters, digits = m.group(1), m.group(2)
-    style = rng.choice(["compact", "dash", "latin", "dotted"])
+    style = rng.choice(["compact", "dash", "spaced", "latin"])
     if style == "compact":
         return f"{letters}{digits}"
     if style == "dash":
         return f"{letters}-{digits}"
-    if style == "latin":
-        latin_letters = "".join(GR_TO_LATIN.get(ch, ch) for ch in letters)
-        return f"{latin_letters} {digits}"
-    return f"Α.Δ.Τ. {letters} {digits}"
+    if style == "spaced":
+        return f"{letters} {digits}"
+    latin_letters = "".join(GR_TO_LATIN.get(ch, ch) for ch in letters)
+    return f"{latin_letters} {digits}"
 
 
 def _reformat_iban_gr(s: str, rng: random.Random) -> str | None:

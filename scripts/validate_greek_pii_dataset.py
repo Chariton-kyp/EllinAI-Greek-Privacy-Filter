@@ -2,8 +2,25 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from collections import Counter
 from pathlib import Path
+
+
+_AFM_PREFIXES = ("Α.Φ.Μ.:", "Α.Φ.Μ.", "ΑΦΜ", "Α Φ Μ", "A.F.M.:", "AFM", "EL")
+_AMKA_PREFIXES = ("Α.Μ.Κ.Α.:", "Α.Μ.Κ.Α.", "ΑΜΚΑ", "AMKA")
+
+
+def _strip_known_prefix(s: str, prefixes: tuple[str, ...]) -> str:
+    stripped = s.strip()
+    for p in prefixes:
+        if stripped.startswith(p):
+            return stripped[len(p):].strip(" :- \t")
+    return stripped
+
+
+def _normalize_digits(s: str) -> str:
+    return re.sub(r"[\s\-.]", "", s)
 
 
 EXPECTED_LABELS = {
@@ -88,14 +105,24 @@ def validate(path: Path) -> tuple[list[str], Counter, int, int, int]:
                     continue
 
                 span_str = text[start:end]
-                if category == "afm" and not (span_str.isdigit() and len(span_str) == 9):
-                    issues.append(f"Line {line_no}: AFM malformed '{span_str}'")
-                elif category == "amka" and not (
-                    span_str.isdigit() and len(span_str) == 11
-                ):
-                    issues.append(f"Line {line_no}: AMKA malformed '{span_str}'")
+                if category == "afm":
+                    digits = _normalize_digits(
+                        _strip_known_prefix(span_str, _AFM_PREFIXES)
+                    )
+                    if not (digits.isdigit() and len(digits) == 9):
+                        issues.append(
+                            f"Line {line_no}: AFM malformed '{span_str}'"
+                        )
+                elif category == "amka":
+                    digits = _normalize_digits(
+                        _strip_known_prefix(span_str, _AMKA_PREFIXES)
+                    )
+                    if not (digits.isdigit() and len(digits) == 11):
+                        issues.append(
+                            f"Line {line_no}: AMKA malformed '{span_str}'"
+                        )
                 elif category == "iban_gr":
-                    cleaned = span_str.replace(" ", "")
+                    cleaned = re.sub(r"[\s\-]", "", span_str).upper()
                     if not (cleaned.startswith("GR") and len(cleaned) == 27):
                         issues.append(f"Line {line_no}: IBAN malformed '{span_str}'")
 
