@@ -1,0 +1,32 @@
+# Local inference Dockerfile for the Greek Privacy Filter v1 fine-tuned
+# checkpoint. Mirrors the AWS EC2 stack used during training so results
+# are reproducible: Ubuntu 22.04, Python 3.10, CUDA 12.4, torch >= 2.5
+# (installed fresh via pip; matches the EC2 user-data flow).
+#
+# Build:  docker compose build
+# Run:    docker compose run --rm gpf-inference
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /workspace
+
+RUN apt-get update -q && \
+    apt-get install -y --no-install-recommends \
+        git ca-certificates build-essential && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install opf in editable mode from the bundled upstream source.
+# Note: external/privacy-filter contains a local 2-line patch to
+# opf/_model/triton_moe.py that adds w.to(a.dtype) before tl.dot to
+# satisfy triton 3.1's stricter dtype matching. See AUDIT_LOG.md §3
+# for the rationale and reference upstream commit.
+COPY external/privacy-filter /opt/opf-src
+RUN pip install -e /opt/opf-src
+
+# Default to the realworld inference test; override at `docker compose run`
+# time with any other command (e.g. an interactive shell).
+CMD ["python", "-u", "scripts/test_finetuned_realworld.py"]

@@ -1,0 +1,275 @@
+[
+  {
+    "register": "business email",
+    "text": "Καλημέρα κ. Παπαδόπουλε,\n\nΕπιβεβαιώνουμε τη συνάντηση την Παρασκευή 30 Μαΐου 2025 στο γραφείο μας. Παρακαλώ επικοινωνήστε με τη γραμματεία μας στο 2103456789 ή στο info@law-firm-athens.gr για οποιαδήποτε αλλαγή.",
+    "redacted_text": "Καλημέρα κ. Παπαδόπουλε,\n\nΕπιβεβαιώνουμε τη συνάντηση την Παρασκευή <PRIVATE_DATE> στο γραφείο μας. Παρακαλώ επικοινωνήστε με τη γραμματεία μας στο <PRIVATE_PHONE> ή στο <PRIVATE_EMAIL> για οποιαδήποτε αλλαγή.",
+    "detected_spans": [
+      {
+        "label": "private_date",
+        "start": 68,
+        "end": 81,
+        "text": "30 Μαΐου 2025"
+      },
+      {
+        "label": "private_phone",
+        "start": 147,
+        "end": 157,
+        "text": "2103456789"
+      },
+      {
+        "label": "private_email",
+        "start": 164,
+        "end": 187,
+        "text": "info@law-firm-athens.gr"
+      }
+    ]
+  },
+  {
+    "register": "SMS",
+    "text": "Γεια σου Μαρία! Ο γιατρός θέλει το ΑΜΚΑ σου 15076512345 και τον ΑΦΜ 078123456 για τη συνταγή. Πες του και τη ΑΔΤ ΑΖ123456 πριν τη Δευτέρα.",
+    "redacted_text": "Γεια σου Μαρία! Ο γιατρός θέλει το ΑΜΚΑ σου <AMKA> και τον <AFM> για τη συνταγή. Πες του και τη Α<ADT> πριν τη Δευτέρα.",
+    "detected_spans": [
+      {
+        "label": "amka",
+        "start": 44,
+        "end": 55,
+        "text": "15076512345"
+      },
+      {
+        "label": "afm",
+        "start": 64,
+        "end": 77,
+        "text": "ΑΦΜ 078123456"
+      },
+      {
+        "label": "adt",
+        "start": 110,
+        "end": 121,
+        "text": "ΔΤ ΑΖ123456"
+      }
+    ]
+  },
+  {
+    "register": "banking notification",
+    "text": "Αγαπητέ πελάτη, η μεταφορά 1.250,00€ προς τον λογαριασμό 014/220123456 (IBAN GR1601100140000001402201234) ολοκληρώθηκε την 15/06/2025. Ο νέος κωδικός μίας χρήσης είναι TX9-AB7-PQ42 και ισχύει για 5 λεπτά.",
+    "redacted_text": "Αγαπητέ πελάτη, η μεταφορά 1.250,00€ προς τον λογαριασμό <ACCOUNT_NUMBER> (IBAN <IBAN_GR>) ολοκληρώθηκε την <PRIVATE_DATE>. Ο νέος κωδικός μίας χρήσης είναι <SECRET> και ισχύει για 5 λεπτά.",
+    "detected_spans": [
+      {
+        "label": "account_number",
+        "start": 57,
+        "end": 70,
+        "text": "014/220123456"
+      },
+      {
+        "label": "iban_gr",
+        "start": 77,
+        "end": 104,
+        "text": "GR1601100140000001402201234"
+      },
+      {
+        "label": "private_date",
+        "start": 123,
+        "end": 133,
+        "text": "15/06/2025"
+      },
+      {
+        "label": "secret",
+        "start": 168,
+        "end": 180,
+        "text": "TX9-AB7-PQ42"
+      }
+    ]
+  },
+  {
+    "register": "medical chart",
+    "text": "Ασθενής: Γεώργιος Δημητρίου, ΑΜΚΑ 22018054321. Ημερομηνία γέννησης: 22/01/1980. Διεύθυνση: Αγίου Κωνσταντίνου 14, Πειραιάς. Τηλ. επικοινωνίας: 6981234567. Παραπεμπτικός ιατρός: dr.papadimitriou@iatreio.gr.",
+    "redacted_text": "Ασθενής: <PRIVATE_PERSON>, ΑΜΚΑ 22018054321. Ημερομηνία γέννησης: <PRIVATE_DATE>. Διεύθυνση: <PRIVATE_ADDRESS>. Τηλ. επικοινωνίας: <ACCOUNT_NUMBER>. Παραπεμπτικός ιατρός: <PRIVATE_EMAIL>.",
+    "detected_spans": [
+      {
+        "label": "private_person",
+        "start": 9,
+        "end": 27,
+        "text": "Γεώργιος Δημητρίου"
+      },
+      {
+        "label": "private_date",
+        "start": 68,
+        "end": 78,
+        "text": "22/01/1980"
+      },
+      {
+        "label": "private_address",
+        "start": 91,
+        "end": 122,
+        "text": "Αγίου Κωνσταντίνου 14, Πειραιάς"
+      },
+      {
+        "label": "account_number",
+        "start": 143,
+        "end": 153,
+        "text": "6981234567"
+      },
+      {
+        "label": "private_email",
+        "start": 177,
+        "end": 204,
+        "text": "dr.papadimitriou@iatreio.gr"
+      }
+    ]
+  },
+  {
+    "register": "HR letter",
+    "text": "Με την παρούσα βεβαιώνουμε ότι ο κ. Νίκος Αντωνίου εργάζεται στην εταιρεία μας από 01/03/2018. Ο ΑΦΜ του είναι 134567890 και ο κωδικός τραπεζικού λογαριασμού που χρησιμοποιείται για μισθοδοσία είναι 175/487654321.",
+    "redacted_text": "Με την παρούσα βεβαιώνουμε ότι ο κ. <PRIVATE_PERSON> εργάζεται στην εταιρεία μας από <PRIVATE_DATE>. Ο ΑΦΜ του είναι <AFM> και ο κωδικός τραπεζικού λογαριασμού που χρησιμοποιείται για μισθοδοσία είναι <ACCOUNT_NUMBER>.",
+    "detected_spans": [
+      {
+        "label": "private_person",
+        "start": 36,
+        "end": 50,
+        "text": "Νίκος Αντωνίου"
+      },
+      {
+        "label": "private_date",
+        "start": 83,
+        "end": 93,
+        "text": "01/03/2018"
+      },
+      {
+        "label": "afm",
+        "start": 111,
+        "end": 120,
+        "text": "134567890"
+      },
+      {
+        "label": "account_number",
+        "start": 199,
+        "end": 212,
+        "text": "175/487654321"
+      }
+    ]
+  },
+  {
+    "register": "support ticket",
+    "text": "Ticket #4421: Ο χρήστης δεν μπορεί να συνδεθεί. Email: kostas.giannidis@example.gr, URL προφίλ: https://platform.example.gr/users/12944. Παρακαλώ ελέγξτε το token σύνδεσης sk-LIVE-9a2bf7ed4c3e και ενημερώστε εάν χρειάζεται reset.",
+    "redacted_text": "Ticket #4421: Ο χρήστης δεν μπορεί να συνδεθεί. Email: <PRIVATE_EMAIL>, URL προφίλ: <PRIVATE_URL>. Παρακαλώ ελέγξτε το token σύνδεσης <SECRET> και ενημερώστε εάν χρειάζεται reset.",
+    "detected_spans": [
+      {
+        "label": "private_email",
+        "start": 55,
+        "end": 82,
+        "text": "kostas.giannidis@example.gr"
+      },
+      {
+        "label": "private_url",
+        "start": 96,
+        "end": 135,
+        "text": "https://platform.example.gr/users/12944"
+      },
+      {
+        "label": "secret",
+        "start": 172,
+        "end": 192,
+        "text": "sk-LIVE-9a2bf7ed4c3e"
+      }
+    ]
+  },
+  {
+    "register": "government form",
+    "text": "Όνομα: Ελένη Παπανικολάου. Πατρώνυμο: Ιωάννης. Α.Δ.Τ.: ΑΗ987654. Διεύθυνση κατοικίας: Πατησίων 88, Αθήνα 10434. Τηλέφωνο: 2106789012. Ηλεκτρονικό ταχυδρομείο: e.papanikolaou@dimosio.gr.",
+    "redacted_text": "Όνομα: <PRIVATE_PERSON>. Πατρώνυμο: Ιωάννης. Α.Δ.Τ.: <ADT>. Διεύθυνση κατοικίας: <PRIVATE_ADDRESS>. Τηλέφωνο: <PRIVATE_PHONE>. Ηλεκτρονικό ταχυδρομείο: <PRIVATE_EMAIL>.",
+    "detected_spans": [
+      {
+        "label": "private_person",
+        "start": 7,
+        "end": 25,
+        "text": "Ελένη Παπανικολάου"
+      },
+      {
+        "label": "adt",
+        "start": 55,
+        "end": 63,
+        "text": "ΑΗ987654"
+      },
+      {
+        "label": "private_address",
+        "start": 86,
+        "end": 110,
+        "text": "Πατησίων 88, Αθήνα 10434"
+      },
+      {
+        "label": "private_phone",
+        "start": 122,
+        "end": 132,
+        "text": "2106789012"
+      },
+      {
+        "label": "private_email",
+        "start": 159,
+        "end": 184,
+        "text": "e.papanikolaou@dimosio.gr"
+      }
+    ]
+  },
+  {
+    "register": "carrier-only (no PII)",
+    "text": "Η Ελληνική Δημοκρατία αποτελεί κράτος δικαίου με κοινοβουλευτική δημοκρατία. Η οικονομία της βασίζεται στις υπηρεσίες, στον τουρισμό και στη γεωργία.",
+    "redacted_text": "Η Ελληνική Δημοκρατία αποτελεί κράτος δικαίου με κοινοβουλευτική δημοκρατία. Η οικονομία της βασίζεται στις υπηρεσίες, στον τουρισμό και στη γεωργία.",
+    "detected_spans": []
+  },
+  {
+    "register": "mixed Greek/Latin contact",
+    "text": "Επικοινωνήστε στο τηλέφωνο 6987654321 ή στείλτε email στο νικος@παράδειγμα.gr για τη συνέντευξη της 03/07/2025. Η εταιρεία ΧΥΖ Α.Ε. βρίσκεται στη Λεωφόρο Αλεξάνδρας 105.",
+    "redacted_text": "Επικοινωνήστε στο τηλέφωνο <PRIVATE_PHONE> ή στείλτε email στο <PRIVATE_EMAIL> για τη συνέντευξη της <PRIVATE_DATE>. Η εταιρεία ΧΥΖ Α.Ε. βρίσκεται στη Λεωφόρο Αλεξάνδρας 105.",
+    "detected_spans": [
+      {
+        "label": "private_phone",
+        "start": 27,
+        "end": 37,
+        "text": "6987654321"
+      },
+      {
+        "label": "private_email",
+        "start": 58,
+        "end": 77,
+        "text": "νικος@παράδειγμα.gr"
+      },
+      {
+        "label": "private_date",
+        "start": 100,
+        "end": 110,
+        "text": "03/07/2025"
+      }
+    ]
+  },
+  {
+    "register": "tricky numerics (hard negatives + real PII)",
+    "text": "Το σχολείο εξυπηρετεί 350 μαθητές και έχει 25 τάξεις. Ο διευθυντής, κ. Μιχάλης Στεφανίδης, μπορεί να κληθεί στο 2102233445. Ο ΑΦΜ του σχολείου είναι 999023456 και το επιχειρησιακό IBAN GR9201100990000099900112233.",
+    "redacted_text": "Το σχολείο εξυπηρετεί 350 μαθητές και έχει 25 τάξεις. Ο διευθυντής, κ. <PRIVATE_PERSON>, μπορεί να κληθεί στο <PRIVATE_PHONE>. Ο ΑΦΜ του σχολείου είναι <AFM> και το επιχειρησιακό IBAN <IBAN_GR>.",
+    "detected_spans": [
+      {
+        "label": "private_person",
+        "start": 71,
+        "end": 89,
+        "text": "Μιχάλης Στεφανίδης"
+      },
+      {
+        "label": "private_phone",
+        "start": 112,
+        "end": 122,
+        "text": "2102233445"
+      },
+      {
+        "label": "afm",
+        "start": 149,
+        "end": 158,
+        "text": "999023456"
+      },
+      {
+        "label": "iban_gr",
+        "start": 185,
+        "end": 212,
+        "text": "GR9201100990000099900112233"
+      }
+    ]
+  }
+]

@@ -1,0 +1,22 @@
+services:
+  gpf-inference:
+    build:
+      context: .
+      dockerfile: Dockerfile.inference
+    image: gpf-inference:local
+    container_name: gpf-inference
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./scripts:/workspace/scripts
+      - ./configs:/workspace/configs
+      - ./data:/workspace/data
+      - ./artifacts:/workspace/artifacts
+    working_dir: /workspace
+    command: python scripts/test_finetuned_realworld.py
