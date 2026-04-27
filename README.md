@@ -1,352 +1,230 @@
-# Greek Privacy Filter Fine-Tuning Repository
+# Greek Privacy Filter
 
-Repository για fine-tuning του OpenAI Privacy Filter με pinned upstream code + pinned Hugging Face checkpoint για reproducible runs.
+A 1.4-billion-parameter mixture-of-experts span detector for Greek
+personal-information text, fine-tuned from
+[`openai/privacy-filter`](https://github.com/openai/privacy-filter) on a
+fully synthetic Greek corpus and shipped with audit-grade governance
+documentation. The v1 release detects twelve PII classes — eight
+inherited from the upstream English-language base plus four added for
+Greek (AMKA, AFM, ADT, IBAN_GR) — at span F1 ≥ 0.94 across every
+class, with overall span F1 of **0.9886** on the held-out test set
+and **0.9868** on the harder edge-case set.
 
-## Project documentation
+| Field            | Value                                              |
+| ---------------- | -------------------------------------------------- |
+| Status           | v1 released 2026-04-26                             |
+| Model size       | ~1.4 B parameters (8 layers × 128 experts × 4 routed/token, hidden 640), 2.6 GB bf16 |
+| Detection F1     | 0.9886 test · 0.9868 hard_test (span level, typed) |
+| Token F1         | 0.9972 test · 0.9942 hard_test                     |
+| Per-class F1 floor | 0.9486 (afm) — see `docs/MODEL_CARD.md` §4        |
+| Languages        | Modern Greek (with Latin-transliterated contact fields) |
+| License          | Code: Apache 2.0; weights: dual-licensed (NC + commercial) — see `LICENSING.md` |
+| Provider         | Chariton Kypraios — `haritos19@gmail.com`          |
 
-| File | Contents |
-|---|---|
-| `docs/DATASHEET.md` | Dataset record (Gebru et al. template) — sources, preprocessing, class distribution |
-| `docs/MODEL_CARD.md` | Model record (Mitchell et al. template) — intended use, HITL requirement, metrics (post-fine-tune) |
-| `docs/AUDIT_LOG.md` | Chronological build ledger with commit hashes |
-| `docs/DPIA_NOTE.md` | GDPR data-protection note for deployers |
-| `docs/GDPR_ART30_ROPA.md` | GDPR Article 30 Record-of-Processing-Activities template |
-| `docs/EU_AI_ACT_ANNEX_IV.md` | EU AI Act Article 11 / Annex IV mapping |
-| `docs/AIMS_STATEMENT.md` | ISO/IEC 42001:2023 AI management system statement |
-| `docs/NIST_AI_RMF.md` | NIST AI Risk Management Framework 1.0 mapping |
-| `LICENSING.md` | Licence chain for every component, commercial licence procedure |
-| `ATTRIBUTION.txt` | Attribution block to ship with the weights |
-| `NOTICE` | Apache 2.0 §4(d) NOTICE file |
-| `SECURITY.md` | Vulnerability-disclosure process |
-| `artifacts/metrics/provenance_report.json` | Per-split record-provenance audit (run `scripts/verify_provenance.py`) |
-| `artifacts/manifest/manifest.json` | SHA-256 + line-count manifest (run `scripts/hash_manifest.py`) |
+## What the model detects
 
-## End-to-end reproducible build
+| Class             | Format                                             |
+| ----------------- | -------------------------------------------------- |
+| `private_person`  | Personal names                                     |
+| `private_phone`   | Greek phones (10-digit; mobile prefix 69x)         |
+| `private_email`   | Email addresses (Greek-script local-part supported) |
+| `private_address` | Street addresses                                   |
+| `private_url`     | URLs and social-media handles                      |
+| `private_date`    | Dates in numeric and verbose form                  |
+| `account_number`  | Bank account numbers                               |
+| `secret`          | API tokens, passwords, private keys                |
+| `afm`             | Greek tax number (9 digits)                        |
+| `amka`            | Greek social-security number (11 digits)           |
+| `adt`             | Greek ID-card number (1–2 letters + 6 digits)      |
+| `iban_gr`         | Greek IBAN (`GR` + 25 digits)                      |
 
-```powershell
-# 1. Pull the synthetic-data generator (runs locally on CUDA)
-ollama pull hf.co/unsloth/Qwen3.6-35B-A3B-GGUF:UD-Q4_K_S
+The full label-space schema lives at `configs/label_space.json`.
 
-# 2. Start llama-server (CUDA + CPU-MoE offload)
-./external/llama.cpp/llama-server.exe `
-    -m "$env:USERPROFILE\.ollama\models\blobs\sha256-<blob>" `
-    -ngl 99 -c 8192 --port 8080 --host 127.0.0.1 --jinja --n-cpu-moe 40
+## Inference example
 
-# 3. Download carrier corpora (Greek legal + Common Voice EL)
-python scripts/download_carrier_legal_code.py --max-sentences 10000 `
-    --output data/raw/greek_legal_sentences.jsonl
-python scripts/download_carrier_common_voice.py --max-sentences 5000 `
-    --output data/raw/common_voice_el_sentences.jsonl
-Get-Content data/raw/greek_legal_sentences.jsonl, `
-            data/raw/common_voice_el_sentences.jsonl |
-    Set-Content data/raw/blended_carriers.jsonl
+```python
+from opf import OPF
 
-# 4. Generate the main corpus (Qwen batched + rule + carrier + template)
-python scripts/generate_commercial_safe_greek_pii.py `
-    --output data/processed/greek_v2_raw.jsonl `
-    --count 14500 --mode mix `
-    --ollama-host http://127.0.0.1:8080 --llm-engine openai `
-    --ollama-mode batch --ollama-batch-size 10 --ollama-fraction 0.5 `
-    --carrier-jsonl data/raw/blended_carriers.jsonl --seed 2024
-
-# 5. Latinize Greek-script email/URL spans (deterministic, reproducible)
-python scripts/postprocess_latinize_contacts.py `
-    --input data/processed/greek_v2_raw.jsonl `
-    --output data/processed/greek_v2_fixed.jsonl --seed 1337
-
-# 6. Generate diverse hard negatives via Qwen
-python scripts/generate_qwen_hard_negatives.py `
-    --output data/processed/hard_neg_qwen.jsonl --count 1500 --seed 2024
-
-# 7. Merge + curate into balanced splits
-Get-Content data/processed/greek_v2_fixed.jsonl, `
-            data/processed/hard_neg_qwen.jsonl |
-    Set-Content data/processed/greek_v2_final.jsonl
-python scripts/curate_generated_dataset.py `
-    --input data/processed/greek_v2_final.jsonl --output-dir data/processed `
-    --train-size 10000 --val-size 1500 --test-size 1500 --hard-size 1500 `
-    --seed 1337
-
-# 8. Audit (provenance + manifest)
-python scripts/verify_provenance.py `
-    --inputs data/processed/train.jsonl data/processed/validation.jsonl `
-             data/processed/test.jsonl data/processed/hard_test.jsonl
-python scripts/hash_manifest.py `
-    --inputs data/processed/train.jsonl data/processed/validation.jsonl `
-             data/processed/test.jsonl data/processed/hard_test.jsonl
+detector = OPF(model="path/to/finetuned/model", device="cuda")
+result = detector.redact(
+    "Είμαι ο Γιώργος Παπαδόπουλος, ΑΦΜ 234567890, και θέλω "
+    "πληροφορίες για τη συνάντηση της 12/06/2025."
+)
+print(result.redacted_text)
+# => "Είμαι ο [private_person], ΑΦΜ [afm], και θέλω
+#     πληροφορίες για τη συνάντηση της [private_date]."
+for span in result.detected_spans:
+    print(span.label, span.text, span.start, span.end)
 ```
 
-The same pipeline runs unattended on AWS via
-`scripts/aws/ec2_spot_generate.sh` (see `scripts/aws/README.md`).
+To reproduce the v1 metrics on the realworld test passages bundled with
+the repository:
 
-## Τι έχει ήδη ρυθμιστεί
+```bash
+docker compose build
+docker compose run --rm gpf-inference --checkpoint /workspace/path/to/model
+```
 
-- **Upstream code source:** `https://github.com/openai/privacy-filter`
-- **Pinned upstream commit:** `f7f00ca7fb869683eb732c010299d901457f19c3`
-- **HF model source:** `openai/privacy-filter`
-- **Pinned HF revision:** `7ffa9a043d54d1be65afb281eddf0ffbe629385b`
+The fine-tuned checkpoint itself is not bundled with this repository
+(2.6 GB); a deployer either reproduces it via the AWS launchers in
+`scripts/aws/` or downloads it from the project's HuggingFace Hub
+release once published.
 
-Όλα τα παραπάνω βρίσκονται στο `configs\fine_tune_config.yaml`.
-
-## Δομή
+## Repository layout
 
 ```text
 .
 ├── configs/
-│   └── fine_tune_config.yaml
+│   ├── fine_tune_config.yaml          Pinned upstream commit + training defaults
+│   └── label_space.json               12-class label schema
 ├── data/
-│   ├── raw/
-│   └── processed/
+│   ├── seed/                          42 golden seed records (committed)
+│   ├── samples/                       100-record reference samples per split (committed)
+│   ├── raw/, processed/               Pipeline output (gitignored)
 ├── scripts/
-│   ├── setup_opf_stack.py
-│   ├── run_opf_train.py
-│   ├── run_opf_eval.py
-│   ├── prepare_dataset.py
-│   └── validate_dataset.py
-└── requirements.txt
+│   ├── generate_commercial_safe_greek_pii.py   Main carrier-injection generator (Qwen via llama-server)
+│   ├── generate_qwen_hard_negatives.py         Hard-negative generator
+│   ├── build_golden_seeds.py                   Deterministic golden seeds
+│   ├── curate_generated_dataset.py             5-stage curator + split writer
+│   ├── download_carrier_*.py                   Greek-PD / Common Voice / legal-code pulls
+│   ├── postprocess_latinize_contacts.py        Latin / Greek email-URL variation
+│   ├── augment_greek_formats.py                Per-class format variation
+│   ├── hash_manifest.py                        SHA-256 manifest writer
+│   ├── verify_provenance.py                    Per-record provenance allow-list check
+│   ├── validate_greek_pii_dataset.py           JSONL schema validator
+│   ├── test_finetuned_realworld.py             10-case realworld inference test (with P/R/F1)
+│   ├── setup_opf_stack.py                      Clone + install upstream OPF at the pinned commit
+│   ├── run_opf_train.py / run_opf_eval.py      Local-host training / evaluation wrappers
+│   ├── aws/
+│   │   ├── ec2_spot_generate.sh                AWS spot launcher: synthetic-data generation
+│   │   ├── ec2_spot_finetune.sh                AWS spot launcher: fine-tune + eval
+│   │   ├── iam_policy_ec2_gen.json             Inline-policy template (placeholder bucket)
+│   │   ├── sagemaker_train.py                  Optional SageMaker entrypoint
+│   │   └── README.md                           AWS operator guide (Parts A / B / C)
+│   ├── prepare_dataset.py / split_dataset.py / convert_gemini_to_opf.py / check_readiness.py
+├── src/privacy_filter_ft/                      Local utility package (transliteration, schema)
+├── docs/                                       Audit-ready governance documentation (see below)
+├── artifacts/
+│   ├── manifest/                               manifest_v1.json (release) + manifest.json (smoke) + samples_manifest.json
+│   ├── metrics/                                curation, provenance, samples_provenance, realworld_inference reports + archive/
+│   ├── logs/, model/, checkpoints/             gitignored run artefacts
+├── Dockerfile.inference                        Local CUDA inference image (clones upstream OPF)
+├── docker-compose.yml                          Single-service compose stack
+├── requirements.txt                            Minimum top-level deps
+├── requirements-aws.txt                        AWS-only deps (boto3, sagemaker)
+└── (LICENSE, LICENSE-CODE, LICENSE-MODEL-NC, NOTICE, ATTRIBUTION.txt, LICENSING.md, SECURITY.md)
 ```
 
-## Setup
+## Documentation
 
-```powershell
+| File                              | Contents                                                                  |
+| --------------------------------- | ------------------------------------------------------------------------- |
+| `docs/MODEL_CARD.md`              | Mitchell-template model card (intended use, metrics, ethical considerations) |
+| `docs/DATASHEET.md`               | Gebru-template datasheet (composition, collection, recommended uses)      |
+| `docs/AUDIT_LOG.md`               | Chronological build ledger with commit hashes                             |
+| `docs/EU_AI_ACT_ANNEX_IV.md`      | Per-paragraph mapping to repository artefacts                             |
+| `docs/AIMS_STATEMENT.md`          | ISO/IEC 42001 AI Management System statement                              |
+| `docs/NIST_AI_RMF.md`             | NIST AI RMF 1.0 mapping                                                   |
+| `docs/DPIA_NOTE.md`               | Public DPIA-status note (training stage processes no personal data)       |
+| `docs/GDPR_ART30_ROPA.md`         | Deployer template (provider record kept private per Art. 30 guidance)    |
+| `LICENSING.md`                    | Dual-license rationale + commercial-license procedure                     |
+| `SECURITY.md`                     | Vulnerability disclosure policy                                           |
+| `NOTICE`, `ATTRIBUTION.txt`       | Apache 2.0 notice + per-data-source citations                             |
+
+## Installation
+
+```bash
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+source .venv/bin/activate            # PowerShell: .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python scripts\setup_opf_stack.py --install-opf
+python scripts/setup_opf_stack.py --install-opf
 ```
 
-Τι κάνει το `setup_opf_stack.py`:
-1. Κάνει clone/update το upstream repo στο `external\privacy-filter`
-2. Κάνει checkout στο pinned commit
-3. Κάνει install το local `opf` package (με `--install-opf`)
-4. Κατεβάζει το pinned checkpoint από HF στο `checkpoints\base\privacy-filter`
+`setup_opf_stack.py` clones `openai/privacy-filter` at the pinned
+commit into `external/privacy-filter/`, pip-installs it in editable
+mode, and downloads the pinned base checkpoint from Hugging Face into
+`checkpoints/base/privacy-filter/`. Both directories are gitignored.
 
-## Dataset preparation / validation
+To run the AWS launchers locally add `pip install -r requirements-aws.txt`.
 
-Παράδειγμα μετατροπής CSV με χαρακτήρες offsets σε OPF JSONL:
+## Reproducing v1
 
-```powershell
-python scripts\prepare_dataset.py --input data\raw\sample_train.csv --output data\processed\sample_train.jsonl --text-column text --category-column category --start-column start --end-column end --example-id-column example_id --info-columns source
+The v1 release is the result of a single AWS spot run documented in
+`docs/AUDIT_LOG.md` §3 and reproducible from the launchers under
+`scripts/aws/`:
+
+1. **One-off AWS setup** — bucket, IAM role, instance profile, inline
+   policy. Step-by-step in `scripts/aws/README.md` Part A.1.
+2. **Synthetic-data generation** — `bash scripts/aws/ec2_spot_generate.sh`
+   produces a 50 000-record raw set, runs the curator, the provenance
+   verifier and the manifest hasher, syncs everything to S3, and
+   self-terminates the spot instance. ~$2.30 spot + ~$0.10 storage at
+   `g6e.xlarge` pricing.
+3. **Fine-tune + evaluation** — `bash scripts/aws/ec2_spot_finetune.sh`
+   pulls the v1 splits and the base checkpoint, runs the OPF baseline
+   eval (`--eval-mode untyped`), trains for 3 bf16 epochs at lr 5e-5
+   and `n_ctx=256`, runs the finetuned eval (`--eval-mode typed`), and
+   syncs every artefact (model + four metric JSONs + run_metadata.json)
+   back to S3. ~$0.27 spot + ~$0.02 storage.
+4. **Local audit** — `python scripts/hash_manifest.py` against the
+   downloaded splits should match `artifacts/manifest/manifest_v1.json`
+   byte-for-byte; `python scripts/verify_provenance.py` should pass
+   with all-OK on every record.
+
+The pinned hyperparameters live in `configs/fine_tune_config.yaml`
+and the rationale for each is captured in
+`docs/MODEL_CARD.md` §4 and the inline comments of that YAML.
+
+A local-only Linux Docker stack reproduces the same inference path on
+a workstation GPU (`Dockerfile.inference` + `docker-compose.yml`) and
+is the recommended path for running `scripts/test_finetuned_realworld.py`
+against a downloaded checkpoint.
+
+## Greek-format augmentation
+
+The augmenter at `scripts/augment_greek_formats.py` produces format
+variations of existing AMKA / AFM / ADT / IBAN_GR / phone spans
+(spaces, dashes, Greek-Latin lookalikes, prefix-form variation) without
+introducing new PII values. Useful for closing residual recall gaps:
+
+```bash
+python scripts/augment_greek_formats.py \
+    --input data/processed/train.jsonl \
+    --output data/processed/train_augmented.jsonl \
+    --per-example-variants 2
 ```
 
-Validation OPF schema:
-
-```powershell
-python scripts\validate_dataset.py --input data\processed\sample_train.jsonl
-```
-
-Για Gemini output (`span_text` format) χρησιμοποίησε:
-
-```powershell
-python scripts\convert_gemini_to_opf.py --input data\raw\gemini_raw.jsonl --output data\processed\greek_all.jsonl
-python scripts\validate_greek_pii_dataset.py --input data\processed\greek_all.jsonl
-python scripts\split_dataset.py --input data\processed\greek_all.jsonl --train-out data\processed\train.jsonl --validation-out data\processed\validation.jsonl --test-out data\processed\test.jsonl --train-ratio 0.7 --validation-ratio 0.15 --test-ratio 0.15
-```
-
-Για γρήγορο synthetic σετ 200 δειγμάτων:
-
-```powershell
-python scripts\generate_synthetic_greek_pii.py --output data\processed\greek_all_200.jsonl --count 200
-python scripts\validate_greek_pii_dataset.py --input data\processed\greek_all_200.jsonl
-python scripts\split_dataset.py --input data\processed\greek_all_200.jsonl --train-out data\processed\train.jsonl --validation-out data\processed\validation.jsonl --test-out data\processed\test.jsonl
-python scripts\run_baseline.py --eval-mode untyped
-```
-
-Για curriculum set αυξανόμενης δυσκολίας (500-1000):
-
-```powershell
-python scripts\generate_curriculum_greek_pii.py --output data\processed\greek_curriculum_720.jsonl --count 720
-python scripts\validate_greek_pii_dataset.py --input data\processed\greek_curriculum_720.jsonl
-python scripts\split_dataset.py --input data\processed\greek_curriculum_720.jsonl --train-out data\processed\train.jsonl --validation-out data\processed\validation.jsonl --test-out data\processed\test.jsonl
-python scripts\run_baseline.py --eval-mode untyped
-```
-
-## Baseline-first workflow (recommended)
-
-1. Βάλε τα datasets:
-   - `data\processed\train.jsonl`
-   - `data\processed\validation.jsonl`
-   - `data\processed\test.jsonl` (μένει κλειδωμένο, μόνο για τελική αξιολόγηση)
-
-2. Τρέξε baseline στο test set με το base μοντέλο:
-
-```powershell
-python scripts\run_baseline.py
-```
-
-Θα γραφτεί στο `artifacts\metrics\baseline_test_metrics.json`.
-
-3. Τρέξε fine-tuning:
-
-```powershell
-python scripts\run_opf_train.py
-```
-
-4. Τρέξε post-train αξιολόγηση + σύγκριση baseline/finetuned:
-
-```powershell
-python scripts\run_post_train_evaluation.py
-```
-
-Θα γράψει `artifacts\metrics\finetuned_test_metrics.json` και θα εμφανίσει metric deltas.
-
-## RTX 4080 12GB mobile (safe starter settings)
-
-Για αρχικό local run (smoke test):
-
-```powershell
-python scripts\run_opf_train.py --device cuda --n-ctx 256 --batch-size 1 --grad-accum-steps 16 --epochs 1 --max-train-examples 500
-```
-
-Αν δεν έχεις OOM, αύξησε σταδιακά `epochs` / `n-ctx` / `batch-size`.
-
-## AWS SageMaker fine-tuning (recommended για το $100 credit)
-
-Πλήρης οδηγός: `scripts/aws/README.md`.
-
-Quick start:
-
-```powershell
-pip install "sagemaker>=2.224" boto3
-aws configure   # region=us-east-1
-
-# 1. Upload data + base checkpoint to S3
-$env:BUCKET="YOUR-GPF-BUCKET"
-bash scripts/aws/upload_to_s3.sh
-
-# 2. Launch training job (spot g5.xlarge ~ $0.40-0.55/hr)
-python scripts/aws/sagemaker_train.py `
-    --role arn:aws:iam::123456789012:role/AmazonSageMaker-ExecutionRole-xxxx `
-    --bucket YOUR-GPF-BUCKET --use-spot --epochs 3 --learning-rate 5e-5
-```
-
-Κόστος ανά run (3 epochs, 8k examples, bs=4, gas=4, n_ctx=256): **~$0.70-$1.50**.
-Σε $100 χωράνε **~20 full runs** ή ένα sweep + refinements.
-
-## Greek format augmentation
-
-Για να καλύψεις παραλλαγές σε AMKA / AFM / ADT / IBAN_GR / τηλέφωνα:
-
-```powershell
-python scripts\augment_greek_formats.py --input data\processed\train.jsonl --output data\processed\train_augmented.jsonl --per-example-variants 2
-cat data\processed\train.jsonl data\processed\train_augmented.jsonl > data\processed\train_combined.jsonl
-```
-
-Το script ΔΕΝ εισάγει νέα PII - απλώς αλλάζει τη μορφή υπαρχόντων spans
-(spaces, dashes, Greek/Latin lookalikes, prefixes) και ξαναυπολογίζει
-σωστά τα character offsets.
-
-## External Greek datasets for data expansion
+## External Greek datasets — commercial-use note
 
 > **Commercial-use warning.** Most publicly-available Greek NER corpora
-> are released under non-commercial licenses (CC-BY-NC-SA). If you plan
-> to sell the fine-tuned model or use it in a commercial product, **do
-> NOT** include any non-commercial dataset in your training data. See
-> [LICENSING.md](LICENSING.md) for the full provenance and attribution
-> guide.
-
-### Commercial-safe sources (OK to train on and ship commercially)
+> are released under non-commercial licenses (CC-BY-NC-SA). Do not
+> include any non-commercial dataset in training data for a
+> commercial deployment. See `LICENSING.md` for the full provenance
+> and attribution guide.
 
 | Dataset | Use case | License |
 |---|---|---|
-| [PleIAs/Greek-PD](https://huggingface.co/datasets/PleIAs/Greek-PD) | Public-domain Greek prose (~156M words). Use as carrier text with `scripts/generate_commercial_safe_greek_pii.py --mode carrier`. | Public domain |
-| [Mozilla Common Voice — Greek (text corpus)](https://commonvoice.mozilla.org/en/datasets) | CC0 Greek sentences. Same usage pattern. | CC0 |
-| [bigcode/bigcode-pii-dataset](https://huggingface.co/datasets/bigcode/bigcode-pii-dataset) | PII in source code (emails, keys, IPs). English but useful for `code_comments` + `secret`. | Apache-2.0 |
-| Your own synthetic data | Generate with `scripts/generate_commercial_safe_greek_pii.py` — all PII is rule-based, all carrier text is public domain or your own templates. | Yours |
-| Local open-weight LLM output (Llama 3.1, Mistral, Gemma, Qwen 2.5) via `--mode ollama` | Regenerate synthetic data with no third-party ToS concerns. | Apache 2.0 / Llama CL / Gemma ToU |
+| [PleIAs/Greek-PD](https://huggingface.co/datasets/PleIAs/Greek-PD) | Public-domain Greek prose (~156 M words). Used as carrier text via `--mode carrier`. | Public domain |
+| [Mozilla Common Voice — Greek](https://commonvoice.mozilla.org/en/datasets) | CC0 Greek sentence corpus. Same usage pattern. | CC0 |
+| [AI-team-UoA/greek_legal_code](https://huggingface.co/datasets/AI-team-UoA/greek_legal_code) | Greek legislation excerpts for legal-text register carriers. | CC-BY-4.0 |
+| Locally-hosted open-weight LLM output (Qwen 3.6 / Llama 3.1 / Mistral / Gemma) | Used to assemble PII-bearing sentences around rule-generated values. | Apache 2.0 / Llama CL / Gemma ToU |
+| Your own synthetic data via `generate_commercial_safe_greek_pii.py` | Fully commercial-safe — every PII value is rule-based and every carrier is permissively licensed. | Yours |
 
-### Non-commercial sources (research / evaluation only — do NOT include in commercial train data)
+## Status and roadmap
 
-| Dataset | Notes | License |
-|---|---|---|
-| [joelniklaus/greek_legal_ner](https://huggingface.co/datasets/joelniklaus/greek_legal_ner) | Real Greek legal text with PERSON, GPE, FACILITY, LOCATION. | CC-BY-NC-SA-4.0 |
-| [nmpartzio/elNER](https://github.com/nmpartzio/elNER) | 21k Greek news sentences, 4/18-class NER. | Academic, verify |
-| [UD_Greek-GDT](https://github.com/UniversalDependencies/UD_Greek-GDT) | Real Greek sentences with named-entity morphology. | CC-BY-NC-SA-3.0 |
-| [ai4privacy/pii-masking-*](https://huggingface.co/datasets/ai4privacy/pii-masking-400k) | 27 PII classes, 6 languages (no Greek). Schema reference only. | CC-BY-NC-4.0 |
+v1 is the foundational release: 32 061 records, 12 PII classes, span
+F1 ≥ 0.94 across every class, audit-ready governance documentation,
+reproducible build pipeline. v2 is in active planning; the public
+roadmap will be published when the v2 model is ready for release.
+Open issues, security questions and commercial-license requests go via
+`SECURITY.md`.
 
-### Commercial-safe data generation workflow
+## Ethics
 
-Quick start — zero external dependencies, 100% commercial-safe:
-
-```powershell
-python scripts\generate_commercial_safe_greek_pii.py `
-    --output data\processed\greek_commercial_safe.jsonl `
-    --count 5000 --mode mix
-```
-
-With public-domain Greek carrier text (Greek-PD / Common Voice) for more
-natural-sounding examples:
-
-```powershell
-# 1. Download Greek-PD once, extract a sentences JSONL into data/raw/
-# 2. Generate:
-python scripts\generate_commercial_safe_greek_pii.py `
-    --output data\processed\greek_commercial_safe.jsonl `
-    --count 5000 --mode carrier `
-    --carrier-jsonl data\raw\greek_pd_sentences.jsonl
-```
-
-With a locally-running open-weight model (fully yours, no API-TOS
-concerns):
-
-```powershell
-ollama pull llama3.1:8b
-python scripts\generate_commercial_safe_greek_pii.py `
-    --output data\processed\greek_commercial_safe.jsonl `
-    --count 5000 --mode ollama --ollama-model llama3.1:8b
-```
-
-## Fine-tuning run (manual)
-
-Με έτοιμα train/validation JSONL:
-
-```powershell
-python scripts\run_opf_train.py
-```
-
-Το output γράφεται στο `artifacts\model\finetuned-opf` (ρυθμιζόμενο από config).
-
-## Evaluation run (manual)
-
-Base checkpoint στο test set:
-
-```powershell
-python scripts\run_opf_eval.py --dataset test --checkpoint base --metrics-out baseline
-```
-
-Finetuned checkpoint στο test set:
-
-```powershell
-python scripts\run_opf_eval.py --dataset test --checkpoint finetuned --metrics-out finetuned
-```
-
-Για εναλλακτική ταξινομία labels:
-
-```powershell
-python scripts\run_opf_eval.py --dataset test --checkpoint base --eval-mode untyped
-```
-
-## Readiness check
-
-```powershell
-python scripts\check_readiness.py
-```
-
-## Dataset schema για OPF
-
-Για `opf train`/`opf eval` χρησιμοποίησε schema συμβατό με το upstream, π.χ.:
-
-```json
-{"text":"Quindle Testwick ...","spans":{"private_person: Quindle Testwick":[[0,16]]}}
-```
-
-Αν έχεις διαφορετική ταξινομία labels, χρησιμοποίησε `--label-space-json` μέσω custom command ή επέκταση του wrapper script. Το `configs/fine_tune_config.yaml` το κάνει αυτόματο μέσω του `label_space.path` field.
-
-## Tuned hyperparameters (why the defaults look the way they do)
-
-- **`epochs: 3`** — 1 epoch δεν συγκλίνει τα 4 νέα heads (`amka`, `afm`, `adt`, `iban_gr`). Το upstream demo τρέχει 40 epochs σε 1-example toy data, οπότε για 8k examples το 3-5 είναι ο σωστός χώρος.
-- **`learning_rate: 5e-5`** — 2e-5 είναι πολύ συντηρητικό για supervised finetune αυτού του μεγέθους· 2e-4 (demo) είναι ρίσκο overfit. 5e-5 είναι η ασφαλής μεσαία τιμή, με `1e-4` σαν upper sweep point.
-- **`n_ctx: 256`** — Μέσο μήκος κειμένου ~156 chars (~50 tokens). 512 tokens ήταν καθαρή σπατάλη GPU χρόνου.
-- **`batch_size: 4, grad_accum_steps: 4`** — Effective batch 16, καλύτερη χρήση του A10G vs. `bs=1, gas=16`.
-- **`output_param_dtype: bf16`** — Ίδιο dtype με το base checkpoint, ~1/2 disk size.
-- **`label_space.path`** — Explicit pointer στο `configs/label_space.json` ώστε τα custom classes να μην πέσουν silently στο default 8-class taxonomy.
+Use the model as a triage tool, never as the sole basis for an
+irreversible action on personal data. A human-in-the-loop review is
+part of the model's intended-use definition (see `docs/MODEL_CARD.md`
+§6). Re-evaluate the model on a labelled sample drawn from your own
+production distribution before deploying it. Complete the deployer
+template in `docs/GDPR_ART30_ROPA.md` and consult `docs/DPIA_NOTE.md`
+before processing real Greek personal data.

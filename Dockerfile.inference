@@ -1,16 +1,25 @@
 # Local inference Dockerfile for the Greek Privacy Filter v1 fine-tuned
 # checkpoint. Mirrors the AWS EC2 stack used during training so results
-# are reproducible: Ubuntu 22.04, Python 3.10, CUDA 12.4, torch >= 2.5
-# (installed fresh via pip; matches the EC2 user-data flow).
+# are reproducible: Ubuntu 22.04, Python 3.10, CUDA 12.4, torch >= 2.5.
 #
 # Build:  docker compose build
-# Run:    docker compose run --rm gpf-inference
+# Run:    docker compose run --rm gpf-inference --checkpoint /workspace/path/to/model
+#
+# The image clones upstream OPF at the pinned commit recorded in
+# configs/fine_tune_config.yaml and installs it in editable mode. There
+# is no dependency on the local external/ directory so this image
+# builds cleanly on a fresh fork or CI runner.
 FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
+
+# Pinned upstream commit; matches configs/fine_tune_config.yaml's
+# opf.upstream_pinned_commit and the model card's documented base.
+ARG OPF_UPSTREAM_REPO=https://github.com/openai/privacy-filter.git
+ARG OPF_UPSTREAM_COMMIT=f7f00ca7fb869683eb732c010299d901457f19c3
 
 WORKDIR /workspace
 
@@ -19,14 +28,19 @@ RUN apt-get update -q && \
         git ca-certificates build-essential && \
     rm -rf /var/lib/apt/lists/*
 
-# Install opf in editable mode from the bundled upstream source.
-# Note: external/privacy-filter contains a local 2-line patch to
-# opf/_model/triton_moe.py that adds w.to(a.dtype) before tl.dot to
-# satisfy triton 3.1's stricter dtype matching. See AUDIT_LOG.md §3
-# for the rationale and reference upstream commit.
-COPY external/privacy-filter /opt/opf-src
-RUN pip install -e /opt/opf-src
+# Clone upstream OPF, checkout the pinned commit, install editable.
+# Upstream may need a small triton-3.1 dtype patch on this base image
+# (insert `w.to(a.dtype)` before tl.dot in opf/_model/triton_moe.py at
+# the two call sites) when running on the bundled triton 3.1; see the
+# project AUDIT_LOG for the rationale. The Docker image leaves the
+# upstream tree unmodified so a fork can apply or skip that patch
+# according to its base-image's triton version.
+RUN git clone "${OPF_UPSTREAM_REPO}" /opt/opf-src && \
+    cd /opt/opf-src && \
+    git checkout "${OPF_UPSTREAM_COMMIT}" && \
+    pip install -e .
 
 # Default to the realworld inference test; override at `docker compose run`
-# time with any other command (e.g. an interactive shell).
+# time with any other command (e.g. an interactive shell, a different
+# checkpoint path, or a custom inference script).
 CMD ["python", "-u", "scripts/test_finetuned_realworld.py"]

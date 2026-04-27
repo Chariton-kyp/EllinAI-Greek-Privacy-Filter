@@ -1,3 +1,19 @@
+# Minimum runtime dependencies for the synthetic-data pipeline,
+# manifests, and audit scripts in this repository.
+#
+# Heavy ML dependencies (torch, transformers, the upstream `opf`
+# package itself) are installed separately by
+# scripts/setup_opf_stack.py, which clones openai/privacy-filter at
+# the pinned commit recorded in configs/fine_tune_config.yaml and
+# pip-installs it in editable mode. Doing it that way pins the exact
+# upstream code that produced the v1 weights without forcing the
+# (large, conflict-prone) torch wheel into this top-level
+# requirements set.
+#
+# AWS-specific dependencies (boto3, sagemaker) are listed in
+# requirements-aws.txt and are only needed if you run the AWS
+# launchers under scripts/aws/.
+
+huggingface_hub>=0.31.0
 pandas>=2.2.0
 pyyaml>=6.0.0
-huggingface_hub>=0.31.0

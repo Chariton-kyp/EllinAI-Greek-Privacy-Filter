@@ -1,0 +1,11 @@
+# AWS-specific dependencies — needed only when running the launchers
+# under scripts/aws/ (sagemaker_train.py, upload_to_s3.sh helpers,
+# etc.). The EC2 spot launchers themselves are bash and install their
+# own runtime inside the spot instance; only the local-host helpers
+# need these wheels.
+#
+# Install on top of requirements.txt:
+#   pip install -r requirements.txt -r requirements-aws.txt
+
+boto3>=1.34.0
+sagemaker>=2.224.0

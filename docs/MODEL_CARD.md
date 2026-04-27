@@ -1,10 +1,18 @@
 # Model card — Greek Privacy Filter
 
 This model card follows the structure of Mitchell et al., "Model Cards
-for Model Reporting" (FAT* 2019). Quantitative sections are populated
-from `artifacts/metrics/finetuned_test_metrics.json` and
-`artifacts/metrics/finetuned_hard_test_metrics.json` produced by the
-v1 fine-tune run on 2026-04-26.
+for Model Reporting" (FAT* 2019). The quantitative sections below are
+transcribed from the four raw metric JSON files
+(`baseline_test_metrics.json`, `baseline_hard_test_metrics.json`,
+`finetuned_test_metrics.json`, `finetuned_hard_test_metrics.json`)
+produced by the v1 fine-tune run on 2026-04-26 (run id
+`20260426T135853Z`). Those raw files are written to
+`artifacts/metrics/` by `scripts/aws/ec2_spot_finetune.sh` after each
+run; they are not bundled with the public clone and a deployer
+reproduces them by replaying the launcher (see `scripts/aws/README.md`
+Part B). The figures repeated here, the SHA-256s in
+`artifacts/manifest/manifest_v1.json`, and the v1 split counts in
+`docs/DATASHEET.md` §2 are mutually consistent.
 
 ## 1. Model details
 
@@ -19,8 +27,12 @@ v1 fine-tune run on 2026-04-26.
 - **Architecture:** 8-layer mixture-of-experts encoder, 128 experts of
   which 4 are routed per token, hidden_size 640, vocab 200,064
   (o200k_base tokenizer), bidirectional left/right context 128 each.
-  Total ~1.4 B parameters; checkpoint size 2.6 GB in bfloat16. See
-  `external/privacy-filter` for the upstream reference implementation.
+  Total ~1.4 B parameters; checkpoint size 2.6 GB in bfloat16. The
+  upstream reference implementation is the
+  [`openai/privacy-filter`](https://github.com/openai/privacy-filter)
+  repository at the pinned commit recorded in
+  `configs/fine_tune_config.yaml`; `scripts/setup_opf_stack.py` clones
+  it into `external/privacy-filter/` (gitignored) on a fresh fork.
 - **Label space:** twelve PII categories — eight inherited from the
   upstream base and four added for Greek (`amka`, `afm`, `adt`,
   `iban_gr`). Full list in `configs/label_space.json`.
@@ -70,8 +82,12 @@ on the v1 fine-tune run `20260426T135853Z`. The baseline column is the
 unmodified `openai/privacy-filter` checkpoint evaluated with
 `--eval-mode untyped` (its label scheme does not include `amka`,
 `afm`, `adt`, or `iban_gr`); the finetuned column is the v1 weights
-evaluated with `--eval-mode typed` (per-class match required). Raw
-JSON: `artifacts/metrics/{baseline,finetuned}_{test,hard_test}_metrics.json`.
+evaluated with `--eval-mode typed` (per-class match required). The
+raw JSON files (`baseline_test_metrics.json`,
+`baseline_hard_test_metrics.json`, `finetuned_test_metrics.json`,
+`finetuned_hard_test_metrics.json`) are written to `artifacts/metrics/`
+when `scripts/aws/ec2_spot_finetune.sh` runs; they are reproduced
+from the run artefacts and are not bundled with the public clone.
 
 ### 4.1 Detection (any-PII, span-level)
 
