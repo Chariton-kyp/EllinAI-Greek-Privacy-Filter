@@ -2,6 +2,83 @@
 
 Repository για fine-tuning του OpenAI Privacy Filter με pinned upstream code + pinned Hugging Face checkpoint για reproducible runs.
 
+## Project documentation
+
+| File | Contents |
+|---|---|
+| `docs/DATASHEET.md` | Dataset record (Gebru et al. template) — sources, preprocessing, class distribution |
+| `docs/MODEL_CARD.md` | Model record (Mitchell et al. template) — intended use, HITL requirement, metrics (post-fine-tune) |
+| `docs/AUDIT_LOG.md` | Chronological build ledger with commit hashes |
+| `docs/DPIA_NOTE.md` | GDPR data-protection note for deployers |
+| `docs/GDPR_ART30_ROPA.md` | GDPR Article 30 Record-of-Processing-Activities template |
+| `docs/EU_AI_ACT_ANNEX_IV.md` | EU AI Act Article 11 / Annex IV mapping |
+| `docs/AIMS_STATEMENT.md` | ISO/IEC 42001:2023 AI management system statement |
+| `docs/NIST_AI_RMF.md` | NIST AI Risk Management Framework 1.0 mapping |
+| `LICENSING.md` | Licence chain for every component, commercial licence procedure |
+| `ATTRIBUTION.txt` | Attribution block to ship with the weights |
+| `NOTICE` | Apache 2.0 §4(d) NOTICE file |
+| `SECURITY.md` | Vulnerability-disclosure process |
+| `artifacts/metrics/provenance_report.json` | Per-split record-provenance audit (run `scripts/verify_provenance.py`) |
+| `artifacts/manifest/manifest.json` | SHA-256 + line-count manifest (run `scripts/hash_manifest.py`) |
+
+## End-to-end reproducible build
+
+```powershell
+# 1. Pull the synthetic-data generator (runs locally on CUDA)
+ollama pull hf.co/unsloth/Qwen3.6-35B-A3B-GGUF:UD-Q4_K_S
+
+# 2. Start llama-server (CUDA + CPU-MoE offload)
+./external/llama.cpp/llama-server.exe `
+    -m "$env:USERPROFILE\.ollama\models\blobs\sha256-<blob>" `
+    -ngl 99 -c 8192 --port 8080 --host 127.0.0.1 --jinja --n-cpu-moe 40
+
+# 3. Download carrier corpora (Greek legal + Common Voice EL)
+python scripts/download_carrier_legal_code.py --max-sentences 10000 `
+    --output data/raw/greek_legal_sentences.jsonl
+python scripts/download_carrier_common_voice.py --max-sentences 5000 `
+    --output data/raw/common_voice_el_sentences.jsonl
+Get-Content data/raw/greek_legal_sentences.jsonl, `
+            data/raw/common_voice_el_sentences.jsonl |
+    Set-Content data/raw/blended_carriers.jsonl
+
+# 4. Generate the main corpus (Qwen batched + rule + carrier + template)
+python scripts/generate_commercial_safe_greek_pii.py `
+    --output data/processed/greek_v2_raw.jsonl `
+    --count 14500 --mode mix `
+    --ollama-host http://127.0.0.1:8080 --llm-engine openai `
+    --ollama-mode batch --ollama-batch-size 10 --ollama-fraction 0.5 `
+    --carrier-jsonl data/raw/blended_carriers.jsonl --seed 2024
+
+# 5. Latinize Greek-script email/URL spans (deterministic, reproducible)
+python scripts/postprocess_latinize_contacts.py `
+    --input data/processed/greek_v2_raw.jsonl `
+    --output data/processed/greek_v2_fixed.jsonl --seed 1337
+
+# 6. Generate diverse hard negatives via Qwen
+python scripts/generate_qwen_hard_negatives.py `
+    --output data/processed/hard_neg_qwen.jsonl --count 1500 --seed 2024
+
+# 7. Merge + curate into balanced splits
+Get-Content data/processed/greek_v2_fixed.jsonl, `
+            data/processed/hard_neg_qwen.jsonl |
+    Set-Content data/processed/greek_v2_final.jsonl
+python scripts/curate_generated_dataset.py `
+    --input data/processed/greek_v2_final.jsonl --output-dir data/processed `
+    --train-size 10000 --val-size 1500 --test-size 1500 --hard-size 1500 `
+    --seed 1337
+
+# 8. Audit (provenance + manifest)
+python scripts/verify_provenance.py `
+    --inputs data/processed/train.jsonl data/processed/validation.jsonl `
+             data/processed/test.jsonl data/processed/hard_test.jsonl
+python scripts/hash_manifest.py `
+    --inputs data/processed/train.jsonl data/processed/validation.jsonl `
+             data/processed/test.jsonl data/processed/hard_test.jsonl
+```
+
+The same pipeline runs unattended on AWS via
+`scripts/aws/ec2_spot_generate.sh` (see `scripts/aws/README.md`).
+
 ## Τι έχει ήδη ρυθμιστεί
 
 - **Upstream code source:** `https://github.com/openai/privacy-filter`

@@ -21,7 +21,7 @@ data:
   train_file: data/processed/train.jsonl
   validation_file: data/processed/validation.jsonl
   test_file: data/processed/test.jsonl
-  hard_test_file: data/processed/hard_test_2000.jsonl
+  hard_test_file: data/processed/hard_test.jsonl
   schema_note: "OPF expects JSONL with text + spans/label following upstream docs."
 
 # Custom label space: 8 upstream categories + 4 Greek-specific

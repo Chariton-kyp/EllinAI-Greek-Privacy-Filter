@@ -1,0 +1,95 @@
+{
+  "files": {
+    "data/processed/train.jsonl": {
+      "total": 8088,
+      "missing_info": 0,
+      "unknown_strategy": 0,
+      "unknown_source": 0,
+      "unknown_difficulty": 0,
+      "strategies": {
+        "ollama//batch": 3729,
+        "carrier": 1817,
+        "templates": 1501,
+        "qwen_hard_negative": 1035,
+        "hard_negative": 6
+      },
+      "sources": {
+        "commercial_safe_generator": 8088
+      },
+      "difficulties": {
+        "medium": 6269,
+        "hard_negative": 1041,
+        "easy": 774,
+        "hard": 4
+      }
+    },
+    "data/processed/validation.jsonl": {
+      "total": 1217,
+      "missing_info": 0,
+      "unknown_strategy": 0,
+      "unknown_source": 0,
+      "unknown_difficulty": 0,
+      "strategies": {
+        "ollama//batch": 577,
+        "carrier": 268,
+        "templates": 216,
+        "qwen_hard_negative": 155,
+        "hard_negative": 1
+      },
+      "sources": {
+        "commercial_safe_generator": 1217
+      },
+      "difficulties": {
+        "medium": 952,
+        "hard_negative": 156,
+        "easy": 108,
+        "hard": 1
+      }
+    },
+    "data/processed/test.jsonl": {
+      "total": 1217,
+      "missing_info": 0,
+      "unknown_strategy": 0,
+      "unknown_source": 0,
+      "unknown_difficulty": 0,
+      "strategies": {
+        "ollama//batch": 534,
+        "carrier": 287,
+        "templates": 240,
+        "qwen_hard_negative": 156
+      },
+      "sources": {
+        "commercial_safe_generator": 1217
+      },
+      "difficulties": {
+        "medium": 957,
+        "hard_negative": 156,
+        "easy": 103,
+        "hard": 1
+      }
+    },
+    "data/processed/hard_test.jsonl": {
+      "total": 1219,
+      "missing_info": 0,
+      "unknown_strategy": 0,
+      "unknown_source": 0,
+      "unknown_difficulty": 0,
+      "strategies": {
+        "templates": 549,
+        "ollama//batch": 375,
+        "qwen_hard_negative": 154,
+        "carrier": 140,
+        "hard_negative": 1
+      },
+      "sources": {
+        "commercial_safe_generator": 1219
+      },
+      "difficulties": {
+        "medium": 541,
+        "hard": 488,
+        "hard_negative": 155,
+        "easy": 35
+      }
+    }
+  }
+}

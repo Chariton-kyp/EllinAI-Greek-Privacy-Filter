@@ -24,9 +24,22 @@ data/archive_*/
 .env.*
 
 # External model/runtime assets
-external/privacy-filter/
+external/
 checkpoints/base/
-artifacts/
+
+# Generated artefacts.
+# Large / heavy outputs (model checkpoints, raw logs, .txt debug dumps)
+# stay out of git. Small audit-evidence JSONs (manifests + metrics
+# reports) ARE committed so anyone cloning the repo can verify a
+# downloaded dataset without running the full pipeline.
+artifacts/logs/
+artifacts/model/
+artifacts/checkpoints/
+artifacts/*.txt
+artifacts/**/*.txt
+artifacts/*.json
+!artifacts/manifest/*.json
+!artifacts/metrics/*.json
 
 # OS / IDE
 .DS_Store
@@ -36,3 +49,14 @@ Thumbs.db
 
 # Claude Code per-user settings
 .claude/settings.local.json
+.playwright-mcp/
+
+# Controller-private records.
+# Operational identifiers (AWS account ID, S3 bucket name, IAM user/role
+# names, instance IDs, spot-request IDs), the provider-side filled
+# Article 30 ROPA, and any DPIA detail that is not appropriate for a
+# public repository live under private/. Only private/README.md is
+# tracked, as a stub explaining the directory structure for forks /
+# reproductions.
+private/*
+!private/README.md

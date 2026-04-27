@@ -30,11 +30,12 @@ derivative adapters, but NOT to the base model `openai/privacy-filter`
    You must retain this license file and a conspicuous notice that the
    Model is derived from:
    (a) OpenAI Privacy Filter (Apache 2.0), and
-   (b) the Greek Privacy Filter project by Chariton
-       (https://github.com/...  — fill in final URL).
+   (b) the Greek Privacy Filter project by Chariton Kypraios
+       (project home page as listed in the repository's README.md).
 
    You must also retain any attribution notices required by the
-   training-data licenses listed in LICENSING.md.
+   training-data licenses listed in LICENSING.md and the NOTICE file at
+   the repository root.
 
 4. Restrictions
 

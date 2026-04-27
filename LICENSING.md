@@ -1,156 +1,121 @@
-# Licensing & Commercial Use Guide
+# Licensing
 
-This document explains (1) the license of every component that goes into
-the Greek Privacy Filter fine-tune, (2) the dual-license strategy for
-the resulting model, and (3) which training data is safe to use
-commercially.
+This file records the licence applied to each artefact in the
+repository and the terms on which the artefacts may be used by third
+parties.
 
-**TL;DR.** For a cleanly-commercial fine-tune, use only the sources
-marked as **Commercial-safe** below. Everything marked
-**Non-commercial** should be deleted from `data/raw/` before training if
-you intend to monetize the resulting model.
+## 1. Artefacts released by this project
 
----
-
-## 1. Dual-license strategy
-
-| Artefact | License you offer to others | Your own rights |
-|---|---|---|
-| Source code (`scripts/`, `configs/`, `src/`) | Apache 2.0 | Full commercial use |
-| Fine-tuned model weights (`artifacts/model/…`) | Non-commercial (LICENSE-MODEL-NC) **or** a paid commercial license on request | Full commercial use (you are the copyright holder) |
-| Training data you ship in this repo | Same as the source data (see §3) | Full commercial use only if every source is commercial-safe |
-
-As the copyright holder of the fine-tuned weights, you can license them
-to the public under any terms you choose AND simultaneously use them
-commercially yourself. This is a classic "open-core / commercial"
-dual-license model.
-
-**Important:** The legal validity of this dual-license model depends on
-the training-data provenance chain. If a single non-commercial dataset
-ends up in the training mix, downstream commercial deployment becomes
-legally risky because courts may treat the fine-tuned weights as a
-derivative work of the training data.
-
----
-
-## 2. Base model
-
-| Component | Source | License | Commercial? |
-|---|---|---|---|
-| `openai/privacy-filter` weights | [huggingface.co/openai/privacy-filter](https://huggingface.co/openai/privacy-filter) | Apache 2.0 | **Yes** |
-| `openai/privacy-filter` code | [github.com/openai/privacy-filter](https://github.com/openai/privacy-filter) | Apache 2.0 | **Yes** |
-
-Apache 2.0 is fully compatible with commercial use and with re-licensing
-the *derivative* (the fine-tuned weights) under any terms you choose,
-provided you retain the Apache 2.0 notice file and attribution.
-
----
-
-## 3. Training-data sources
-
-### 3a. Commercial-safe (use these)
-
-| Dataset | License | Notes |
-|---|---|---|
-| [PleIAs/Greek-PD](https://huggingface.co/datasets/PleIAs/Greek-PD) | Public domain (authors dead >70 years) | Biggest open Greek corpus (~156M words). Safe for commercial use as carrier text. |
-| [Mozilla Common Voice — Greek](https://commonvoice.mozilla.org/en/datasets) (text sentences) | CC0 | Public-domain sentences; use only the text corpus, not the audio. |
-| Greek Wikipedia dumps | CC-BY-SA 4.0 | Commercial-OK **but** the ShareAlike clause may contaminate derivatives. **Only use for carrier text injection, not as labeled training data, and consult a lawyer before including.** Safest: exclude. |
-| [Diavgeia](https://diavgeia.gov.gr/) — Greek government decisions | Considered public-sector info; terms vary by document | Public-sector data. Attribution recommended. Verify the specific document's license before including. |
-| [bigcode/bigcode-pii-dataset](https://huggingface.co/datasets/bigcode/bigcode-pii-dataset) | Apache 2.0 (data) / Apache 2.0 (code) | PII-in-code examples. English, but useful for `code_comments` domain + `secret` class. |
-| Your own template-generator output (`scripts/generate_commercial_safe_greek_pii.py`) | All yours | **100% commercial-safe by construction.** All PII values are rule-generated, all carrier text is either public domain or your own templates. |
-
-### 3b. Non-commercial (do NOT include in a commercial fine-tune)
-
-These are great for *research* or *non-commercial* releases, but using
-them in training data creates commercial-use risk:
-
-| Dataset | License |
+| Artefact | Licence |
 |---|---|
-| [joelniklaus/greek_legal_ner](https://huggingface.co/datasets/joelniklaus/greek_legal_ner) | CC-BY-NC-SA-4.0 |
-| [nmpartzio/elNER](https://github.com/nmpartzio/elNER) | Academic; verify per-version terms |
-| [UD_Greek-GDT](https://github.com/UniversalDependencies/UD_Greek-GDT) | CC-BY-NC-SA-3.0 |
-| [ai4privacy/pii-masking-*](https://huggingface.co/datasets/ai4privacy/pii-masking-400k) | CC-BY-NC-4.0 |
+| Source code (`scripts/`, `configs/`, `src/`) | Apache License, Version 2.0 (see `LICENSE-CODE`). |
+| Documentation (`docs/`, top-level `*.md`, `NOTICE`, `ATTRIBUTION.txt`) | Apache License, Version 2.0 (see `LICENSE-CODE`). |
+| Reference data samples (`data/samples/*.jsonl`, `data/seed/golden_examples.jsonl`) | Apache License, Version 2.0 (see `LICENSE-CODE`). |
+| Fine-tuned model weights (when released at `artifacts/model/…` and published to HuggingFace) | Greek Privacy Filter Non-Commercial License v1.0 (see `LICENSE-MODEL-NC`). A separate commercial licence is available from the provider on request (haritos19@gmail.com). |
 
-### 3c. Synthetic data generated by a third-party LLM
+As the copyright holder of the fine-tuned weights, the provider
+retains the right to use those weights commercially in his own
+products and services. The non-commercial licence governs third-party
+use only.
 
-If you generated existing `data/processed/*.jsonl` files using **Google
-Gemini API** (paid tier):
+## 2. Third-party components relied on
 
-* Gemini's Additional Terms of Service explicitly allow use for
-  commercial development.
-* The paid tier does **not** let Google use your prompts/outputs to
-  improve its own models.
-* You own the generated outputs.
+| Component | Licence |
+|---|---|
+| `openai/privacy-filter` — base weights and training code | Apache License, Version 2.0. |
+| `unsloth/Qwen3.6-35B-A3B-GGUF` — local synthetic-data generator | Apache License, Version 2.0. |
+| `ilsp/Meltemi-7B-Instruct-v1.5` — evaluated as an alternate generator | Apache License, Version 2.0. |
+| `PleIAs/Greek-PD` — Greek public-domain carrier text | Public domain. |
+| Mozilla Common Voice Greek text corpus — carrier text | CC0. |
+| `AI-team-UoA/greek_legal_code` — Greek legal carrier text | CC-BY-4.0 (attribution required). |
+| Rule-based PII generators in `scripts/generate_commercial_safe_greek_pii.py` | Apache License, Version 2.0 (this repository). |
 
-**Risk:** the free/unpaid tier has different terms — Google may use
-your inputs/outputs for its own training. Regenerate with the paid tier
-or with an open-weight model if you used the unpaid tier.
+The training-data chain is compatible with commercial reuse end-to-end.
+The CC-BY-4.0 material (`greek_legal_code`) requires the attribution
+shown in §3 below.
 
-If you generated data with **OpenAI's API** or **Claude's API**:
+## 3. Attribution notice to ship with the weights
 
-* Both permit commercial use of outputs, but both prohibit using the
-  outputs to train a competing general-purpose LLM. Fine-tuning a PII
-  classifier is not a competing general-purpose LLM, so this is
-  permitted.
-
-**Safest zero-risk alternative:** regenerate with a local open-weight
-model via `scripts/generate_commercial_safe_greek_pii.py --mode ollama`.
-Recommended open-weight models with commercial licenses:
-
-| Model | License | Commercial? |
-|---|---|---|
-| Llama 3.1 / 3.2 (Meta) | Llama Community License | Yes, for companies <700M MAU |
-| Mistral 7B / Mixtral 8x7B | Apache 2.0 | Yes |
-| Gemma 2 (Google) | Gemma Terms of Use | Yes |
-| Qwen 2.5 (Alibaba) | Apache 2.0 (most variants) | Yes |
-
----
-
-## 4. Attribution notice you must ship
-
-When distributing the fine-tuned weights (either the NC release to
-others or a commercial build for yourself), include this block in your
-`USAGE.txt` / `README.md` / model card:
+The following block is reproduced verbatim in `ATTRIBUTION.txt`. Any
+redistribution of the fine-tuned weights must include it in the
+`USAGE.txt` file emitted by `opf train`, in the HuggingFace model-card
+README, or in a file named `ATTRIBUTION.txt` alongside the weights,
+whichever is appropriate to the distribution channel.
 
 ```
 This model is derived from:
-  • OpenAI Privacy Filter (Apache 2.0). Copyright © OpenAI.
+  • OpenAI Privacy Filter (Apache 2.0)
     https://huggingface.co/openai/privacy-filter
-  • Public-domain Greek text from PleIAs/Greek-PD.
-  • [+ any other commercial-safe source you used]
+  • Qwen3.6-35B-A3B (Apache 2.0, Alibaba Qwen team; Unsloth Dynamic GGUF)
+    https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF
+  • PleIAs/Greek-PD (public domain)
+  • Mozilla Common Voice Greek text corpus (CC0)
+  • Greek Legal Code corpus (CC-BY-4.0)
+    Papaloukas et al. 2021, AI Team, University of Athens
+    https://huggingface.co/datasets/AI-team-UoA/greek_legal_code
 
-Base-model license: Apache 2.0 (retained).
-Fine-tuned weights license: Greek Privacy Filter NC v1.0 (to you)
-                         / Commercial license (on request).
+Base-model licence: Apache License, Version 2.0 (retained).
+Fine-tuned weights licence: Greek Privacy Filter Non-Commercial
+                            License v1.0, or a separate commercial
+                            licence available on request.
 ```
 
----
+The `USAGE.txt` emitted by the upstream `opf train` command is to be
+preserved inside `artifacts/model/finetuned-opf/`.
 
-## 5. Decision tree before training
+## 4. Commercial licence procedure
 
-1. Is every dataset listed in your train/validation/test JSONL sourced
-   from §3a?
-   * **Yes →** safe to build and use commercially.
-   * **No →** either remove the §3b items, or build a separate
-     non-commercial-only checkpoint (acceptable to release under NC,
-     not to use commercially).
-2. Did you regenerate any Gemini/OpenAI-sourced data?
-   * If it's from a paid tier **and** used for a PII classifier (not a
-     general-purpose LLM), you're fine.
-   * Otherwise regenerate with `--mode ollama` using an Apache-licensed
-     local model.
-3. Is the base model's `config.json` and Apache 2.0 notice retained in
-   your `artifacts/model/finetuned-opf/` output?
-   * `opf train` does this automatically via `USAGE.txt`. Don't delete
-     that file.
+A third party that wishes to use the fine-tuned weights commercially
+must:
 
----
+1. Contact the provider at `haritos19@gmail.com` with a description
+   of the intended use (identity of the commercial entity, scope of
+   deployment, estimated request volume, retention policy).
+2. Sign a written commercial licence agreement supplied by the
+   provider that supersedes `LICENSE-MODEL-NC` for the licensee only.
+3. Include the attribution notice in §3 in the commercial product's
+   user-facing documentation.
 
-## 6. Jurisdictional note
+Until a written commercial licence is in place, third-party
+commercial use is prohibited by `LICENSE-MODEL-NC` §4. Internal
+evaluation by a commercial entity for the purpose of negotiating a
+licence is permitted under `LICENSE-MODEL-NC` §2 provided no
+production deployment results.
 
-This document is a practical engineering guide, not legal advice. Greek
-and EU data-protection law (GDPR) imposes separate requirements on
-how you handle real personal data during data collection. If you use
-real Greek government documents or legal text, consult a Greek lawyer
-before shipping a commercial product. For synthetic data you generate
-yourself, those concerns don't apply.
+## 5. Non-commercial definition
+
+`LICENSE-MODEL-NC` §2 defines "non-commercial" in terms substantially
+similar to Creative Commons Attribution-NonCommercial 4.0: use that is
+not primarily intended for or directed toward commercial advantage or
+monetary compensation. Academic research, classroom teaching, personal
+experimentation, open-source contribution, and pre-purchase evaluation
+are non-commercial. Sale of a service principally powered by the model,
+or its inclusion in a paid product, is commercial and requires a
+licence under §4.
+
+## 6. Revocability
+
+`LICENSE-MODEL-NC` §1 grants a revocable non-commercial licence. The
+revocability is intentional: it allows the provider to publish a
+superseding version of the licence without tracking individual
+downstream users, and to withdraw the licence from a specific party
+that has materially breached `LICENSE-MODEL-NC` §4 or §3
+(attribution). The provider does not otherwise intend to revoke
+licences granted to compliant users.
+
+## 7. Quarantined data
+
+`data/archive_pre_meltemi_2026-04-23/` contains synthetic data from
+earlier experimental runs that used third-party language-model APIs.
+The directory is excluded from git via `.gitignore`. It must not be
+re-used in training, seeding, or few-shot prompting. Scheduled
+permanent deletion: 2026-05-23.
+
+## 8. Training data and GDPR
+
+Training data is fully synthetic. No personal data is processed
+during training (see `docs/DPIA_NOTE.md` §1). GDPR obligations that
+attach to the processing of personal data do not apply to the training
+pipeline. Obligations on the data processed at inference time are the
+deployer's responsibility; see `docs/DPIA_NOTE.md` §2 and the template
+at `docs/GDPR_ART30_ROPA.md`.

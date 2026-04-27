@@ -1,0 +1,47 @@
+Greek Privacy Filter
+Copyright (c) 2026 Chariton Kypraios (haritos19@gmail.com)
+
+This product includes software developed at OpenAI:
+  OpenAI Privacy Filter
+  https://huggingface.co/openai/privacy-filter
+  https://github.com/openai/privacy-filter
+  Copyright (c) OpenAI
+  Licensed under the Apache License, Version 2.0.
+
+The fine-tuned model weights produced by this repository are distributed
+under the Greek Privacy Filter Non-Commercial License v1.0 (see
+LICENSE-MODEL-NC). A separate commercial license for the weights is
+available on request: haritos19@gmail.com.
+
+Synthetic training data in this repository was generated with the
+following open-weight tools (all Apache-2.0):
+
+  Qwen3.6-35B-A3B, Alibaba Qwen team
+    https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF
+
+  Meltemi-7B-Instruct-v1.5, ILSP / Athena Research Center
+    https://huggingface.co/ilsp/Meltemi-7B-Instruct-v1.5
+    (evaluated as an alternate generator; retained in documentation)
+
+Training-data carrier text is drawn from:
+
+  PleIAs/Greek-PD (Public Domain)
+    https://huggingface.co/datasets/PleIAs/Greek-PD
+
+  Mozilla Common Voice Greek text corpus (CC0)
+    https://commonvoice.mozilla.org/en/datasets
+
+  Greek Legal Code corpus (CC-BY-4.0)
+    Papaloukas, C., Chalkidis, I., Athinaios, K., Pantazi, D.-A.,
+    & Koubarakis, M. (2021). Multi-granular Legal Topic Classification
+    on Greek Legislation. https://arxiv.org/abs/2109.15298
+    AI Team, National and Kapodistrian University of Athens.
+    https://huggingface.co/datasets/AI-team-UoA/greek_legal_code
+
+Inference binaries used during data generation (not redistributed):
+
+  llama.cpp (MIT)
+    https://github.com/ggerganov/llama.cpp
+
+See ATTRIBUTION.txt for the short notice intended to ship alongside
+the fine-tuned weights.

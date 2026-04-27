@@ -1,0 +1,52 @@
+Greek Privacy Filter — Attribution notice
+
+The fine-tuned model is derived from the following components. Ship
+this notice alongside any distribution of the weights.
+
+-----------------------------------------------------------------------
+Base model
+-----------------------------------------------------------------------
+OpenAI Privacy Filter (Apache License 2.0)
+  https://huggingface.co/openai/privacy-filter
+  https://github.com/openai/privacy-filter
+
+-----------------------------------------------------------------------
+Synthetic-data generator (local inference only, not a component of
+the released weights)
+-----------------------------------------------------------------------
+Qwen3.6-35B-A3B (Apache License 2.0)
+  Alibaba Qwen team
+  https://huggingface.co/Qwen  (official upstream)
+  Unsloth Dynamic GGUF quantisation:
+  https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF
+
+-----------------------------------------------------------------------
+Training-data sources (carrier text)
+-----------------------------------------------------------------------
+PleIAs/Greek-PD (Public Domain)
+  https://huggingface.co/datasets/PleIAs/Greek-PD
+
+Mozilla Common Voice Greek text corpus (CC0)
+  https://commonvoice.mozilla.org/en/datasets
+
+Greek Legal Code corpus (CC-BY-4.0)
+  Papaloukas, C., Chalkidis, I., Athinaios, K., Pantazi, D.-A.,
+  & Koubarakis, M. (2021). Multi-granular Legal Topic Classification
+  on Greek Legislation. In Proceedings of the Natural Legal Language
+  Processing Workshop 2021. https://arxiv.org/abs/2109.15298
+  AI Team, National and Kapodistrian University of Athens.
+  https://huggingface.co/datasets/AI-team-UoA/greek_legal_code
+
+-----------------------------------------------------------------------
+Pipeline code
+-----------------------------------------------------------------------
+Greek Privacy Filter fine-tuning pipeline (Apache License 2.0)
+  Copyright (c) 2026 Chariton Kypraios.
+  See LICENSE-CODE.
+
+-----------------------------------------------------------------------
+Fine-tuned weights
+-----------------------------------------------------------------------
+Greek Privacy Filter — Non-Commercial License v1.0 (see
+LICENSE-MODEL-NC). A separate commercial license is available on
+request: haritos19@gmail.com.
