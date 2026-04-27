@@ -381,6 +381,50 @@ _GREEK_CATEGORY_DESCRIPTIONS: dict[str, str] = {
     "iban_gr": "IBAN",
 }
 
+# Latin-transliterated slot descriptions used in Greeklish prompts.
+# When the carrier register is Greeklish (i.e. text written in Latin
+# letters), the slot descriptions in the Qwen prompt should also be
+# Latin so the model produces internally-consistent Greeklish output
+# rather than mixing scripts. The slot VALUE itself stays in its
+# canonical form (a 9-digit AFM is still 9 digits regardless of
+# carrier script).
+_GREEKLISH_CATEGORY_DESCRIPTIONS: dict[str, str] = {
+    "private_person": "onomateponymo",
+    "private_phone": "tilefono",
+    "private_email": "email",
+    "private_url": "syndesmos",
+    "private_address": "dieythynsi",
+    "private_date": "imerominia",
+    "account_number": "arithmos logariasmou",
+    "secret": "API key",
+    "afm": "AFM",
+    "amka": "AMKA",
+    "adt": "ADT",
+    "iban_gr": "IBAN",
+}
+
+# Heuristic: detect Greeklish-style register names so the prompt
+# automatically switches slot descriptions even when --script-mode
+# is left at the default `auto`.
+_GREEKLISH_REGISTER_HINTS = ("greeklish", "Greeklish", "GREEKLISH")
+
+
+def _category_descriptions_for(register_name: str, script_mode: str) -> dict[str, str]:
+    """Return the slot-description map appropriate for a register.
+
+    ``script_mode`` ∈ {``auto``, ``greek``, ``greeklish``}.
+    ``auto`` picks Greeklish when the register name contains a
+    Greeklish hint, Greek otherwise.
+    """
+    if script_mode == "greeklish":
+        return _GREEKLISH_CATEGORY_DESCRIPTIONS
+    if script_mode == "greek":
+        return _GREEK_CATEGORY_DESCRIPTIONS
+    # auto
+    if any(h in register_name for h in _GREEKLISH_REGISTER_HINTS):
+        return _GREEKLISH_CATEGORY_DESCRIPTIONS
+    return _GREEK_CATEGORY_DESCRIPTIONS
+
 
 _BATCH_REGISTERS: list[tuple[str, str]] = [
     (
@@ -438,6 +482,58 @@ _BATCH_REGISTERS: list[tuple[str, str]] = [
     (
         "social media post",
         "δημόσια ανάρτηση σε Facebook / Instagram / X / LinkedIn.",
+    ),
+    # ── Phase-2 distribution-shift registers ─────────────────────────
+    # Added to broaden the carrier-text distribution beyond standard
+    # demotic Greek. Each register stresses a different axis:
+    # transliteration (Greeklish), classical accents (polytonic),
+    # regional vocabulary (Cretan / Cypriot / Pontic), and informal /
+    # student writing. The PII slot values themselves remain in their
+    # canonical numeric / alphabetic format; only the surrounding
+    # prose changes.
+    (
+        "Greeklish SMS / chat",
+        "σύντομα μηνύματα SMS ή chat γραμμένα σε greeklish (Greek "
+        "γραμμένα με λατινικούς χαρακτήρες — π.χ. «steile mou to AFM "
+        "sou na to valw»). Χρησιμοποίησε λατινικά γράμματα σε ΟΛΟ το "
+        "κείμενο εκτός από τις τιμές των slots· τα slots παραμένουν "
+        "στην αυθεντική μορφή τους (αριθμοί ή ελληνικά γράμματα όπου "
+        "απαιτείται).",
+    ),
+    (
+        "πολυτονικό νομικό κείμενο",
+        "ἀπόσπασμα ἀπὸ νομοθεσία ἢ ἀκαδημαϊκὸ κείμενο μὲ πολυτονικὴ "
+        "γραφή (ὀξεῖα, βαρεῖα, περισπωμένη, ψιλή/δασεῖα ὅπου ἁρμόζει). "
+        "Διατήρησε τὸν τόνο τοῦ Νόμου ἢ τοῦ Καθαρευουσιάνικου ὕφους.",
+    ),
+    (
+        "κρητική διάλεκτος",
+        "σύντομη πρόταση σε κρητική διάλεκτο (π.χ. «επά ντα κάνεις, "
+        "Μανώλη, μου 'πες τονε ΑΦΜ σου;») χρησιμοποιώντας κρητικούς "
+        "ιδιωματισμούς (επά, μπα, ντα, εδά, να σου πω, μάθαμε) και "
+        "κρητική προφορά όπου εμφανίζεται γραπτώς.",
+    ),
+    (
+        "κυπριακή διάλεκτος",
+        "σύντομη πρόταση σε κυπριακή διάλεκτο (π.χ. «εν να μου το "
+        "πεις τον αριθμόν σου;» — «έχει» = «εν» / «εν' » — «να μου» = "
+        "«ναν' » — «μετά» = «μεθ' »). Χρησιμοποίησε κυπριακό λεξιλόγιο "
+        "και την παραδοσιακή γραφή του διπλού συμφώνου όπου χρειάζεται.",
+    ),
+    (
+        "ποντιακή διάλεκτος",
+        "σύντομη πρόταση σε ποντιακή διάλεκτο (π.χ. «είμαι ο Γιάννης ο "
+        "Παπαδόπουλος, ντο θέλνε να μάθνε για τον ΑΦΜ-ι μ'»). "
+        "Χρησιμοποίησε ποντιακούς γραμματικούς τύπους (-νε για 3ο "
+        "πρόσωπο, εν αντί είναι, -ι μ' για κτητικό «μου») και "
+        "ποντιακό λεξιλόγιο.",
+    ),
+    (
+        "σχολική / μαθητική γραφή",
+        "πρόταση γραμμένη από μαθητή 12-15 ετών στο τετράδιό του ή "
+        "σε σχολική φόρμα — μπορεί να έχει μικρά ορθογραφικά λάθη, "
+        "ατελείς προτάσεις, ή απλό λεξιλόγιο (π.χ. «η μαμά είπε να "
+        "δώσω το τηλεφωνο της: …»).",
     ),
 ]
 
@@ -720,11 +816,15 @@ def _build_batch_from_ollama(
         items.append(pairs)
 
     register_name, register_desc = rng.choice(_BATCH_REGISTERS)
+    # Switch slot-description language for Greeklish carrier registers
+    # so the prompt is internally consistent (Latin descriptions map to
+    # Latin carrier text). Other registers stay on Greek descriptions.
+    cat_desc = _category_descriptions_for(register_name, "auto")
 
     lines = []
     for i, pairs in enumerate(items, start=1):
         parts = [
-            f"{_GREEK_CATEGORY_DESCRIPTIONS.get(c, c)}: {v}"
+            f"{cat_desc.get(c, c)}: {v}"
             for c, v in pairs
         ]
         lines.append(f"{i}. " + "  +  ".join(parts))
