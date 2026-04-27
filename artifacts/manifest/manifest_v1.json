@@ -1,0 +1,34 @@
+{
+  "manifest_version": "v1",
+  "release_name": "Greek Privacy Filter v1",
+  "release_date_utc": "2026-04-26",
+  "comment": "SHA-256 manifest for the v1 production splits produced by AWS spot generation run 20260426T092703Z. Reproduces what an auditor would compute by running scripts/hash_manifest.py against the synced run artefacts. The split files themselves live under data/processed/aws-v1-20260426T092703Z/ which is gitignored; downloading them is documented in scripts/aws/README.md Part A.3. The smoke-build manifest at artifacts/manifest/manifest.json refers to an earlier 8088/1217/1217/1219-record dataset retained as a reference fixture and is NOT the v1 release.",
+  "git_commit_at_run": "e6c8ddacdbe0f4f1c34c0c82986fdc7142ba5979",
+  "generator_strategy": "llm-server/unsloth/Qwen3.6-35B-A3B-GGUF:UD-Q8_K_XL",
+  "entries": [
+    {
+      "path": "train.jsonl",
+      "size_bytes": 9431592,
+      "sha256": "7d6c746f2ac78723154f051ac464c1ca51acb4d029f8a64a9a9bcdd6beee79d0",
+      "line_count": 21124
+    },
+    {
+      "path": "validation.jsonl",
+      "size_bytes": 1412221,
+      "sha256": "65e5e09ef0fd6581046b393d818bfafc04222f852ac7577a9a615e00611d92a0",
+      "line_count": 3173
+    },
+    {
+      "path": "test.jsonl",
+      "size_bytes": 1412294,
+      "sha256": "415930a4c05025b65ebed8a5ff2c0a5d9ad1e7526ddc460e89c52714a43cbfa6",
+      "line_count": 3171
+    },
+    {
+      "path": "hard_test.jsonl",
+      "size_bytes": 2119219,
+      "sha256": "41f43e8ed35fbf999a893f69209d729a0acd175a3e192c466026c583d1927741",
+      "line_count": 4593
+    }
+  ]
+}

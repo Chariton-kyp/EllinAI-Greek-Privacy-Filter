@@ -69,6 +69,10 @@ aws:
   recommended_instance: ml.g5.xlarge  # 1x A10G 24GB
   use_spot: true
   region: us-east-1
-  s3_data_prefix: s3://YOUR_BUCKET/greek-privacy-filter/data
-  s3_output_prefix: s3://YOUR_BUCKET/greek-privacy-filter/output
+  # The deployer supplies their own S3 bucket via the BUCKET environment
+  # variable used by scripts/aws/ec2_spot_generate.sh and ec2_spot_finetune.sh.
+  # The placeholders below are only documentation; do not run a job
+  # against them. See scripts/aws/README.md for the full setup flow.
+  s3_data_prefix: s3://<your-bucket>/greek-privacy-filter/data
+  s3_output_prefix: s3://<your-bucket>/greek-privacy-filter/output
 # End of config.
