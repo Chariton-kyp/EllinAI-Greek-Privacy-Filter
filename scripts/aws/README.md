@@ -95,6 +95,46 @@ work; a clean run produces all artefacts above.
 
 Default: `g6e.xlarge` (Q8 fits fully in VRAM, no offload penalty).
 
+### A.5 v2 dataset run (LLM main pipeline + Tier-1 deterministic stage)
+
+Set `TIER1_COUNT` to also emit deterministic-format records for twelve
+new PII classes (passport, license_plate, vehicle_vin, gemi, ama,
+card_pan, cvv, imei, ip_address, mac_address, driver_license, pcn).
+The CPU-only stage runs on the same instance after the LLM curation
+step and adds <2 minutes wall-clock at 5,000 records per class. The
+six new Phase-2 carrier registers (Greeklish, polytonic,
+Cretan/Cypriot/Pontic dialects, school/student) are picked
+automatically by the existing register-sampler in the LLM stage; no
+extra flag is needed.
+
+```bash
+export BUCKET=your-gpf-bucket
+export IAM_INSTANCE_PROFILE=your-iam-role
+export AWS_REGION=eu-north-1
+export SAMPLE_COUNT=50000      # main LLM-driven set
+export QUANT=UD-Q8_K_XL
+export TIER1_COUNT=5000        # 12 × 5000 = 60,000 deterministic records
+export SEED_MAIN=2025
+export SEED_HARDNEG=2025
+export SEED_LATINIZE=1338
+export SEED_CURATE=1338
+export SEED_TIER1=2025
+
+bash scripts/aws/ec2_spot_generate.sh
+```
+
+Run output adds `data/tier1_records.jsonl` and
+`artifacts/manifest/tier1_manifest.json` next to the existing v1
+artefacts. The downstream training launcher decides whether to merge
+the Tier-1 records (see Part B.2.1).
+
+If `RunInstances` returns `InsufficientInstanceCapacity`, AWS spot
+capacity for the requested instance type is temporarily depleted in
+the requested AZ. Retry after a few minutes (capacity churns
+minute-to-minute) or set `INSTANCE_TYPE=g5.2xlarge` (lower-priority
+fallback at the cost of generation latency). The launcher does not
+auto-retry; it exits non-zero and the deployer re-runs.
+
 ---
 
 ## Part B — Fine-tuning, EC2 spot path (`ec2_spot_finetune.sh`)
@@ -157,6 +197,42 @@ bash scripts/aws/ec2_spot_finetune.sh
 `V1_RUN_ID` is still required (the launcher uses it as a tag in
 `run_metadata.json`) but the JSONL splits will come from the
 override prefix instead.
+
+### B.2.2 Training against the assembled v2 dataset (v1.1 + Tier-1 [+ Phase-2])
+
+After Part A.5 has produced a generation run that includes
+`tier1_records.jsonl`, the four base splits (LLM-curated) and the
+Tier-1 pack are merged locally with the v2 dataset assembler:
+
+```bash
+# 1. Sync the v1.1 base + the v2 generation output
+aws s3 sync s3://${BUCKET}/relabelled/v1_1/ \
+    data/processed/v1_1/ --region ${AWS_REGION}
+aws s3 sync s3://${BUCKET}/generated/run-<V2_RUN_ID>/data/ \
+    data/processed/aws-v2-<V2_RUN_ID>/data/ --region ${AWS_REGION}
+
+# 2. Assemble v2 combined splits (stratified, dedup'd)
+python scripts/assemble_v2_dataset.py \
+    --base-dir data/processed/v1_1 \
+    --add data/processed/aws-v2-<V2_RUN_ID>/data/tier1_records.jsonl \
+    --output-dir data/processed/v2_combined \
+    --seed 1337 --write-manifest
+
+# 3. Upload the assembled splits
+aws s3 sync data/processed/v2_combined/ \
+    s3://${BUCKET}/assembled/v2_combined/ \
+    --region ${AWS_REGION} --exclude "assembly_report.json"
+
+# 4. Fine-tune against the assembled v2 splits
+export DATASET_S3_PREFIX=assembled/v2_combined
+bash scripts/aws/ec2_spot_finetune.sh
+```
+
+The label-space file at `s3://${BUCKET}/finetune/label_space.json`
+must be updated before Step 4 to include the twelve new Tier-1
+classes; otherwise the new heads silently fall back to the upstream
+default taxonomy and lose the Tier-1 signal. The label-space update
+is a per-deployer schema decision and lives outside this launcher.
 
 ### B.3 Layout under each run prefix
 
