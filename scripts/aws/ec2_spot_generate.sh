@@ -481,12 +481,23 @@ elif command -v python3 >/dev/null 2>&1; then
   _PY_LOCAL="python3"
 fi
 
+# Translate the spec path for Python: when running under Git Bash on
+# Windows the local Python interpreter is the native Windows one and
+# does not understand POSIX paths like /tmp/... Pass the converted
+# path as an environment variable so quoting / escape rules don't
+# leak into the Python source string.
+_SPEC_FILE_NATIVE="${SPEC_FILE}"
+if command -v cygpath >/dev/null 2>&1; then
+  _SPEC_FILE_NATIVE="$(cygpath -w "${SPEC_FILE}")"
+fi
+export GPF_SPEC_FILE="${_SPEC_FILE_NATIVE}"
+
 if [ -n "${SSH_KEY_NAME:-}" ]; then
   if [ -z "${_PY_LOCAL}" ]; then
     echo "FAIL: SSH_KEY_NAME set but no local Python 3 found." >&2
     exit 1
   fi
-  ${_PY_LOCAL} -c "import json; d=json.load(open('${SPEC_FILE}')); d['KeyName']='${SSH_KEY_NAME}'; json.dump(d, open('${SPEC_FILE}','w'))"
+  GPF_SSH_KEY="${SSH_KEY_NAME}" ${_PY_LOCAL} -c "import json, os; p=os.environ['GPF_SPEC_FILE']; d=json.load(open(p)); d['KeyName']=os.environ['GPF_SSH_KEY']; json.dump(d, open(p,'w'))"
 fi
 
 # Switch from spot to on-demand by removing InstanceMarketOptions.
@@ -499,11 +510,12 @@ if [ "${MARKET_TYPE}" = "ondemand" ] || [ "${MARKET_TYPE}" = "on-demand" ]; then
     echo "FAIL: MARKET_TYPE=ondemand set but no local Python 3 found." >&2
     exit 1
   fi
-  ${_PY_LOCAL} -c "import json; d=json.load(open('${SPEC_FILE}')); d.pop('InstanceMarketOptions', None); json.dump(d, open('${SPEC_FILE}','w'))"
+  ${_PY_LOCAL} -c "import json, os; p=os.environ['GPF_SPEC_FILE']; d=json.load(open(p)); d.pop('InstanceMarketOptions', None); json.dump(d, open(p,'w'))"
   echo "  market: on-demand (spot block removed from spec)"
 else
   echo "  market: spot (max-price=${SPOT_MAX_PRICE})"
 fi
+unset GPF_SPEC_FILE
 
 # Pass spec inline instead of file:// — avoids POSIX-vs-Windows path
 # resolution issues when the host shell is Git Bash but the AWS CLI is
