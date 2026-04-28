@@ -51,6 +51,11 @@
 #                         even at 10000 per class.
 #   QUANT               — default UD-Q8_K_XL (alt: UD-Q4_K_S)
 #   SPOT_MAX_PRICE      — default 1.00 ($/h ceiling)
+#   MARKET_TYPE         — default spot. Set to "ondemand" to drop the
+#                         spot-pricing block from the launch spec when
+#                         spot capacity is depleted; the instance then
+#                         runs at on-demand pricing (g6e.xlarge eu-north-1
+#                         on-demand is ~$1.86/h vs spot ~$0.66-0.78/h).
 #   SEED_MAIN           — default 2024
 #   SEED_HARDNEG        — default 2024
 #   SEED_LATINIZE       — default 1337
@@ -71,6 +76,7 @@ SAMPLE_COUNT="${SAMPLE_COUNT:-100000}"
 HARDNEG_COUNT="${HARDNEG_COUNT:-$(( SAMPLE_COUNT / 67 ))}"
 TIER1_COUNT="${TIER1_COUNT:-0}"
 SPOT_MAX_PRICE="${SPOT_MAX_PRICE:-1.00}"
+MARKET_TYPE="${MARKET_TYPE:-spot}"
 QUANT="${QUANT:-UD-Q8_K_XL}"
 SEED_MAIN="${SEED_MAIN:-2024}"
 SEED_HARDNEG="${SEED_HARDNEG:-2024}"
@@ -464,6 +470,18 @@ EOF
 
 if [ -n "${SSH_KEY_NAME:-}" ]; then
   python3 -c "import json; d=json.load(open('${SPEC_FILE}')); d['KeyName']='${SSH_KEY_NAME}'; json.dump(d, open('${SPEC_FILE}','w'))"
+fi
+
+# Switch from spot to on-demand by removing InstanceMarketOptions.
+# Useful when spot capacity is depleted; on-demand is guaranteed
+# available at the published per-hour price (~2.4x spot at full
+# rate). The launcher still terminates the instance via
+# InstanceInitiatedShutdownBehavior + the user-data EXIT trap.
+if [ "${MARKET_TYPE}" = "ondemand" ] || [ "${MARKET_TYPE}" = "on-demand" ]; then
+  python3 -c "import json; d=json.load(open('${SPEC_FILE}')); d.pop('InstanceMarketOptions', None); json.dump(d, open('${SPEC_FILE}','w'))"
+  echo "  market: on-demand (spot block removed from spec)"
+else
+  echo "  market: spot (max-price=${SPOT_MAX_PRICE})"
 fi
 
 # Pass spec inline instead of file:// — avoids POSIX-vs-Windows path
