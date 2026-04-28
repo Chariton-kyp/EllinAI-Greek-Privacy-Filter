@@ -468,8 +468,25 @@ cat > "${SPEC_FILE}" <<EOF
 }
 EOF
 
+# Resolve a local Python interpreter for spec post-processing.
+# The launcher runs from Git Bash on Windows where `python3` may
+# resolve to the Microsoft Store stub; prefer `py -3` then `python`,
+# falling back to `python3` only if those are absent.
+_PY_LOCAL=""
+if command -v py >/dev/null 2>&1; then
+  _PY_LOCAL="py -3"
+elif command -v python >/dev/null 2>&1 && python --version 2>&1 | grep -qi 'python 3'; then
+  _PY_LOCAL="python"
+elif command -v python3 >/dev/null 2>&1; then
+  _PY_LOCAL="python3"
+fi
+
 if [ -n "${SSH_KEY_NAME:-}" ]; then
-  python3 -c "import json; d=json.load(open('${SPEC_FILE}')); d['KeyName']='${SSH_KEY_NAME}'; json.dump(d, open('${SPEC_FILE}','w'))"
+  if [ -z "${_PY_LOCAL}" ]; then
+    echo "FAIL: SSH_KEY_NAME set but no local Python 3 found." >&2
+    exit 1
+  fi
+  ${_PY_LOCAL} -c "import json; d=json.load(open('${SPEC_FILE}')); d['KeyName']='${SSH_KEY_NAME}'; json.dump(d, open('${SPEC_FILE}','w'))"
 fi
 
 # Switch from spot to on-demand by removing InstanceMarketOptions.
@@ -478,7 +495,11 @@ fi
 # rate). The launcher still terminates the instance via
 # InstanceInitiatedShutdownBehavior + the user-data EXIT trap.
 if [ "${MARKET_TYPE}" = "ondemand" ] || [ "${MARKET_TYPE}" = "on-demand" ]; then
-  python3 -c "import json; d=json.load(open('${SPEC_FILE}')); d.pop('InstanceMarketOptions', None); json.dump(d, open('${SPEC_FILE}','w'))"
+  if [ -z "${_PY_LOCAL}" ]; then
+    echo "FAIL: MARKET_TYPE=ondemand set but no local Python 3 found." >&2
+    exit 1
+  fi
+  ${_PY_LOCAL} -c "import json; d=json.load(open('${SPEC_FILE}')); d.pop('InstanceMarketOptions', None); json.dump(d, open('${SPEC_FILE}','w'))"
   echo "  market: on-demand (spot block removed from spec)"
 else
   echo "  market: spot (max-price=${SPOT_MAX_PRICE})"
