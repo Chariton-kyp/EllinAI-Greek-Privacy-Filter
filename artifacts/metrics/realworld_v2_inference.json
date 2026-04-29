@@ -1,0 +1,842 @@
+{
+  "checkpoint": "/workspace/artifacts/finetune-v2-20260428T134618Z/model",
+  "device": "cuda",
+  "total": {
+    "tp": 33,
+    "fp": 12,
+    "fn": 21,
+    "precision": 0.7333333333333333,
+    "recall": 0.6111111111111112,
+    "f1": 0.6666666666666666
+  },
+  "per_class": {
+    "account_number": {
+      "tp": 1,
+      "fp": 3,
+      "fn": 0
+    },
+    "adt": {
+      "tp": 2,
+      "fp": 1,
+      "fn": 0
+    },
+    "afm": {
+      "tp": 3,
+      "fp": 0,
+      "fn": 0
+    },
+    "ama": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0
+    },
+    "amka": {
+      "tp": 3,
+      "fp": 0,
+      "fn": 0
+    },
+    "card_pan": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0
+    },
+    "cvv": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 1
+    },
+    "driver_license": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 2
+    },
+    "gemi": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 1
+    },
+    "iban_gr": {
+      "tp": 1,
+      "fp": 1,
+      "fn": 0
+    },
+    "imei": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0
+    },
+    "ip_address": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0
+    },
+    "license_plate": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0
+    },
+    "mac_address": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0
+    },
+    "passport": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0
+    },
+    "private_address": {
+      "tp": 4,
+      "fp": 0,
+      "fn": 1
+    },
+    "private_date": {
+      "tp": 1,
+      "fp": 2,
+      "fn": 2
+    },
+    "private_email": {
+      "tp": 2,
+      "fp": 1,
+      "fn": 1
+    },
+    "private_person": {
+      "tp": 1,
+      "fp": 1,
+      "fn": 9
+    },
+    "private_phone": {
+      "tp": 5,
+      "fp": 0,
+      "fn": 2
+    },
+    "private_url": {
+      "tp": 0,
+      "fp": 1,
+      "fn": 1
+    },
+    "secret": {
+      "tp": 0,
+      "fp": 1,
+      "fn": 1
+    },
+    "vehicle_vin": {
+      "tp": 1,
+      "fp": 1,
+      "fn": 0
+    }
+  },
+  "cases": [
+    {
+      "case_id": 1,
+      "register": "business email",
+      "text": "Καλημέρα κ. Παπαδόπουλε,\n\nΕπιβεβαιώνουμε τη συνάντηση την Παρασκευή 30 Μαΐου 2026 στο γραφείο μας. Επικοινωνήστε στο 2103456789 ή στο info@law-firm-athens.gr.",
+      "expected": [
+        {
+          "label": "private_person",
+          "text": "Παπαδόπουλε"
+        },
+        {
+          "label": "private_date",
+          "text": "30 Μαΐου 2026"
+        },
+        {
+          "label": "private_phone",
+          "text": "2103456789"
+        },
+        {
+          "label": "private_email",
+          "text": "info@law-firm-athens.gr"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "private_phone",
+          "text": "2103456789",
+          "start": 117,
+          "end": 127
+        },
+        {
+          "label": "private_email",
+          "text": "στο info@law-firm-athens.gr",
+          "start": 130,
+          "end": 157
+        }
+      ],
+      "tp": 1,
+      "fp": 1,
+      "fn": 3,
+      "precision": 0.5,
+      "recall": 0.25,
+      "f1": 0.3333333333333333
+    },
+    {
+      "case_id": 2,
+      "register": "tax declaration SMS",
+      "text": "Παρακαλώ προωθήστε το ΑΦΜ 078123456 και ΑΜΚΑ 15076512345 της κας Ελένης στο λογιστή. Στείλτε με αντίγραφο ταυτότητας ΑΖ123456.",
+      "expected": [
+        {
+          "label": "afm",
+          "text": "078123456"
+        },
+        {
+          "label": "amka",
+          "text": "15076512345"
+        },
+        {
+          "label": "private_person",
+          "text": "Ελένης"
+        },
+        {
+          "label": "adt",
+          "text": "ΑΖ123456"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "afm",
+          "text": "078123456",
+          "start": 26,
+          "end": 35
+        },
+        {
+          "label": "amka",
+          "text": "15076512345",
+          "start": 45,
+          "end": 56
+        },
+        {
+          "label": "adt",
+          "text": "ΑΖ123456",
+          "start": 117,
+          "end": 125
+        }
+      ],
+      "tp": 3,
+      "fp": 0,
+      "fn": 1,
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1": 0.8571428571428571
+    },
+    {
+      "case_id": 3,
+      "register": "bank IBAN notification",
+      "text": "Έγινε μεταφορά 1500€ στον λογαριασμό IBAN GR1601101250000000012300695 του δικαιούχου Γεώργιος Νικολαΐδης. Αρ. λογαριασμού 0125-12300-695.",
+      "expected": [
+        {
+          "label": "iban_gr",
+          "text": "GR1601101250000000012300695"
+        },
+        {
+          "label": "private_person",
+          "text": "Γεώργιος Νικολαΐδης"
+        },
+        {
+          "label": "account_number",
+          "text": "0125-12300-695"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "iban_gr",
+          "text": "GR1601101250000000012300695",
+          "start": 42,
+          "end": 69
+        },
+        {
+          "label": "account_number",
+          "text": "0125-12300-695",
+          "start": 122,
+          "end": 136
+        }
+      ],
+      "tp": 2,
+      "fp": 0,
+      "fn": 1,
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1": 0.8
+    },
+    {
+      "case_id": 4,
+      "register": "credit card payment",
+      "text": "Η πληρωμή με κάρτα 4532 1234 5678 9012 και CVV 123 ολοκληρώθηκε. Λήξη 12/28. Ο κάτοχος Ιωάννης Παπανδρέου ειδοποιήθηκε στο 6912345678.",
+      "expected": [
+        {
+          "label": "card_pan",
+          "text": "4532 1234 5678 9012"
+        },
+        {
+          "label": "cvv",
+          "text": "123"
+        },
+        {
+          "label": "private_person",
+          "text": "Ιωάννης Παπανδρέου"
+        },
+        {
+          "label": "private_phone",
+          "text": "6912345678"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "card_pan",
+          "text": "4532 1234 5678 9012",
+          "start": 19,
+          "end": 38
+        },
+        {
+          "label": "private_date",
+          "text": "12/28",
+          "start": 70,
+          "end": 75
+        },
+        {
+          "label": "vehicle_vin",
+          "text": "Ιωάννης Παπανδ",
+          "start": 87,
+          "end": 101
+        },
+        {
+          "label": "account_number",
+          "text": "6912345678",
+          "start": 123,
+          "end": 133
+        }
+      ],
+      "tp": 1,
+      "fp": 3,
+      "fn": 3,
+      "precision": 0.25,
+      "recall": 0.25,
+      "f1": 0.25
+    },
+    {
+      "case_id": 5,
+      "register": "vehicle insurance",
+      "text": "Ασφαλίστρια εταιρεία ζητά πινακίδα ΥΧΕ-9341, αρ. πλαισίου WBADT43413G123456, και δίπλωμα οδήγησης 123456789. Στοιχεία επικοινωνίας: 6987654321.",
+      "expected": [
+        {
+          "label": "license_plate",
+          "text": "ΥΧΕ-9341"
+        },
+        {
+          "label": "vehicle_vin",
+          "text": "WBADT43413G123456"
+        },
+        {
+          "label": "driver_license",
+          "text": "123456789"
+        },
+        {
+          "label": "private_phone",
+          "text": "6987654321"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "license_plate",
+          "text": "ΥΧΕ-9341",
+          "start": 35,
+          "end": 43
+        },
+        {
+          "label": "vehicle_vin",
+          "text": "WBADT43413G123456",
+          "start": 58,
+          "end": 75
+        },
+        {
+          "label": "account_number",
+          "text": "6987654321",
+          "start": 132,
+          "end": 142
+        }
+      ],
+      "tp": 2,
+      "fp": 1,
+      "fn": 2,
+      "precision": 0.6666666666666666,
+      "recall": 0.5,
+      "f1": 0.5714285714285715
+    },
+    {
+      "case_id": 6,
+      "register": "passport application",
+      "text": "Αιτών Δημήτριος Ανδρέου, διαβατήριο AE0123456, γεννηθείς 15 Ιανουαρίου 1985, διαμένων Ομήρου 23, Αθήνα.",
+      "expected": [
+        {
+          "label": "private_person",
+          "text": "Δημήτριος Ανδρέου"
+        },
+        {
+          "label": "passport",
+          "text": "AE0123456"
+        },
+        {
+          "label": "private_date",
+          "text": "15 Ιανουαρίου 1985"
+        },
+        {
+          "label": "private_address",
+          "text": "Ομήρου 23, Αθήνα"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "passport",
+          "text": "AE0123456",
+          "start": 36,
+          "end": 45
+        },
+        {
+          "label": "private_date",
+          "text": "1985",
+          "start": 71,
+          "end": 75
+        }
+      ],
+      "tp": 1,
+      "fp": 1,
+      "fn": 3,
+      "precision": 0.5,
+      "recall": 0.25,
+      "f1": 0.3333333333333333
+    },
+    {
+      "case_id": 7,
+      "register": "company filing",
+      "text": "Η εταιρεία Παπαδόπουλος ΑΕ με ΓΕΜΗ 123456701000 και ΑΦΜ 094567891 καταχώρισε νέο εκπρόσωπο στο μητρώο. Επικοινωνία: 2107654321.",
+      "expected": [
+        {
+          "label": "gemi",
+          "text": "123456701000"
+        },
+        {
+          "label": "afm",
+          "text": "094567891"
+        },
+        {
+          "label": "private_phone",
+          "text": "2107654321"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "account_number",
+          "text": "123456701000",
+          "start": 35,
+          "end": 47
+        },
+        {
+          "label": "afm",
+          "text": "094567891",
+          "start": 56,
+          "end": 65
+        },
+        {
+          "label": "private_phone",
+          "text": "2107654321",
+          "start": 116,
+          "end": 126
+        }
+      ],
+      "tp": 2,
+      "fp": 1,
+      "fn": 1,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "f1": 0.6666666666666666
+    },
+    {
+      "case_id": 8,
+      "register": "IT incident report",
+      "text": "Ανιχνεύθηκε ύποπτη δραστηριότητα από IP 192.168.45.123 σε συσκευή MAC 00:1B:44:11:3A:B7. Επικοινωνία με admin@company.gr ή στο 2110123456.",
+      "expected": [
+        {
+          "label": "ip_address",
+          "text": "192.168.45.123"
+        },
+        {
+          "label": "mac_address",
+          "text": "00:1B:44:11:3A:B7"
+        },
+        {
+          "label": "private_email",
+          "text": "admin@company.gr"
+        },
+        {
+          "label": "private_phone",
+          "text": "2110123456"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "ip_address",
+          "text": "192.168.45.123",
+          "start": 40,
+          "end": 54
+        },
+        {
+          "label": "mac_address",
+          "text": "00:1B:44:11:3A:B7",
+          "start": 70,
+          "end": 87
+        },
+        {
+          "label": "private_email",
+          "text": "admin@company.gr",
+          "start": 104,
+          "end": 120
+        },
+        {
+          "label": "private_phone",
+          "text": "2110123456",
+          "start": 127,
+          "end": 137
+        }
+      ],
+      "tp": 4,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    {
+      "case_id": 9,
+      "register": "mobile device theft",
+      "text": "Δηλώθηκε κλοπή κινητού IMEI 351234567890123 του Νικόλαου Σταυρίδη. Τελευταία θέση: Πατησίων 145. Επικοινωνία στο 6945123456.",
+      "expected": [
+        {
+          "label": "imei",
+          "text": "351234567890123"
+        },
+        {
+          "label": "private_person",
+          "text": "Νικόλαου Σταυρίδη"
+        },
+        {
+          "label": "private_address",
+          "text": "Πατησίων 145"
+        },
+        {
+          "label": "private_phone",
+          "text": "6945123456"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "imei",
+          "text": "351234567890123",
+          "start": 28,
+          "end": 43
+        },
+        {
+          "label": "private_address",
+          "text": "Πατησίων 145",
+          "start": 83,
+          "end": 95
+        },
+        {
+          "label": "private_phone",
+          "text": "6945123456",
+          "start": 113,
+          "end": 123
+        }
+      ],
+      "tp": 3,
+      "fp": 0,
+      "fn": 1,
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1": 0.8571428571428571
+    },
+    {
+      "case_id": 10,
+      "register": "social security",
+      "text": "Ο ασφαλισμένος Σταύρος Καραμανλής με ΑΜΑ 1234567 και ΑΜΚΑ 11058912345 δικαιούται επίδομα από 01 Μαρτίου 2026.",
+      "expected": [
+        {
+          "label": "private_person",
+          "text": "Σταύρος Καραμανλής"
+        },
+        {
+          "label": "ama",
+          "text": "1234567"
+        },
+        {
+          "label": "amka",
+          "text": "11058912345"
+        },
+        {
+          "label": "private_date",
+          "text": "01 Μαρτίου 2026"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "ama",
+          "text": "1234567",
+          "start": 41,
+          "end": 48
+        },
+        {
+          "label": "amka",
+          "text": "11058912345",
+          "start": 58,
+          "end": 69
+        },
+        {
+          "label": "private_date",
+          "text": "01 Μαρτίου 2026",
+          "start": 93,
+          "end": 108
+        }
+      ],
+      "tp": 3,
+      "fp": 0,
+      "fn": 1,
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1": 0.8571428571428571
+    },
+    {
+      "case_id": 11,
+      "register": "medical referral",
+      "text": "Ασθενής: Αικατερίνη Χριστοδούλου. ΑΜΚΑ 22087812345. Τηλ. επικοινωνίας 6976543210. Διεύθυνση: Πλαστήρα 8, Νέα Σμύρνη. Email: katerina.chrysou@gmail.com",
+      "expected": [
+        {
+          "label": "private_person",
+          "text": "Αικατερίνη Χριστοδούλου"
+        },
+        {
+          "label": "amka",
+          "text": "22087812345"
+        },
+        {
+          "label": "private_phone",
+          "text": "6976543210"
+        },
+        {
+          "label": "private_address",
+          "text": "Πλαστήρα 8, Νέα Σμύρνη"
+        },
+        {
+          "label": "private_email",
+          "text": "katerina.chrysou@gmail.com"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "private_person",
+          "text": "Αικατερίνη Χριστοδούλου",
+          "start": 9,
+          "end": 32
+        },
+        {
+          "label": "amka",
+          "text": "22087812345",
+          "start": 39,
+          "end": 50
+        },
+        {
+          "label": "private_phone",
+          "text": "6976543210",
+          "start": 70,
+          "end": 80
+        },
+        {
+          "label": "private_address",
+          "text": "Πλαστήρα 8, Νέα Σμύρνη",
+          "start": 93,
+          "end": 115
+        },
+        {
+          "label": "private_email",
+          "text": "katerina.chrysou@gmail.com",
+          "start": 124,
+          "end": 150
+        }
+      ],
+      "tp": 5,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    {
+      "case_id": 12,
+      "register": "url + secret leak",
+      "text": "Δείτε τα στοιχεία στο https://intranet.demo.local/users/12345 με token API_KEY=tk_live_abc123XYZ789def456ghi.",
+      "expected": [
+        {
+          "label": "private_url",
+          "text": "https://intranet.demo.local/users/12345"
+        },
+        {
+          "label": "secret",
+          "text": "tk_live_abc123XYZ789def456ghi"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "private_url",
+          "text": ".demo.local/users/12345",
+          "start": 38,
+          "end": 61
+        },
+        {
+          "label": "secret",
+          "text": "tk_live_abc123XYZ789def456",
+          "start": 79,
+          "end": 105
+        }
+      ],
+      "tp": 0,
+      "fp": 2,
+      "fn": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    {
+      "case_id": 13,
+      "register": "passport + driver license",
+      "text": "Ταξιδιώτης Παύλος Δημητρίου με διαβατήριο AB1234567 και δίπλωμα οδήγησης ΑΓ-987654 ζήτησε ανανέωση visa.",
+      "expected": [
+        {
+          "label": "private_person",
+          "text": "Παύλος Δημητρίου"
+        },
+        {
+          "label": "passport",
+          "text": "AB1234567"
+        },
+        {
+          "label": "driver_license",
+          "text": "ΑΓ-987654"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "private_person",
+          "text": "ιώτης Παύλος Δημητρίου",
+          "start": 5,
+          "end": 27
+        },
+        {
+          "label": "passport",
+          "text": "AB1234567",
+          "start": 42,
+          "end": 51
+        },
+        {
+          "label": "adt",
+          "text": "ΑΓ-987654",
+          "start": 73,
+          "end": 82
+        }
+      ],
+      "tp": 1,
+      "fp": 2,
+      "fn": 2,
+      "precision": 0.3333333333333333,
+      "recall": 0.3333333333333333,
+      "f1": 0.3333333333333333
+    },
+    {
+      "case_id": 14,
+      "register": "ecommerce confirmation",
+      "text": "Επιβεβαίωση παραγγελίας #ORD-2026-0428. Κάτοχος κάρτας Visa 5412 7512 3456 7890, παράδοση: Σολωμού 14, 10683 Αθήνα. Εικ. χρέωση 89,90€.",
+      "expected": [
+        {
+          "label": "card_pan",
+          "text": "5412 7512 3456 7890"
+        },
+        {
+          "label": "private_address",
+          "text": "Σολωμού 14, 10683 Αθήνα"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "iban_gr",
+          "text": "#ORD-2026-0428",
+          "start": 24,
+          "end": 38
+        },
+        {
+          "label": "card_pan",
+          "text": "5412 7512 3456 7890",
+          "start": 60,
+          "end": 79
+        },
+        {
+          "label": "private_address",
+          "text": "Σολωμού 14, 10683 Αθήνα",
+          "start": 91,
+          "end": 114
+        }
+      ],
+      "tp": 2,
+      "fp": 1,
+      "fn": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1.0,
+      "f1": 0.8
+    },
+    {
+      "case_id": 15,
+      "register": "court case",
+      "text": "Στην υπόθεση κατά Παπαδημητρίου, εναγόμενος προσκόμισε ΑΔΤ ΞΕ876543 και ΑΦΜ 098765432. Έδρα: Σταδίου 56, Αθήνα.",
+      "expected": [
+        {
+          "label": "private_person",
+          "text": "Παπαδημητρίου"
+        },
+        {
+          "label": "adt",
+          "text": "ΞΕ876543"
+        },
+        {
+          "label": "afm",
+          "text": "098765432"
+        },
+        {
+          "label": "private_address",
+          "text": "Σταδίου 56, Αθήνα"
+        }
+      ],
+      "predicted": [
+        {
+          "label": "adt",
+          "text": "ΞΕ876543",
+          "start": 59,
+          "end": 67
+        },
+        {
+          "label": "afm",
+          "text": "098765432",
+          "start": 76,
+          "end": 85
+        },
+        {
+          "label": "private_address",
+          "text": "Σταδίου 56, Αθήνα",
+          "start": 93,
+          "end": 110
+        }
+      ],
+      "tp": 3,
+      "fp": 0,
+      "fn": 1,
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1": 0.8571428571428571
+    }
+  ]
+}

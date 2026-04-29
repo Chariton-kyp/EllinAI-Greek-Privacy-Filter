@@ -1,0 +1,42 @@
+{
+  "manifest_version": "v2_combined",
+  "base_dir": "data/processed/v2_6_base_for_v2_7",
+  "add_files": [
+    "data/processed/v2_7_targeted_pack.jsonl",
+    "data/processed/v2_9_targeted_pack.jsonl",
+    "data/processed/v2_10_recall_pack.jsonl"
+  ],
+  "seed": 2030,
+  "ratios": {
+    "train.jsonl": 0.8,
+    "validation.jsonl": 0.1,
+    "test.jsonl": 0.05,
+    "hard_test.jsonl": 0.05
+  },
+  "entries": [
+    {
+      "path": "train.jsonl",
+      "size_bytes": 34987959,
+      "sha256": "b77a52962cc6b6c62af7548845f88537632530afab4305f42fb8ef252481d95d",
+      "line_count": 120255
+    },
+    {
+      "path": "validation.jsonl",
+      "size_bytes": 4578087,
+      "sha256": "ec48800eed809a14529212c00d70d7d15bdb0aae25d0c3a55ab5d5c60f6cac5e",
+      "line_count": 15438
+    },
+    {
+      "path": "test.jsonl",
+      "size_bytes": 2998803,
+      "sha256": "0c4078353cd4c759e6df8d404a88c254b1bca866513d78de7b7d255efadd75cb",
+      "line_count": 9315
+    },
+    {
+      "path": "hard_test.jsonl",
+      "size_bytes": 3700158,
+      "sha256": "385c1dc4a7fab71aa22e9dd2f4187d394c68fb016420c7b56f01f987e5ea91ba",
+      "line_count": 10702
+    }
+  ]
+}
