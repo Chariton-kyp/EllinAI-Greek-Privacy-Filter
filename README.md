@@ -221,8 +221,61 @@ python scripts/augment_greek_formats.py \
 
 v1 is the foundational release: 32 061 records, 12 PII classes, span
 F1 ≥ 0.94 across every class, audit-ready governance documentation,
-reproducible build pipeline. v2 is in active planning; the public
-roadmap will be published when the v2 model is ready for release.
+reproducible build pipeline.
+
+### v2 progression — out-of-distribution benchmark
+
+v2 extends coverage to **24 PII classes** (12 new Tier-1 deterministic-
+format classes added: `passport`, `license_plate`, `vehicle_vin`,
+`gemi`, `ama`, `card_pan`, `cvv`, `imei`, `ip_address`, `mac_address`,
+`driver_license`, `pcn`).
+
+Each iteration is evaluated on a **locked 200-case real-world Greek
+benchmark** (`data/realworld_benchmark/cases.jsonl`) with hand-graded
+spans across 24 registers: tax-office letters, medical referrals,
+formal legal text, polytonic, Greeklish, dialect, dense multi-PII
+forms, etc. The benchmark is held out — the model never sees it during
+training.
+
+| Version | Aggregate F1 | Precision | Recall | Notes |
+| ------- | -----------: | --------: | -----: | ----- |
+| v2.6 (Tier-1 baseline) | 0.815 | 0.848 | 0.784 | 24 classes; 6 weak (secret 0.70, dl 0.42, person 0.69, address 0.61, ip 0.74, pcn 0.82) |
+| v2.7 (template targeting) | 0.814 | 0.834 | 0.794 | dl +0.33, ip +0.10, pcn +0.09; secret regressed |
+| v2.8 (template + neg) | 0.758 | 0.842 | 0.689 | empty-label records destroyed recall globally |
+| v2.9 (neg labelling fixed) | **0.826** | **0.907** | 0.758 | best-precision; secret 0.83, address 0.89, person 0.80 |
+| v2.10 (recall-boost templates) | 0.777 | 0.901 | 0.683 | over-formulaic templates; ama 0.13→0.47 but other classes lost recall |
+| v2.11 (Qwen narrative, 1.5k records) | _running_ | — | — | Qwen3.6-35B-A3B-Q4 served locally via llama.cpp Docker (-ncmoe 22, RTX 4080 12 GB); 6 narrow registers targeting v2.9 residuals |
+
+Per-iteration benchmark JSONs at `artifacts/metrics/benchmark_triage_v2_*.json`.
+Per-iteration dataset SHA-256 manifests at `artifacts/manifest/manifest_v2_*.json`.
+
+### Lessons learned (template-only ceiling)
+
+- Template packs work for **deterministic-format classes** (`afm`,
+  `amka`, `pcn`, `driver_license`, `vehicle_vin`, `card_pan`,
+  `iban_gr`, `gemi`) — strong markers transfer to OOD prose.
+- Template packs **do not transfer** for **semantic classes**
+  (`private_person`, `private_address`, `secret`) — model overfits to
+  carrier sentence patterns; benchmark uses real Greek narrative.
+- Negative examples (text without addresses) **must label other PII**
+  in the record. Empty-label records collapse recall globally —
+  the model learns "when in doubt, predict O".
+- Single-pass token accuracy ≥ 0.999 does **not** imply OOD F1 ≥ 0.85.
+  Validation-set token accuracy is too easy. The 200-case OOD bench
+  is the only signal that correlates with real deployment.
+
+### v2 path forward
+
+- **Qwen narrative pack** (v2.11+, in progress): generate diverse Greek
+  prose locally via Qwen3.6-35B-A3B served on consumer GPU. Each
+  record has authored PII slot values + LLM-written carrier prose;
+  spans labelled deterministically by substring search. ~25 records/min
+  on RTX 4080 Mobile.
+- **Hard-negative mining**: predict on real Greek prose, harvest
+  false positives, re-train.
+- **Cascade architecture** (planned): regex Layer 1 + transformer
+  Layer 2 + contextual Layer 3 — break the single-model 0.83 ceiling.
+
 Open issues, security questions and commercial-license requests go via
 `SECURITY.md`.
 
