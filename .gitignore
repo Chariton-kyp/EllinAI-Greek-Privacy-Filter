@@ -35,6 +35,10 @@ checkpoints/base/
 artifacts/logs/
 artifacts/model/
 artifacts/checkpoints/
+# Per-run fine-tune output (model.safetensors weights ~2.7GB each).
+# These are reproducible from the public dataset + manifest hash; the
+# weights themselves stay out of git history to keep the repo lean.
+artifacts/finetune-*/
 artifacts/*.txt
 artifacts/**/*.txt
 artifacts/*.json
