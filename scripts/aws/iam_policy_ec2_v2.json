@@ -1,0 +1,77 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowS3ReadRepoTar",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::YOUR-GPF-BUCKET/code/*"
+    },
+    {
+      "Sid": "AllowS3WriteGeneratedOutput",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:PutObjectAcl"
+      ],
+      "Resource": [
+        "arn:aws:s3:::YOUR-GPF-BUCKET/generated/*",
+        "arn:aws:s3:::YOUR-GPF-BUCKET/logs/*"
+      ]
+    },
+    {
+      "Sid": "AllowS3ReadGeneratedDataForFinetune",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::YOUR-GPF-BUCKET/generated/*"
+    },
+    {
+      "Sid": "AllowS3ReadAssembledDataForFinetune",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::YOUR-GPF-BUCKET/assembled/*"
+    },
+    {
+      "Sid": "AllowS3ReadRelabelledData",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::YOUR-GPF-BUCKET/relabelled/*"
+    },
+    {
+      "Sid": "AllowS3ReadBaseCheckpointAndLabels",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::YOUR-GPF-BUCKET/checkpoints/*",
+        "arn:aws:s3:::YOUR-GPF-BUCKET/finetune/*"
+      ]
+    },
+    {
+      "Sid": "AllowS3WriteFinetuneOutput",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:PutObjectAcl"
+      ],
+      "Resource": "arn:aws:s3:::YOUR-GPF-BUCKET/finetune/*"
+    },
+    {
+      "Sid": "AllowListBucket",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": "arn:aws:s3:::YOUR-GPF-BUCKET"
+    }
+  ]
+}
