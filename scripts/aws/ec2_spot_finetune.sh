@@ -55,6 +55,7 @@ OPF_REPO_URL="${OPF_REPO_URL:-https://github.com/openai/privacy-filter.git}"
 OPF_COMMIT="${OPF_COMMIT:-f7f00ca7fb869683eb732c010299d901457f19c3}"
 BASE_CKPT_S3_PREFIX="${BASE_CKPT_S3_PREFIX:-checkpoints/base/privacy-filter}"
 LABEL_SPACE_S3_KEY="${LABEL_SPACE_S3_KEY:-finetune/label_space.json}"
+MARKET_TYPE="${MARKET_TYPE:-spot}"
 
 : "${BUCKET:?BUCKET env var required}"
 : "${IAM_INSTANCE_PROFILE:?IAM_INSTANCE_PROFILE env var required}"
@@ -286,9 +287,40 @@ cat > "${SPEC_FILE}" <<EOF
 }
 EOF
 
-if [ -n "${SSH_KEY_NAME:-}" ]; then
-  python3 -c "import json; d=json.load(open('${SPEC_FILE}')); d['KeyName']='${SSH_KEY_NAME}'; json.dump(d, open('${SPEC_FILE}','w'))"
+_PY_LOCAL=""
+if command -v py >/dev/null 2>&1; then
+  _PY_LOCAL="py -3"
+elif command -v python >/dev/null 2>&1 && python --version 2>&1 | grep -qi 'python 3'; then
+  _PY_LOCAL="python"
+elif command -v python3 >/dev/null 2>&1; then
+  _PY_LOCAL="python3"
 fi
+
+_SPEC_FILE_NATIVE="${SPEC_FILE}"
+if command -v cygpath >/dev/null 2>&1; then
+  _SPEC_FILE_NATIVE="$(cygpath -w "${SPEC_FILE}")"
+fi
+export GPF_SPEC_FILE="${_SPEC_FILE_NATIVE}"
+
+if [ -n "${SSH_KEY_NAME:-}" ]; then
+  if [ -z "${_PY_LOCAL}" ]; then
+    echo "FAIL: SSH_KEY_NAME set but no local Python 3 found." >&2
+    exit 1
+  fi
+  GPF_SSH_KEY="${SSH_KEY_NAME}" ${_PY_LOCAL} -c "import json, os; p=os.environ['GPF_SPEC_FILE']; d=json.load(open(p)); d['KeyName']=os.environ['GPF_SSH_KEY']; json.dump(d, open(p,'w'))"
+fi
+
+if [ "${MARKET_TYPE}" = "ondemand" ] || [ "${MARKET_TYPE}" = "on-demand" ]; then
+  if [ -z "${_PY_LOCAL}" ]; then
+    echo "FAIL: MARKET_TYPE=ondemand set but no local Python 3 found." >&2
+    exit 1
+  fi
+  ${_PY_LOCAL} -c "import json, os; p=os.environ['GPF_SPEC_FILE']; d=json.load(open(p)); d.pop('InstanceMarketOptions', None); json.dump(d, open(p,'w'))"
+  echo "  market: on-demand (spot block removed from spec)"
+else
+  echo "  market: spot (max-price=${SPOT_MAX_PRICE})"
+fi
+unset GPF_SPEC_FILE
 
 SPEC_JSON="$(cat "${SPEC_FILE}")"
 INSTANCE_ID="$(aws ec2 run-instances --region "${REGION}" \
