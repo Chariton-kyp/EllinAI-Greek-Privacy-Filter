@@ -245,6 +245,7 @@ training.
 | v2.9 (neg labelling fixed) | **0.826** | **0.907** | 0.758 | best-precision; secret 0.83, address 0.89, person 0.80 |
 | v2.10 (recall-boost templates) | 0.777 | 0.901 | 0.683 | over-formulaic templates; ama 0.13→0.47 but other classes lost recall |
 | v2.11 (Qwen narrative, 1.5k records) | 0.814 | 0.865 | 0.769 | Qwen3.6-35B-A3B-Q4 served locally; ama 0.13→0.60 (+0.47), gemi 0.59→0.93; private_phone 0.86→0.53 (12 confusions); net F1 −0.012 vs v2.9 |
+| v2.12 (data audit + phone-anchor) | **0.8266** | 0.881 | **0.778** | filtered 118 phone-shape account_number records from base; +300 Qwen phone-anchor records with explicit `τηλ./κιν./📞` markers; ama 0.13→0.78 (+0.65), gemi 0.59→0.97, pcn 0.95→1.00, dl 0.67→0.82; phone confusions 12→7; **new champion** |
 
 Per-iteration benchmark JSONs at `artifacts/metrics/benchmark_triage_v2_*.json`.
 Per-iteration dataset SHA-256 manifests at `artifacts/manifest/manifest_v2_*.json`.
