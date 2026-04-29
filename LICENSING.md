@@ -11,6 +11,8 @@ parties.
 | Source code (`scripts/`, `configs/`, `src/`) | Apache License, Version 2.0 (see `LICENSE-CODE`). |
 | Documentation (`docs/`, top-level `*.md`, `NOTICE`, `ATTRIBUTION.txt`) | Apache License, Version 2.0 (see `LICENSE-CODE`). |
 | Reference data samples (`data/samples/*.jsonl`, `data/seed/golden_examples.jsonl`) | Apache License, Version 2.0 (see `LICENSE-CODE`). |
+| Real-world OOD evaluation benchmark (`data/realworld_benchmark/cases.jsonl`) | Apache License, Version 2.0. Hand-crafted synthetic Greek cases authored for this project; all PII values are randomly generated and do not reference real persons. |
+| Public audit evidence (`artifacts/manifest/*.json`, `artifacts/metrics/*.json`) | Apache License, Version 2.0. SHA-256 dataset manifests and benchmark-triage metrics; reproducibility evidence containing no copyrighted content. |
 | Fine-tuned model weights (when released at `artifacts/model/…` and published to HuggingFace) | Greek Privacy Filter Non-Commercial License v1.0 (see `LICENSE-MODEL-NC`). A separate commercial licence is available from the provider on request (haritos19@gmail.com). |
 
 As the copyright holder of the fine-tuned weights, the provider
