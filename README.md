@@ -244,7 +244,7 @@ training.
 | v2.8 (template + neg) | 0.758 | 0.842 | 0.689 | empty-label records destroyed recall globally |
 | v2.9 (neg labelling fixed) | **0.826** | **0.907** | 0.758 | best-precision; secret 0.83, address 0.89, person 0.80 |
 | v2.10 (recall-boost templates) | 0.777 | 0.901 | 0.683 | over-formulaic templates; ama 0.13→0.47 but other classes lost recall |
-| v2.11 (Qwen narrative, 1.5k records) | _running_ | — | — | Qwen3.6-35B-A3B-Q4 served locally via llama.cpp Docker (-ncmoe 22, RTX 4080 12 GB); 6 narrow registers targeting v2.9 residuals |
+| v2.11 (Qwen narrative, 1.5k records) | 0.814 | 0.865 | 0.769 | Qwen3.6-35B-A3B-Q4 served locally; ama 0.13→0.60 (+0.47), gemi 0.59→0.93; private_phone 0.86→0.53 (12 confusions); net F1 −0.012 vs v2.9 |
 
 Per-iteration benchmark JSONs at `artifacts/metrics/benchmark_triage_v2_*.json`.
 Per-iteration dataset SHA-256 manifests at `artifacts/manifest/manifest_v2_*.json`.
