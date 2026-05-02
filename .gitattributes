@@ -1,0 +1,26 @@
+# Force LF line endings on all shell + python + yaml/json files even on
+# Windows checkouts. Without this, AWS user-data scripts may carry \r\n
+# line endings into the cloud-init heredoc and produce errors like
+# "command not found: set\r" or unrecognized "EOF\r" markers.
+* text=auto eol=lf
+
+# Explicit overrides for the file types most likely to break
+*.sh    text eol=lf
+*.bash  text eol=lf
+*.py    text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.json  text eol=lf
+*.jsonl text eol=lf
+*.toml  text eol=lf
+
+# Binary
+*.safetensors binary
+*.gguf        binary
+*.bin         binary
+*.tar         binary
+*.tar.gz      binary
+*.zip         binary
+*.png         binary
+*.jpg         binary
+*.pdf         binary

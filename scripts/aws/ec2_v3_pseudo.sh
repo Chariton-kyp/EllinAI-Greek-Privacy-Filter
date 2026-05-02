@@ -140,7 +140,7 @@ python3 -m venv /opt/gpf/.venv
 source /opt/gpf/.venv/bin/activate
 pip install --upgrade pip wheel
 pip install -r /opt/gpf/requirements-unsloth.txt
-pip install vllm pyyaml
+pip install pyyaml
 
 # Step A: Download + chunk Greek corpus (commercial-clean sources only)
 mkdir -p /opt/gpf/data/v3_corpus
@@ -155,69 +155,39 @@ aws s3 sync "s3://\${RUN_BUCKET}/\${TEACHER_S3_PREFIX}/" \\
   /opt/gpf/teacher_adapter/ \\
   --region "\${RUN_REGION}"
 
-# Find the lora_adapters dir (could be nested under run-XXX)
-ADAPTER_DIR="\$(find /opt/gpf/teacher_adapter -name lora_adapters -type d | head -1)"
+# Use canonical adapter path (output_dir/lora_adapters from train_teacher.py).
+# Pre-glob to first match — avoids picking mid-training checkpoint subdirs.
+ADAPTER_DIR=""
+for cand in /opt/gpf/teacher_adapter/run-*/lora_adapters \\
+            /opt/gpf/teacher_adapter/lora_adapters \\
+            /opt/gpf/teacher_adapter/artifacts/run-*/lora_adapters; do
+  for d in \$cand; do
+    if [ -d "\$d" ] && [ -f "\$d/adapter_config.json" ]; then
+      ADAPTER_DIR="\$d"
+      break 2
+    fi
+  done
+done
 if [ -z "\${ADAPTER_DIR}" ]; then
-  echo "FAIL: no lora_adapters/ found under teacher S3 prefix"
+  echo "FAIL: no lora_adapters/ with adapter_config.json found under teacher S3 prefix"
+  ls -laR /opt/gpf/teacher_adapter
   exit 1
 fi
-export ADAPTER_DIR
-export TEACHER_HF_ID
 echo "Using LoRA adapter: \${ADAPTER_DIR}"
 
-# Step C: Merge LoRA adapter into base BEFORE serving (vLLM bnb+lora-modules
-# is unsupported as of v0.20). Merged checkpoint is bf16 ~60GB on disk for
-# 31B model — fits the 250GB EBS provisioned for this instance.
-mkdir -p /opt/gpf/teacher_merged
-python3 - <<'PYEOF'
-import os
-from peft import PeftModel
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
-
-base_id = os.environ["TEACHER_HF_ID"]
-adapter = os.environ["ADAPTER_DIR"]
-out = "/opt/gpf/teacher_merged"
-
-tok = AutoTokenizer.from_pretrained(base_id)
-base = AutoModelForCausalLM.from_pretrained(base_id, dtype=torch.bfloat16, device_map="auto")
-peft = PeftModel.from_pretrained(base, adapter)
-merged = peft.merge_and_unload()
-merged.save_pretrained(out, safe_serialization=True)
-tok.save_pretrained(out)
-print("merged ->", out)
-PYEOF
-
-nohup python3 -m vllm.entrypoints.openai.api_server \\
-  --model /opt/gpf/teacher_merged \\
-  --max-model-len 4096 \\
-  --gpu-memory-utilization 0.92 \\
-  --port 8080 \\
-  > /var/log/vllm.log 2>&1 &
-VLLM_PID=\$!
-
-# Wait for vLLM ready
-echo "Waiting for vLLM..."
-for i in \$(seq 1 60); do
-  if curl -sf http://127.0.0.1:8080/v1/models >/dev/null; then
-    echo "vLLM ready"
-    break
-  fi
-  sleep 10
-done
-
-# Step D: Generate pseudo-labels
+# Step C: Run pseudo-label generation via Unsloth DIRECT inference.
+# (Reviewer C-NEW-1/C-NEW-2: vLLM merge+serve approach OOMs L40S 48GB and
+# bnb-4bit merge_and_unload is unreliable. Unsloth FastLanguageModel runs
+# bnb-4bit base + LoRA adapter inference natively in ~22GB VRAM, batched.)
 mkdir -p /opt/gpf/data/v3_pseudo
-python3 /opt/gpf/scripts/v3/generate_pseudo_labels.py \\
-  --engine openai-server \\
-  --host http://127.0.0.1:8080 \\
-  --teacher-id "\${TEACHER_HF_ID}" \\
-  --model /opt/gpf/teacher_merged \\
+python3 /opt/gpf/scripts/v3/generate_pseudo_labels_unsloth.py \\
+  --base-model "\${TEACHER_HF_ID}" \\
+  --lora-adapter "\${ADAPTER_DIR}" \\
   --input /opt/gpf/data/v3_corpus/greek_corpus.jsonl \\
   --output /opt/gpf/data/v3_pseudo/pseudo_labels.jsonl \\
+  --batch-size 8 \\
   --max-records "\${CORPUS_TARGET_RECORDS}"
 
-kill \$VLLM_PID 2>/dev/null || true
 echo "PSEUDO-LABEL GENERATION COMPLETE"
 EOF
 
