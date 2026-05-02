@@ -65,11 +65,11 @@ tar -czf "${REPO_TAR}" -C "${REPO_ROOT}" \
 echo "[2/5] Upload repo tar to s3://${BUCKET}/${REPO_KEY}"
 aws s3 cp "${REPO_TAR}" "s3://${BUCKET}/${REPO_KEY}" --region "${REGION}"
 
-echo "[3/5] Resolve Deep Learning Base GPU AMI"
+echo "[3/5] Resolve Deep Learning PyTorch GPU AMI"
 AMI_ID="$(aws ec2 describe-images --region "${REGION}" \
     --owners amazon \
     --filters \
-        'Name=name,Values=Deep Learning Base OSS Nvidia Driver GPU AMI (Ubuntu 22.04)*' \
+        'Name=name,Values=Deep Learning OSS Nvidia Driver AMI GPU PyTorch*Ubuntu 22.04*' \
         'Name=state,Values=available' \
     --query 'sort_by(Images, &CreationDate)[-1].ImageId' --output text)"
 echo "  AMI: ${AMI_ID}"
@@ -152,12 +152,19 @@ aws s3 cp "s3://\${RUN_BUCKET}/${REPO_KEY}" /tmp/gpf-v3.tar.gz \\
   --region "\${RUN_REGION}"
 tar -xzf /tmp/gpf-v3.tar.gz -C /opt/gpf/
 
-# Install Unsloth
-python3 -m venv /opt/gpf/.venv
-source /opt/gpf/.venv/bin/activate
-pip install --upgrade pip wheel
-pip install -r /opt/gpf/requirements-unsloth.txt
-pip install pyyaml
+# Activate DLAMI's pytorch conda env (ships torch + CUDA pre-built).
+if [ -f /opt/conda/etc/profile.d/conda.sh ]; then
+  source /opt/conda/etc/profile.d/conda.sh
+  conda activate pytorch 2>/dev/null \\
+    || conda activate pytorch_p310 2>/dev/null \\
+    || conda activate base 2>/dev/null || true
+fi
+PYBIN="\$(command -v python3)"
+echo "Using PYBIN=\${PYBIN}"
+\${PYBIN} -c "import torch; print('torch:', torch.__version__, 'cuda:', torch.cuda.is_available())"
+\${PYBIN} -m pip install --upgrade pip wheel
+\${PYBIN} -m pip install --no-deps unsloth || \${PYBIN} -m pip install unsloth
+\${PYBIN} -m pip install trl bitsandbytes peft accelerate datasets seqeval sentencepiece pyyaml hf_transfer
 
 # Sync v3_chat (gold) + v3_pseudo (teacher pseudo-labels)
 mkdir -p /opt/gpf/data/processed/v3_chat /opt/gpf/data/processed/v3_pseudo
@@ -178,7 +185,7 @@ if [ -n "\${PSEUDO_RAW}" ]; then
   # teacher in document order; the strict-cursor resolver in generate_pseudo_labels.py
   # already enforces that. Shuffling here would reorder spans and the student would
   # learn an output ordering that contradicts the teacher's. (Reviewer C-NEW-3.)
-  python3 /opt/gpf/scripts/v3/convert_opf_to_chat.py \\
+  \${PYBIN} /opt/gpf/scripts/v3/convert_opf_to_chat.py \\
     --input  "\${PSEUDO_RAW}" \\
     --output /opt/gpf/data/processed/v3_pseudo_chat/pseudo_chat.jsonl \\
     --label-space /opt/gpf/configs/label_space_v2.json
@@ -197,7 +204,7 @@ TRAIN_ARGS=()
 if [ -n "\${MAX_TRAIN_SAMPLES}" ]; then
   TRAIN_ARGS+=( --max-train-samples "\${MAX_TRAIN_SAMPLES}" )
 fi
-python3 /opt/gpf/scripts/v3/train_student_distill.py \\
+\${PYBIN} /opt/gpf/scripts/v3/train_student_distill.py \\
   --config /opt/gpf/configs/v3_distillation.yaml \\
   --tier "\${V3_TIER}" \\
   --output-dir "/opt/gpf/artifacts/v3/students/\${V3_TIER}-\${RUN_TIMESTAMP}" \\

@@ -62,11 +62,11 @@ tar -czf "${REPO_TAR}" -C "${REPO_ROOT}" \
 echo "[2/5] Upload repo tar to s3://${BUCKET}/${REPO_KEY}"
 aws s3 cp "${REPO_TAR}" "s3://${BUCKET}/${REPO_KEY}" --region "${REGION}"
 
-echo "[3/5] Resolve Deep Learning Base GPU AMI"
+echo "[3/5] Resolve Deep Learning PyTorch GPU AMI (ships PyTorch + conda env)"
 AMI_ID="$(aws ec2 describe-images --region "${REGION}" \
     --owners amazon \
     --filters \
-        'Name=name,Values=Deep Learning Base OSS Nvidia Driver GPU AMI (Ubuntu 22.04)*' \
+        'Name=name,Values=Deep Learning OSS Nvidia Driver AMI GPU PyTorch*Ubuntu 22.04*' \
         'Name=state,Values=available' \
     --query 'sort_by(Images, &CreationDate)[-1].ImageId' --output text)"
 echo "  AMI: ${AMI_ID}"
@@ -187,12 +187,17 @@ aws s3 cp "s3://\${RUN_BUCKET}/${REPO_KEY}" /tmp/gpf-v3-teacher.tar.gz \\
 tar -xzf /tmp/gpf-v3-teacher.tar.gz -C /opt/gpf/
 
 # 3. Install Unsloth on top of DLAMI's pre-installed PyTorch (no venv).
-# DLAMI Ubuntu 22.04 ships PyTorch 2.x + CUDA 12.x in /opt/conda. Source
-# the conda activation script so cloud-init (non-login shell) sees torch.
+# Deep Learning PyTorch DLAMI Ubuntu 22.04 ships PyTorch 2.x + CUDA 12.x in
+# the 'pytorch' conda env at /opt/conda. Activate that env so torch is on
+# the path. (The "Deep Learning Base" DLAMI does NOT ship PyTorch — that
+# variant trips a ModuleNotFoundError. Pilot v3 confirmed this.)
 _v3_stamp "PIP_INSTALL"
 if [ -f /opt/conda/etc/profile.d/conda.sh ]; then
   source /opt/conda/etc/profile.d/conda.sh
-  conda activate base 2>/dev/null || true
+  # Try canonical envs in order; fall back to base.
+  conda activate pytorch 2>/dev/null \\
+    || conda activate pytorch_p310 2>/dev/null \\
+    || conda activate base 2>/dev/null || true
 fi
 PYBIN="\$(command -v python3)"
 echo "Using PYBIN=\${PYBIN}"

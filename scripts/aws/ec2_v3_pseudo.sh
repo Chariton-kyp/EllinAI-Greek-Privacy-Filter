@@ -60,11 +60,11 @@ tar -czf "${REPO_TAR}" -C "${REPO_ROOT}" \
 echo "[2/5] Upload repo tar"
 aws s3 cp "${REPO_TAR}" "s3://${BUCKET}/${REPO_KEY}" --region "${REGION}"
 
-echo "[3/5] Resolve AMI"
+echo "[3/5] Resolve Deep Learning PyTorch GPU AMI"
 AMI_ID="$(aws ec2 describe-images --region "${REGION}" \
     --owners amazon \
     --filters \
-        'Name=name,Values=Deep Learning Base OSS Nvidia Driver GPU AMI (Ubuntu 22.04)*' \
+        'Name=name,Values=Deep Learning OSS Nvidia Driver AMI GPU PyTorch*Ubuntu 22.04*' \
         'Name=state,Values=available' \
     --query 'sort_by(Images, &CreationDate)[-1].ImageId' --output text)"
 echo "  AMI: ${AMI_ID}"
@@ -149,16 +149,23 @@ aws s3 cp "s3://\${RUN_BUCKET}/${REPO_KEY}" /tmp/gpf-v3.tar.gz \\
   --region "\${RUN_REGION}"
 tar -xzf /tmp/gpf-v3.tar.gz -C /opt/gpf/
 
-# Install deps
-python3 -m venv /opt/gpf/.venv
-source /opt/gpf/.venv/bin/activate
-pip install --upgrade pip wheel
-pip install -r /opt/gpf/requirements-unsloth.txt
-pip install pyyaml
+# Activate DLAMI's pytorch conda env (ships torch + CUDA pre-built).
+if [ -f /opt/conda/etc/profile.d/conda.sh ]; then
+  source /opt/conda/etc/profile.d/conda.sh
+  conda activate pytorch 2>/dev/null \\
+    || conda activate pytorch_p310 2>/dev/null \\
+    || conda activate base 2>/dev/null || true
+fi
+PYBIN="\$(command -v python3)"
+echo "Using PYBIN=\${PYBIN}"
+\${PYBIN} -c "import torch; print('torch:', torch.__version__, 'cuda:', torch.cuda.is_available())"
+\${PYBIN} -m pip install --upgrade pip wheel
+\${PYBIN} -m pip install --no-deps unsloth || \${PYBIN} -m pip install unsloth
+\${PYBIN} -m pip install trl bitsandbytes peft accelerate datasets seqeval sentencepiece pyyaml hf_transfer
 
 # Step A: Download + chunk Greek corpus (commercial-clean sources only)
 mkdir -p /opt/gpf/data/v3_corpus
-python3 /opt/gpf/scripts/v3/load_greek_corpus.py \\
+\${PYBIN} /opt/gpf/scripts/v3/load_greek_corpus.py \\
   --output /opt/gpf/data/v3_corpus/greek_corpus.jsonl \\
   --target-records "\${CORPUS_TARGET_RECORDS}" \\
   --sources greek_pd common_voice greek_legal
@@ -194,7 +201,7 @@ echo "Using LoRA adapter: \${ADAPTER_DIR}"
 # bnb-4bit merge_and_unload is unreliable. Unsloth FastLanguageModel runs
 # bnb-4bit base + LoRA adapter inference natively in ~22GB VRAM, batched.)
 mkdir -p /opt/gpf/data/v3_pseudo
-python3 /opt/gpf/scripts/v3/generate_pseudo_labels_unsloth.py \\
+\${PYBIN} /opt/gpf/scripts/v3/generate_pseudo_labels_unsloth.py \\
   --base-model "\${TEACHER_HF_ID}" \\
   --lora-adapter "\${ADAPTER_DIR}" \\
   --input /opt/gpf/data/v3_corpus/greek_corpus.jsonl \\
