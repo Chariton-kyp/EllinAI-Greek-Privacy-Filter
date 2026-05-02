@@ -80,6 +80,10 @@ def parse_spans(content: str) -> list[dict]:
 
 
 def resolve_offsets(text: str, spans: list[dict]) -> list[dict]:
+    """Strict cursor resolver — matches generate_pseudo_labels strict mode so
+    benchmark F1 and pseudo-label yield rate are consistent metrics.
+    (Reviewer I-NEW-4: previous lenient text.find fallback inflated benchmark F1.)
+    """
     out = []
     cursor = 0
     for s in spans:
@@ -89,8 +93,8 @@ def resolve_offsets(text: str, spans: list[dict]) -> list[dict]:
             continue
         idx = text.find(val, cursor)
         if idx < 0:
-            idx = text.find(val)
-        if idx < 0:
+            # No fallback — strict cursor mode. If model emits out-of-order
+            # spans, those that violate cursor are dropped (counted as misses).
             continue
         out.append({"label": lbl, "start": idx, "end": idx + len(val), "text": val})
         cursor = idx + len(val)

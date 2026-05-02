@@ -48,19 +48,18 @@ export AVAIL_ZONE=eu-north-1b   # confirmed capacity
 
 Trains gemma-4-31B-it via Unsloth LoRA Q4 SFT on the v3 chat data.
 
+**Pilot note:** with `MAX_TRAIN_SAMPLES=500, batch=1, grad_accum=16`, the pilot will run ~62 optimiser steps total. `save_steps=500` won't trigger any intermediate checkpoint, but the unconditional `trainer.save_model()` at the end always saves. If the spot instance is interrupted mid-pilot, no checkpoint is preserved. Acceptable for a sanity check. For the full run (111k records), `save_steps=500` triggers ~13 intermediate checkpoints per epoch.
+
 ```bash
 # Optional pilot first to verify pipeline (~30 min, $0.30):
 MAX_TRAIN_SAMPLES=500 \
-TEACHER_HF_ID=google/gemma-4-31B-it \
+TEACHER_HF_ID=unsloth/gemma-4-31B-it-unsloth-bnb-4bit \
 INSTANCE_TYPE=g6e.xlarge \
 MARKET_TYPE=spot \
 bash scripts/aws/ec2_v3_teacher.sh
 
-# Full run after pilot is green:
-TEACHER_HF_ID=google/gemma-4-31B-it \
-INSTANCE_TYPE=g6e.xlarge \
-MARKET_TYPE=spot \
-bash scripts/aws/ec2_v3_teacher.sh
+# Full run after pilot is green (default TEACHER_HF_ID is unsloth bnb-4bit mirror):
+INSTANCE_TYPE=g6e.xlarge MARKET_TYPE=spot bash scripts/aws/ec2_v3_teacher.sh
 ```
 
 Output: `s3://${BUCKET}/v3/teacher/run-<TIMESTAMP>/artifacts/run-<TS>/lora_adapters/`
@@ -74,12 +73,12 @@ The instance auto-terminates on completion (EXIT trap) — `shutdown -h now`.
 
 ### Stage 2 — Greek corpus + pseudo-labels (~6-10 h, $4-6 spot)
 
-Downloads commercial-clean Greek corpus (PleIAs/Greek-PD + Common Voice + greek_legal_code), serves trained teacher via vLLM, generates pseudo-labels.
+Downloads commercial-clean Greek corpus (PleIAs/Greek-PD + Common Voice + greek_legal_code), runs teacher via Unsloth direct inference (bnb-4bit + LoRA, batched), generates pseudo-labels. **No vLLM, no merge step** — Unsloth's `FastLanguageModel.for_inference()` runs the trained adapter directly in ~22GB VRAM.
 
 ```bash
 # Note the TEACHER_S3_PREFIX from Stage 1 output
 TEACHER_S3_PREFIX=v3/teacher/run-<TS>/artifacts \
-TEACHER_HF_ID=google/gemma-4-31B-it \
+TEACHER_HF_ID=unsloth/gemma-4-31B-it-unsloth-bnb-4bit \
 CORPUS_TARGET_RECORDS=500000 \
 INSTANCE_TYPE=g6e.xlarge \
 MARKET_TYPE=spot \

@@ -118,8 +118,13 @@ def main() -> None:
         warmup_ratio=0.03,
         weight_decay=0.01,
         optim="adamw_8bit",
+        save_strategy="steps",
         save_steps=500,
+        eval_strategy="steps",          # transformers >=4.45 default is "no" (silently skips eval)
         eval_steps=500,
+        load_best_model_at_end=True,
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
         logging_steps=20,
         report_to="none",
         bf16=True,
