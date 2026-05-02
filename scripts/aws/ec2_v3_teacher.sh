@@ -136,14 +136,39 @@ _v3_finalize() {
   shutdown -h now
 }
 
-# Verify S3 access BEFORE starting log pump or trap (early-fail diagnostic).
-_v3_stamp "BOOT"
-aws s3 ls "s3://\${RUN_BUCKET}/" --region "\${RUN_REGION}" >/dev/null
-_v3_stamp "S3_OK"
-
+# Set trap FIRST so any failure below still triggers finalize + shutdown.
+trap _v3_finalize EXIT INT TERM
 _v3_log_pump &
 _PUMP_PID=\$!
-trap _v3_finalize EXIT INT TERM
+
+# STS identity + IAM diagnostic dump.
+{
+  echo "=== STS identity ==="
+  aws sts get-caller-identity --output json 2>&1 || echo "STS_FAIL"
+  echo "=== Instance metadata IAM ==="
+  TOKEN="\$(curl -sS -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' 2>&1)"
+  curl -sS -H "X-aws-ec2-metadata-token: \${TOKEN}" 'http://169.254.169.254/latest/meta-data/iam/info' 2>&1
+  echo
+  curl -sS -H "X-aws-ec2-metadata-token: \${TOKEN}" 'http://169.254.169.254/latest/meta-data/iam/security-credentials/' 2>&1
+  echo
+} > /var/log/gpf-v3-sts.log 2>&1
+aws s3 cp /var/log/gpf-v3-sts.log \\
+  "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/sts.log" \\
+  --region "\${RUN_REGION}" || true
+
+# BOOT stamp: NOT silenced. If S3 perms broken on v3/* prefix, set -e
+# kills the script and the trap (set above) fires finalize + shutdown.
+_v3_stamp_loud() {
+  local label="\$1"
+  local ts="\$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "[stamp] \${ts} \${label}" >> /var/log/gpf-v3-stamps.log
+  aws s3 cp /var/log/gpf-v3-stamps.log \\
+    "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/stamps.log" \\
+    --region "\${RUN_REGION}"
+}
+_v3_stamp_loud "BOOT"
+aws s3 ls "s3://\${RUN_BUCKET}/" --region "\${RUN_REGION}" >/dev/null
+_v3_stamp "S3_OK"
 
 # 1. Install AWS CLI v2 if missing (DLAMI usually has it)
 _v3_stamp "AWS_CLI_CHECK"
@@ -249,6 +274,24 @@ fi
 INSTANCE_ID="$(aws ec2 run-instances --region "${REGION}" \
     --cli-input-json "file://${SPEC_FILE_NATIVE}" \
     --query 'Instances[0].InstanceId' --output text)"
+
+# Post-launch IAM profile verification — abort+terminate if profile is null
+# (caused silent failure on pilot v2: instance ran w/o S3 perms, all stamps
+# sank, ran shutdown after ~5 min with no diagnostics).
+echo "[4.5/5] Verify IAM profile attached"
+sleep 8
+ATTACHED_PROFILE="$(aws ec2 describe-instances --region "${REGION}" \
+    --instance-ids "${INSTANCE_ID}" \
+    --query 'Reservations[0].Instances[0].IamInstanceProfile.Arn' \
+    --output text 2>/dev/null || echo None)"
+if [ -z "${ATTACHED_PROFILE}" ] || [ "${ATTACHED_PROFILE}" = "None" ] || [ "${ATTACHED_PROFILE}" = "null" ]; then
+  echo "FAIL: instance ${INSTANCE_ID} launched WITHOUT IAM profile."
+  echo "      requested profile name: '${IAM_INSTANCE_PROFILE}'"
+  echo "      terminating to avoid silent stamp failure."
+  aws ec2 terminate-instances --region "${REGION}" --instance-ids "${INSTANCE_ID}" >/dev/null
+  exit 1
+fi
+echo "  IAM profile: ${ATTACHED_PROFILE}"
 
 echo "[5/5] Instance: ${INSTANCE_ID}"
 echo

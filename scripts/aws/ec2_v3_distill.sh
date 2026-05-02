@@ -96,6 +96,20 @@ if [ -n "${HF_TOKEN}" ]; then
 fi
 export HF_HUB_ENABLE_HF_TRANSFER=1
 
+# STS / IAM diagnostic dump (loud failure if perms broken).
+{
+  echo "=== STS identity ==="
+  aws sts get-caller-identity --output json 2>&1 || echo "STS_FAIL"
+  echo "=== Instance metadata IAM ==="
+  TOKEN="\$(curl -sS -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' 2>&1)"
+  curl -sS -H "X-aws-ec2-metadata-token: \${TOKEN}" 'http://169.254.169.254/latest/meta-data/iam/info' 2>&1
+  echo
+} > /var/log/gpf-v3-sts.log 2>&1
+aws s3 cp /var/log/gpf-v3-sts.log \\
+  "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/sts.log" \\
+  --region "\${RUN_REGION}"
+aws s3 ls "s3://\${RUN_BUCKET}/" --region "\${RUN_REGION}" >/dev/null
+
 _v3_log_pump() {
   while true; do
     [ -f /var/log/gpf-v3-\${V3_TIER}.log ] && \\
@@ -235,6 +249,20 @@ fi
 INSTANCE_ID="$(aws ec2 run-instances --region "${REGION}" \
     --cli-input-json "file://${SPEC_FILE_NATIVE}" \
     --query 'Instances[0].InstanceId' --output text)"
+
+# Post-launch IAM profile verification — abort+terminate if profile null.
+echo "[4.5/5] Verify IAM profile attached"
+sleep 8
+ATTACHED_PROFILE="$(aws ec2 describe-instances --region "${REGION}" \
+    --instance-ids "${INSTANCE_ID}" \
+    --query 'Reservations[0].Instances[0].IamInstanceProfile.Arn' \
+    --output text 2>/dev/null || echo None)"
+if [ -z "${ATTACHED_PROFILE}" ] || [ "${ATTACHED_PROFILE}" = "None" ] || [ "${ATTACHED_PROFILE}" = "null" ]; then
+  echo "FAIL: instance ${INSTANCE_ID} launched WITHOUT IAM profile (name='${IAM_INSTANCE_PROFILE}')."
+  aws ec2 terminate-instances --region "${REGION}" --instance-ids "${INSTANCE_ID}" >/dev/null
+  exit 1
+fi
+echo "  IAM profile: ${ATTACHED_PROFILE}"
 
 echo "[5/5] Instance: ${INSTANCE_ID}"
 echo "Tier:        ${V3_TIER}"
