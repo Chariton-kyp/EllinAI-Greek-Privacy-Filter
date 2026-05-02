@@ -1,0 +1,32 @@
+# v3 distillation pipeline — Unsloth-based SFT + GRPO + student distill.
+# Install with: pip install -r requirements-unsloth.txt
+#
+# Tested with:
+#   * CUDA 12.4 + PyTorch 2.5.1 (matches AWS Deep Learning AMI Ubuntu 22.04)
+#   * NVIDIA driver 535+ (g6.xlarge L4 24GB / g6e.xlarge L40S 48GB)
+#   * RTX 4080 Laptop 12GB (local dev with offload)
+#
+# License: all dependencies are Apache 2.0 / MIT / BSD — commercial-clean.
+# Full audit: see LICENSING.md §2 "Third-party components".
+
+# Core fine-tuning library — Apache 2.0
+unsloth>=2025.10.0
+
+# Reinforcement learning trainer — Apache 2.0
+trl>=0.21.0
+
+# Quantization (LoRA Q4) — MIT
+bitsandbytes>=0.45.0
+
+# HF stack — Apache 2.0 across the board
+transformers>=4.51.0
+peft>=0.13.0
+accelerate>=1.2.0
+datasets>=3.2.0
+
+# Span-F1 reward + benchmark
+seqeval>=1.2.2
+
+# Training data utility
+sentencepiece>=0.2.0
+protobuf>=4.21.0
