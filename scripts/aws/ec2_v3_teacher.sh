@@ -93,6 +93,17 @@ if [ -n "${HF_TOKEN}" ]; then
 fi
 export HF_HUB_ENABLE_HF_TRANSFER=1
 
+# Progress marker — write a tiny file to S3 at each major step so we can
+# diagnose failures without relying on the full log_pump getting through.
+_v3_stamp() {
+  local label="\$1"
+  local ts="\$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "[stamp] \${ts} \${label}" >> /var/log/gpf-v3-stamps.log
+  aws s3 cp /var/log/gpf-v3-stamps.log \\
+    "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/stamps.log" \\
+    --region "\${RUN_REGION}" --quiet 2>/dev/null || true
+}
+
 # Sync log every 30s for live monitoring
 _v3_log_pump() {
   while true; do
@@ -103,12 +114,11 @@ _v3_log_pump() {
     sleep 30
   done
 }
-_v3_log_pump &
-_PUMP_PID=\$!
 
 # EXIT trap: always sync final artefacts + logs, then shutdown
 _v3_finalize() {
   set +e
+  _v3_stamp "FINALIZE"
   kill \$_PUMP_PID 2>/dev/null || true
   echo "[finalize] uploading artefacts + logs"
   if [ -d /opt/gpf/artifacts/v3/teacher ]; then
@@ -119,11 +129,24 @@ _v3_finalize() {
   aws s3 cp /var/log/gpf-v3-teacher.log \\
     "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/gpf-v3-teacher.log" \\
     --region "\${RUN_REGION}" --only-show-errors
+  aws s3 cp /var/log/cloud-init-output.log \\
+    "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/cloud-init-output.log" \\
+    --region "\${RUN_REGION}" --only-show-errors 2>/dev/null
+  _v3_stamp "SHUTDOWN"
   shutdown -h now
 }
+
+# Verify S3 access BEFORE starting log pump or trap (early-fail diagnostic).
+_v3_stamp "BOOT"
+aws s3 ls "s3://\${RUN_BUCKET}/" --region "\${RUN_REGION}" >/dev/null
+_v3_stamp "S3_OK"
+
+_v3_log_pump &
+_PUMP_PID=\$!
 trap _v3_finalize EXIT INT TERM
 
 # 1. Install AWS CLI v2 if missing (DLAMI usually has it)
+_v3_stamp "AWS_CLI_CHECK"
 if ! command -v aws >/dev/null 2>&1; then
   curl -sSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
   unzip -q /tmp/awscliv2.zip -d /tmp/
@@ -131,38 +154,51 @@ if ! command -v aws >/dev/null 2>&1; then
 fi
 
 # 2. Pull repo tar
+_v3_stamp "PULL_REPO"
 mkdir -p /opt/gpf
 cd /opt/gpf
 aws s3 cp "s3://\${RUN_BUCKET}/${REPO_KEY}" /tmp/gpf-v3-teacher.tar.gz \\
   --region "\${RUN_REGION}"
 tar -xzf /tmp/gpf-v3-teacher.tar.gz -C /opt/gpf/
 
-# 3. Install Unsloth + deps in a fresh venv
-python3 -m venv /opt/gpf/.venv
-source /opt/gpf/.venv/bin/activate
-pip install --upgrade pip wheel
-pip install -r /opt/gpf/requirements-unsloth.txt
-pip install pyyaml
+# 3. Install Unsloth on top of DLAMI's pre-installed PyTorch (no venv).
+# DLAMI Ubuntu 22.04 ships PyTorch 2.x + CUDA 12.x in /opt/conda. Source
+# the conda activation script so cloud-init (non-login shell) sees torch.
+_v3_stamp "PIP_INSTALL"
+if [ -f /opt/conda/etc/profile.d/conda.sh ]; then
+  source /opt/conda/etc/profile.d/conda.sh
+  conda activate base 2>/dev/null || true
+fi
+PYBIN="\$(command -v python3)"
+echo "Using PYBIN=\${PYBIN}"
+\${PYBIN} -c "import torch; print('torch:', torch.__version__, 'cuda:', torch.cuda.is_available())"
+\${PYBIN} -m pip install --upgrade pip wheel
+# Install Unsloth + missing deps; skip torch (already in DLAMI)
+\${PYBIN} -m pip install --no-deps unsloth || \${PYBIN} -m pip install unsloth
+\${PYBIN} -m pip install trl bitsandbytes peft accelerate datasets seqeval sentencepiece pyyaml hf_transfer
 
 # 4. Sync v3_chat data from S3
+_v3_stamp "SYNC_DATA"
 mkdir -p /opt/gpf/data/processed/v3_chat
 aws s3 sync "s3://\${RUN_BUCKET}/\${V3_DATA_S3_PREFIX}/" \\
   /opt/gpf/data/processed/v3_chat/ \\
   --region "\${RUN_REGION}" --exclude "*" --include "train.jsonl" --include "validation.jsonl"
 
 # 5. Train teacher
+_v3_stamp "TRAIN_START"
 mkdir -p /opt/gpf/artifacts/v3/teacher
 TRAIN_ARGS=()
 if [ -n "\${MAX_TRAIN_SAMPLES}" ]; then
   TRAIN_ARGS+=( --max-train-samples "\${MAX_TRAIN_SAMPLES}" )
 fi
-python3 /opt/gpf/scripts/v3/train_teacher.py \\
+\${PYBIN} /opt/gpf/scripts/v3/train_teacher.py \\
   --config /opt/gpf/configs/v3_distillation.yaml \\
   --output-dir "/opt/gpf/artifacts/v3/teacher/run-\${RUN_TIMESTAMP}" \\
   --train-jsonl /opt/gpf/data/processed/v3_chat/train.jsonl \\
   --eval-jsonl /opt/gpf/data/processed/v3_chat/validation.jsonl \\
   --model-override "\${TEACHER_HF_ID}" \\
   "\${TRAIN_ARGS[@]}"
+_v3_stamp "TRAIN_DONE"
 
 # 6. Final sync + auto-shutdown via EXIT trap
 echo "TEACHER SFT COMPLETE"
