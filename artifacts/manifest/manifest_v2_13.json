@@ -1,0 +1,46 @@
+{
+  "manifest_version": "v2_combined",
+  "base_dir": "C:\\Users\\harit\\Desktop\\Business_Projects\\Greek-Privacy-Filter\\data\\processed\\v2_12_base_filtered",
+  "add_files": [
+    "data\\processed\\v2_7_targeted_pack.jsonl",
+    "data\\processed\\v2_9_targeted_pack.jsonl",
+    "data\\processed\\v2_11_qwen_pack.jsonl",
+    "data\\processed\\v2_12_phone_anchor_pack.jsonl",
+    "data\\processed\\v2_13_phone_account_clean.jsonl",
+    "data\\processed\\v2_13_email_secret_clean.jsonl",
+    "data\\processed\\v2_13_mac_ip_vin_clean.jsonl"
+  ],
+  "seed": 2033,
+  "ratios": {
+    "train.jsonl": 0.8,
+    "validation.jsonl": 0.1,
+    "test.jsonl": 0.05,
+    "hard_test.jsonl": 0.05
+  },
+  "entries": [
+    {
+      "path": "train.jsonl",
+      "size_bytes": 34104500,
+      "sha256": "baf06347e20476c608ac8ded938d562b45ca8ac9be0b43a72b184b7cd2b124ed",
+      "line_count": 111184
+    },
+    {
+      "path": "validation.jsonl",
+      "size_bytes": 4463852,
+      "sha256": "eeb881c201af28c4580737414504610d00ed252e34dc9f6c52d3e6db1c83bba1",
+      "line_count": 14309
+    },
+    {
+      "path": "test.jsonl",
+      "size_bytes": 2943211,
+      "sha256": "a5f23d1b2b5aeed2bae594873bef9720f0a6cb15f82b1fb9c547c0c46122333d",
+      "line_count": 8726
+    },
+    {
+      "path": "hard_test.jsonl",
+      "size_bytes": 3652878,
+      "sha256": "29fa035841e968c6543a75031c961dc1f2e16797937cc2bd2e164cfe0a1052fe",
+      "line_count": 10153
+    }
+  ]
+}
