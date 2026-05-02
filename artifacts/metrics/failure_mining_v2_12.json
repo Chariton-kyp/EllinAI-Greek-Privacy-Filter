@@ -1,0 +1,1717 @@
+{
+  "checkpoint": "/workspace/artifacts/finetune-v2-12-20260430T094120Z/model",
+  "decoder": "viterbi",
+  "aggregate": {
+    "tp": 498,
+    "boundary": 21,
+    "confusion": 18,
+    "missed": 103,
+    "hallucinated": 28,
+    "precision": 0.8814159292035398,
+    "recall": 0.778125,
+    "f1": 0.8265560165975104,
+    "per_class_tp": {
+      "afm": 42,
+      "adt": 22,
+      "amka": 13,
+      "private_address": 37,
+      "private_email": 43,
+      "gemi": 14,
+      "private_date": 35,
+      "private_person": 102,
+      "account_number": 8,
+      "iban_gr": 18,
+      "card_pan": 13,
+      "cvv": 7,
+      "private_phone": 28,
+      "license_plate": 14,
+      "vehicle_vin": 8,
+      "driver_license": 9,
+      "ip_address": 10,
+      "secret": 8,
+      "private_url": 20,
+      "mac_address": 7,
+      "imei": 12,
+      "passport": 8,
+      "ama": 9,
+      "pcn": 11
+    },
+    "per_class_boundary": {
+      "mac_address": 2,
+      "private_address": 3,
+      "card_pan": 1,
+      "private_person": 8,
+      "secret": 2,
+      "private_url": 1,
+      "private_email": 3,
+      "vehicle_vin": 1
+    },
+    "per_class_confusion": {
+      "mac_address": 3,
+      "private_phone": 7,
+      "private_person": 2,
+      "imei": 2,
+      "private_email": 2,
+      "card_pan": 1,
+      "afm": 1
+    },
+    "per_class_missed": {
+      "private_person": 32,
+      "private_date": 5,
+      "private_url": 2,
+      "afm": 8,
+      "driver_license": 3,
+      "private_address": 1,
+      "private_email": 14,
+      "ip_address": 6,
+      "amka": 11,
+      "private_phone": 6,
+      "passport": 2,
+      "ama": 4,
+      "cvv": 3,
+      "card_pan": 1,
+      "license_plate": 1,
+      "adt": 3,
+      "gemi": 1
+    },
+    "per_class_halluc": {
+      "license_plate": 1,
+      "private_url": 1,
+      "ama": 1,
+      "private_date": 4,
+      "cvv": 1,
+      "private_person": 5,
+      "amka": 2,
+      "ip_address": 1,
+      "secret": 2,
+      "private_address": 3,
+      "account_number": 2,
+      "adt": 1,
+      "card_pan": 2,
+      "driver_license": 1,
+      "iban_gr": 1
+    }
+  },
+  "class_metrics": {
+    "account_number": {
+      "tp": 8,
+      "boundary": 0,
+      "confusion": 0,
+      "missed": 0,
+      "hallucinated": 2,
+      "precision": 0.8,
+      "recall": 1.0,
+      "f1": 0.888888888888889,
+      "loss_events": 2
+    },
+    "adt": {
+      "tp": 22,
+      "boundary": 0,
+      "confusion": 0,
+      "missed": 3,
+      "hallucinated": 1,
+      "precision": 0.9565217391304348,
+      "recall": 0.88,
+      "f1": 0.9166666666666666,
+      "loss_events": 4
+    },
+    "afm": {
+      "tp": 42,
+      "boundary": 0,
+      "confusion": 1,
+      "missed": 8,
+      "hallucinated": 0,
+      "precision": 0.9767441860465116,
+      "recall": 0.8235294117647058,
+      "f1": 0.8936170212765957,
+      "loss_events": 9
+    },
+    "ama": {
+      "tp": 9,
+      "boundary": 0,
+      "confusion": 0,
+      "missed": 4,
+      "hallucinated": 1,
+      "precision": 0.9,
+      "recall": 0.6923076923076923,
+      "f1": 0.7826086956521738,
+      "loss_events": 5
+    },
+    "amka": {
+      "tp": 13,
+      "boundary": 0,
+      "confusion": 0,
+      "missed": 11,
+      "hallucinated": 2,
+      "precision": 0.8666666666666667,
+      "recall": 0.5416666666666666,
+      "f1": 0.6666666666666667,
+      "loss_events": 13
+    },
+    "card_pan": {
+      "tp": 13,
+      "boundary": 1,
+      "confusion": 1,
+      "missed": 1,
+      "hallucinated": 2,
+      "precision": 0.7647058823529411,
+      "recall": 0.8125,
+      "f1": 0.787878787878788,
+      "loss_events": 5
+    },
+    "cvv": {
+      "tp": 7,
+      "boundary": 0,
+      "confusion": 0,
+      "missed": 3,
+      "hallucinated": 1,
+      "precision": 0.875,
+      "recall": 0.7,
+      "f1": 0.7777777777777777,
+      "loss_events": 4
+    },
+    "driver_license": {
+      "tp": 9,
+      "boundary": 0,
+      "confusion": 0,
+      "missed": 3,
+      "hallucinated": 1,
+      "precision": 0.9,
+      "recall": 0.75,
+      "f1": 0.8181818181818182,
+      "loss_events": 4
+    },
+    "gemi": {
+      "tp": 14,
+      "boundary": 0,
+      "confusion": 0,
+      "missed": 1,
+      "hallucinated": 0,
+      "precision": 1.0,
+      "recall": 0.9333333333333333,
+      "f1": 0.9655172413793104,
+      "loss_events": 1
+    },
+    "iban_gr": {
+      "tp": 18,
+      "boundary": 0,
+      "confusion": 0,
+      "missed": 0,
+      "hallucinated": 1,
+      "precision": 0.9473684210526315,
+      "recall": 1.0,
+      "f1": 0.972972972972973,
+      "loss_events": 1
+    },
+    "imei": {
+      "tp": 12,
+      "boundary": 0,
+      "confusion": 2,
+      "missed": 0,
+      "hallucinated": 0,
+      "precision": 0.8571428571428571,
+      "recall": 0.8571428571428571,
+      "f1": 0.8571428571428571,
+      "loss_events": 2
+    },
+    "ip_address": {
+      "tp": 10,
+      "boundary": 0,
+      "confusion": 0,
+      "missed": 6,
+      "hallucinated": 1,
+      "precision": 0.9090909090909091,
+      "recall": 0.625,
+      "f1": 0.7407407407407406,
+      "loss_events": 7
+    },
+    "license_plate": {
+      "tp": 14,
+      "boundary": 0,
+      "confusion": 0,
+      "missed": 1,
+      "hallucinated": 1,
+      "precision": 0.9333333333333333,
+      "recall": 0.9333333333333333,
+      "f1": 0.9333333333333333,
+      "loss_events": 2
+    },
+    "mac_address": {
+      "tp": 7,
+      "boundary": 2,
+      "confusion": 3,
+      "missed": 0,
+      "hallucinated": 0,
+      "precision": 0.5833333333333334,
+      "recall": 0.5833333333333334,
+      "f1": 0.5833333333333334,
+      "loss_events": 5
+    },
+    "passport": {
+      "tp": 8,
+      "boundary": 0,
+      "confusion": 0,
+      "missed": 2,
+      "hallucinated": 0,
+      "precision": 1.0,
+      "recall": 0.8,
+      "f1": 0.888888888888889,
+      "loss_events": 2
+    },
+    "pcn": {
+      "tp": 11,
+      "boundary": 0,
+      "confusion": 0,
+      "missed": 0,
+      "hallucinated": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "loss_events": 0
+    },
+    "private_address": {
+      "tp": 37,
+      "boundary": 3,
+      "confusion": 0,
+      "missed": 1,
+      "hallucinated": 3,
+      "precision": 0.8604651162790697,
+      "recall": 0.9024390243902439,
+      "f1": 0.8809523809523809,
+      "loss_events": 7
+    },
+    "private_date": {
+      "tp": 35,
+      "boundary": 0,
+      "confusion": 0,
+      "missed": 5,
+      "hallucinated": 4,
+      "precision": 0.8974358974358975,
+      "recall": 0.875,
+      "f1": 0.8860759493670887,
+      "loss_events": 9
+    },
+    "private_email": {
+      "tp": 43,
+      "boundary": 3,
+      "confusion": 2,
+      "missed": 14,
+      "hallucinated": 0,
+      "precision": 0.8958333333333334,
+      "recall": 0.6935483870967742,
+      "f1": 0.7818181818181819,
+      "loss_events": 19
+    },
+    "private_person": {
+      "tp": 102,
+      "boundary": 8,
+      "confusion": 2,
+      "missed": 32,
+      "hallucinated": 5,
+      "precision": 0.8717948717948718,
+      "recall": 0.7083333333333334,
+      "f1": 0.7816091954022988,
+      "loss_events": 47
+    },
+    "private_phone": {
+      "tp": 28,
+      "boundary": 0,
+      "confusion": 7,
+      "missed": 6,
+      "hallucinated": 0,
+      "precision": 0.8,
+      "recall": 0.6829268292682927,
+      "f1": 0.736842105263158,
+      "loss_events": 13
+    },
+    "private_url": {
+      "tp": 20,
+      "boundary": 1,
+      "confusion": 0,
+      "missed": 2,
+      "hallucinated": 1,
+      "precision": 0.9090909090909091,
+      "recall": 0.8695652173913043,
+      "f1": 0.888888888888889,
+      "loss_events": 4
+    },
+    "secret": {
+      "tp": 8,
+      "boundary": 2,
+      "confusion": 0,
+      "missed": 0,
+      "hallucinated": 2,
+      "precision": 0.6666666666666666,
+      "recall": 0.8,
+      "f1": 0.7272727272727272,
+      "loss_events": 4
+    },
+    "vehicle_vin": {
+      "tp": 8,
+      "boundary": 1,
+      "confusion": 0,
+      "missed": 0,
+      "hallucinated": 0,
+      "precision": 0.8888888888888888,
+      "recall": 0.8888888888888888,
+      "f1": 0.8888888888888888,
+      "loss_events": 1
+    }
+  },
+  "priorities": [
+    {
+      "label": "private_person",
+      "priority_score": 123,
+      "f1": 0.7816091954022988,
+      "precision": 0.8717948717948718,
+      "recall": 0.7083333333333334,
+      "missed": 32,
+      "confusion": 2,
+      "boundary": 8,
+      "hallucinated": 5,
+      "top_confusion": "private_address",
+      "recommended_pack": "qwen_narrative/person_vocative_polytonic: surnames, vocatives, titles, two-person messages"
+    },
+    {
+      "label": "private_email",
+      "priority_score": 54,
+      "f1": 0.7818181818181819,
+      "precision": 0.8958333333333334,
+      "recall": 0.6935483870967742,
+      "missed": 14,
+      "confusion": 2,
+      "boundary": 3,
+      "hallucinated": 0,
+      "top_confusion": "secret",
+      "recommended_pack": "qwen_contrastive/email_vs_secret: normal email plus adjacent token/key-like strings"
+    },
+    {
+      "label": "private_phone",
+      "priority_score": 39,
+      "f1": 0.736842105263158,
+      "precision": 0.8,
+      "recall": 0.6829268292682927,
+      "missed": 6,
+      "confusion": 7,
+      "boundary": 0,
+      "hallucinated": 0,
+      "top_confusion": "account_number",
+      "recommended_pack": "qwen_contrastive/phone_vs_account: phone markers and account markers in the same record"
+    },
+    {
+      "label": "amka",
+      "priority_score": 35,
+      "f1": 0.6666666666666667,
+      "precision": 0.8666666666666667,
+      "recall": 0.5416666666666666,
+      "missed": 11,
+      "confusion": 0,
+      "boundary": 0,
+      "hallucinated": 2,
+      "top_confusion": null,
+      "recommended_pack": "qwen_narrative/amka_administrative: dense Greek admin prose with nearby numeric confusables"
+    },
+    {
+      "label": "afm",
+      "priority_score": 27,
+      "f1": 0.8936170212765957,
+      "precision": 0.9767441860465116,
+      "recall": 0.8235294117647058,
+      "missed": 8,
+      "confusion": 1,
+      "boundary": 0,
+      "hallucinated": 0,
+      "top_confusion": "driver_license",
+      "recommended_pack": "qwen_narrative/afm_administrative: dense Greek admin prose with nearby numeric confusables"
+    },
+    {
+      "label": "ip_address",
+      "priority_score": 19,
+      "f1": 0.7407407407407406,
+      "precision": 0.9090909090909091,
+      "recall": 0.625,
+      "missed": 6,
+      "confusion": 0,
+      "boundary": 0,
+      "hallucinated": 1,
+      "top_confusion": null,
+      "recommended_pack": "qwen_contrastive/ip_address_technical_or_payment: same-record positive plus numeric confusable"
+    },
+    {
+      "label": "private_date",
+      "priority_score": 19,
+      "f1": 0.8860759493670887,
+      "precision": 0.8974358974358975,
+      "recall": 0.875,
+      "missed": 5,
+      "confusion": 0,
+      "boundary": 0,
+      "hallucinated": 4,
+      "top_confusion": null,
+      "recommended_pack": "small_qwen_narrative_pack: 300-1000 local Qwen records, then ablate"
+    },
+    {
+      "label": "mac_address",
+      "priority_score": 13,
+      "f1": 0.5833333333333334,
+      "precision": 0.5833333333333334,
+      "recall": 0.5833333333333334,
+      "missed": 0,
+      "confusion": 3,
+      "boundary": 2,
+      "hallucinated": 0,
+      "top_confusion": "vehicle_vin",
+      "recommended_pack": "qwen_contrastive/mac_vs_ip_vs_vin: network logs with MAC, IP, VIN-like device ids"
+    },
+    {
+      "label": "ama",
+      "priority_score": 13,
+      "f1": 0.7826086956521738,
+      "precision": 0.9,
+      "recall": 0.6923076923076923,
+      "missed": 4,
+      "confusion": 0,
+      "boundary": 0,
+      "hallucinated": 1,
+      "top_confusion": null,
+      "recommended_pack": "qwen_narrative/ama_administrative: dense Greek admin prose with nearby numeric confusables"
+    },
+    {
+      "label": "private_address",
+      "priority_score": 12,
+      "f1": 0.8809523809523809,
+      "precision": 0.8604651162790697,
+      "recall": 0.9024390243902439,
+      "missed": 1,
+      "confusion": 0,
+      "boundary": 3,
+      "hallucinated": 3,
+      "top_confusion": null,
+      "recommended_pack": "small_qwen_narrative_pack: 300-1000 local Qwen records, then ablate"
+    },
+    {
+      "label": "cvv",
+      "priority_score": 10,
+      "f1": 0.7777777777777777,
+      "precision": 0.875,
+      "recall": 0.7,
+      "missed": 3,
+      "confusion": 0,
+      "boundary": 0,
+      "hallucinated": 1,
+      "top_confusion": null,
+      "recommended_pack": "qwen_contrastive/cvv_technical_or_payment: same-record positive plus numeric confusable"
+    },
+    {
+      "label": "card_pan",
+      "priority_score": 10,
+      "f1": 0.787878787878788,
+      "precision": 0.7647058823529411,
+      "recall": 0.8125,
+      "missed": 1,
+      "confusion": 1,
+      "boundary": 1,
+      "hallucinated": 2,
+      "top_confusion": "iban_gr",
+      "recommended_pack": "qwen_contrastive/card_pan_technical_or_payment: same-record positive plus numeric confusable"
+    },
+    {
+      "label": "driver_license",
+      "priority_score": 10,
+      "f1": 0.8181818181818182,
+      "precision": 0.9,
+      "recall": 0.75,
+      "missed": 3,
+      "confusion": 0,
+      "boundary": 0,
+      "hallucinated": 1,
+      "top_confusion": null,
+      "recommended_pack": "qwen_narrative/driver_license_administrative: dense Greek admin prose with nearby numeric confusables"
+    },
+    {
+      "label": "adt",
+      "priority_score": 10,
+      "f1": 0.9166666666666666,
+      "precision": 0.9565217391304348,
+      "recall": 0.88,
+      "missed": 3,
+      "confusion": 0,
+      "boundary": 0,
+      "hallucinated": 1,
+      "top_confusion": null,
+      "recommended_pack": "small_qwen_narrative_pack: 300-1000 local Qwen records, then ablate"
+    },
+    {
+      "label": "private_url",
+      "priority_score": 9,
+      "f1": 0.888888888888889,
+      "precision": 0.9090909090909091,
+      "recall": 0.8695652173913043,
+      "missed": 2,
+      "confusion": 0,
+      "boundary": 1,
+      "hallucinated": 1,
+      "top_confusion": null,
+      "recommended_pack": "small_qwen_narrative_pack: 300-1000 local Qwen records, then ablate"
+    },
+    {
+      "label": "secret",
+      "priority_score": 6,
+      "f1": 0.7272727272727272,
+      "precision": 0.6666666666666666,
+      "recall": 0.8,
+      "missed": 0,
+      "confusion": 0,
+      "boundary": 2,
+      "hallucinated": 2,
+      "top_confusion": null,
+      "recommended_pack": "small_qwen_narrative_pack: 300-1000 local Qwen records, then ablate"
+    },
+    {
+      "label": "imei",
+      "priority_score": 6,
+      "f1": 0.8571428571428571,
+      "precision": 0.8571428571428571,
+      "recall": 0.8571428571428571,
+      "missed": 0,
+      "confusion": 2,
+      "boundary": 0,
+      "hallucinated": 0,
+      "top_confusion": "account_number",
+      "recommended_pack": "qwen_contrastive/imei_technical_or_payment: same-record positive plus numeric confusable"
+    },
+    {
+      "label": "passport",
+      "priority_score": 6,
+      "f1": 0.888888888888889,
+      "precision": 1.0,
+      "recall": 0.8,
+      "missed": 2,
+      "confusion": 0,
+      "boundary": 0,
+      "hallucinated": 0,
+      "top_confusion": null,
+      "recommended_pack": "small_qwen_narrative_pack: 300-1000 local Qwen records, then ablate"
+    },
+    {
+      "label": "license_plate",
+      "priority_score": 4,
+      "f1": 0.9333333333333333,
+      "precision": 0.9333333333333333,
+      "recall": 0.9333333333333333,
+      "missed": 1,
+      "confusion": 0,
+      "boundary": 0,
+      "hallucinated": 1,
+      "top_confusion": null,
+      "recommended_pack": "small_qwen_narrative_pack: 300-1000 local Qwen records, then ablate"
+    },
+    {
+      "label": "gemi",
+      "priority_score": 3,
+      "f1": 0.9655172413793104,
+      "precision": 1.0,
+      "recall": 0.9333333333333333,
+      "missed": 1,
+      "confusion": 0,
+      "boundary": 0,
+      "hallucinated": 0,
+      "top_confusion": null,
+      "recommended_pack": "small_qwen_narrative_pack: 300-1000 local Qwen records, then ablate"
+    },
+    {
+      "label": "vehicle_vin",
+      "priority_score": 2,
+      "f1": 0.8888888888888888,
+      "precision": 0.8888888888888888,
+      "recall": 0.8888888888888888,
+      "missed": 0,
+      "confusion": 0,
+      "boundary": 1,
+      "hallucinated": 0,
+      "top_confusion": null,
+      "recommended_pack": "small_qwen_narrative_pack: 300-1000 local Qwen records, then ablate"
+    },
+    {
+      "label": "account_number",
+      "priority_score": 2,
+      "f1": 0.888888888888889,
+      "precision": 0.8,
+      "recall": 1.0,
+      "missed": 0,
+      "confusion": 0,
+      "boundary": 0,
+      "hallucinated": 2,
+      "top_confusion": null,
+      "recommended_pack": "small_qwen_narrative_pack: 300-1000 local Qwen records, then ablate"
+    },
+    {
+      "label": "iban_gr",
+      "priority_score": 1,
+      "f1": 0.972972972972973,
+      "precision": 0.9473684210526315,
+      "recall": 1.0,
+      "missed": 0,
+      "confusion": 0,
+      "boundary": 0,
+      "hallucinated": 1,
+      "top_confusion": null,
+      "recommended_pack": "small_qwen_narrative_pack: 300-1000 local Qwen records, then ablate"
+    }
+  ],
+  "confusion_pairs": {
+    "private_phone->account_number": 7,
+    "mac_address->vehicle_vin": 2,
+    "imei->account_number": 2,
+    "private_email->secret": 2,
+    "private_person->private_address": 1,
+    "private_person->private_email": 1,
+    "card_pan->iban_gr": 1,
+    "afm->driver_license": 1,
+    "mac_address->ip_address": 1
+  },
+  "examples": {
+    "missed": {
+      "private_person": [
+        {
+          "case_id": 1,
+          "register": "tax_form_letter",
+          "text": "Παπαδοπούλου",
+          "context": "Αξιότιμη κα Παπαδοπούλου,\\n\\nΗ Διεύθυνση Φορολογίας ΔΟΥ Α' Αθηνών σα"
+        },
+        {
+          "case_id": 3,
+          "register": "tax_office_email",
+          "text": "Μάρκου",
+          "context": "u@example.gr\\nΘέμα: Εκκρεμότητα ΦΠΑ\\n\\nΚύριε Μάρκου, η εταιρεία σας με ΓΕΜΗ 089451200000 και "
+        },
+        {
+          "case_id": 27,
+          "register": "prescription",
+          "text": "Ηλίας Σταματόπουλος",
+          "context": "Συνταγή για: Ηλίας Σταματόπουλος, ΑΜΚΑ 09058723456. Φάρμακο: Atorvastatin "
+        },
+        {
+          "case_id": 30,
+          "register": "appointment_confirm_sms",
+          "text": "Καρρά",
+          "context": "Ραντεβού 15:30 την Τρίτη 18/05/2026, Δρ. Καρρά. ΑΜΚΑ 25067843219. Διεύθυνση κλινικής: Δο"
+        },
+        {
+          "case_id": 39,
+          "register": "job_application",
+          "text": "Δημήτρης-Παύλος Βλάχος",
+          "context": "Βιογραφικό υποψηφίου Δημήτρης-Παύλος Βλάχος, dimvlachos@protonmail.com, 6951234567. Δ"
+        },
+        {
+          "case_id": 40,
+          "register": "termination_notice",
+          "text": "Αθανάσιο Ζαχαριάδη",
+          "context": "Καταγγελία σύμβασης εργασίας προς τον κο Αθανάσιο Ζαχαριάδη (ΑΜΑ 4567890), ισχύει από 30 Ιουνίου 2026"
+        },
+        {
+          "case_id": 41,
+          "register": "citizen_id_form",
+          "text": "Ελένη Σταυρίδου",
+          "context": "Στοιχεία πολίτη: Ελένη Σταυρίδου. Προσωπικός Αριθμός Πολίτη (ΠΑΠ): 1243567"
+        },
+        {
+          "case_id": 42,
+          "register": "pcn_letter",
+          "text": "Παππά",
+          "context": "Αξιότιμε κ. Παππά, ο νέος σας Προσωπικός Αριθμός Πολίτη είν"
+        }
+      ],
+      "private_date": [
+        {
+          "case_id": 2,
+          "register": "tax_sms_short",
+          "text": "30/06/2026",
+          "context": "ΕΝΦΙΑ 2026: Πληρωμή έως 30/06/2026. ΑΦΜ: 087451209. Στοιχεία: gov.gr/enfia"
+        },
+        {
+          "case_id": 64,
+          "register": "b2b_contract",
+          "text": "01/04/2026",
+          "context": "ΕΜΗ 345672300000). Διάρκεια: 24 μήνες από 01/04/2026."
+        },
+        {
+          "case_id": 167,
+          "register": "prose_news_anon",
+          "text": "14 Απριλίου 2026",
+          "context": "ωστή δημοσιογράφος, ανακοίνωσε χθες, στις 14 Απριλίου 2026, ότι αποχωρεί από τα ΜΜΕ. Δηλώθηκε στο Τμ"
+        },
+        {
+          "case_id": 168,
+          "register": "long_medical_history",
+          "text": "12/05/1972",
+          "context": "ικό ασθενούς. Όνομα: Σταύρος Καρρά (γενν. 12/05/1972, ΑΜΚΑ 12057245678). Δείκτες πίεσης φυσιολ"
+        },
+        {
+          "case_id": 186,
+          "register": "ergani_form",
+          "text": "15/05/2026",
+          "context": " ΑΜΑ ΙΚΑ: 5678012. ΑΦΜ: 167823945. Έναρξη 15/05/2026."
+        }
+      ],
+      "private_url": [
+        {
+          "case_id": 2,
+          "register": "tax_sms_short",
+          "text": "gov.gr/enfia",
+          "context": "έως 30/06/2026. ΑΦΜ: 087451209. Στοιχεία: gov.gr/enfia"
+        },
+        {
+          "case_id": 19,
+          "register": "it_incident_log",
+          "text": "https://vpn.company.gr/login",
+          "context": "D:EE:01. User: alice@company.gr. Endpoint https://vpn.company.gr/login."
+        }
+      ],
+      "afm": [
+        {
+          "case_id": 4,
+          "register": "tax_authority_record",
+          "text": "156234897",
+          "context": "γουμένου\\nΌνομα: Δημήτριος Στεφανίδης\\nΑΦΜ: 156234897 | ΑΜΚΑ: 03128956712 | ΑΔΤ: ΞΗ-456789\\nΔ/νσ"
+        },
+        {
+          "case_id": 11,
+          "register": "loan_application",
+          "text": "234567891",
+          "context": "Αιτών: Παύλος Δημόπουλος, ΑΦΜ 234567891. Λογαριασμός μισθοδοσίας: 7012-34567-890."
+        },
+        {
+          "case_id": 53,
+          "register": "id_doc_compare",
+          "text": "156789012",
+          "context": " Διαβατήριο AΕ8901234, ΑΔΤ ΞΞ-901234, ΑΦΜ 156789012. Όνομα: Παναγιώτης Σταματίου."
+        },
+        {
+          "case_id": 96,
+          "register": "property_tax_notice",
+          "text": "198234561",
+          "context": " Καλλιθέα. Ιδιοκτήτης Στέφανος Καρρά, ΑΦΜ 198234561. Ποσό: 487€."
+        },
+        {
+          "case_id": 128,
+          "register": "power_of_attorney",
+          "text": "098765431",
+          "context": "Ιωάννης Παπαδημητρίου, ΑΔΤ ΖΞ-345678, ΑΦΜ 098765431. Πληρεξούσιος: Ευαγγελία Νικολάου, ΑΔΤ ΑΘ"
+        },
+        {
+          "case_id": 135,
+          "register": "scholarship_letter",
+          "text": "198432567",
+          "context": ". Δικαιούχος: Ελευθερία Παπαθανασίου. ΑΦΜ 198432567. ΑΜΚΑ 16018045678. Καταβολή στον IBAN GR2"
+        },
+        {
+          "case_id": 141,
+          "register": "multi_pii_form",
+          "text": "087654321",
+          "context": "ίτησης: Ονομ. Παπαδόπουλος Νικόλαος | ΑΦΜ 087654321 | ΑΜΚΑ 03127895432 | ΑΔΤ ΑΖ-345678 | ΓΕΜΗ"
+        },
+        {
+          "case_id": 186,
+          "register": "ergani_form",
+          "text": "167823945",
+          "context": "ς: Στυλιανή Παππά. ΑΜΑ ΙΚΑ: 5678012. ΑΦΜ: 167823945. Έναρξη 15/05/2026."
+        }
+      ],
+      "driver_license": [
+        {
+          "case_id": 13,
+          "register": "vehicle_insurance_policy",
+          "text": "845721369",
+          "context": "ισμένος: Γιώργος Παππάς, δίπλωμα οδήγησης 845721369."
+        },
+        {
+          "case_id": 141,
+          "register": "multi_pii_form",
+          "text": "234578102",
+          "context": "Η εταιρείας 245678300000 | Διπλ. οδήγησης 234578102 | IBAN GR1606601200004567812345678 | Τηλ."
+        },
+        {
+          "case_id": 190,
+          "register": "vehicle_full_record",
+          "text": "234567891",
+          "context": "ταντίνου, ΑΦΜ 198765432, Δίπλωμα οδήγησης 234567891."
+        }
+      ],
+      "private_address": [
+        {
+          "case_id": 17,
+          "register": "stolen_vehicle_report",
+          "text": "Ομήρου 18, Παγκράτι",
+          "context": "ρ. πλαισίου TMBJF41Z7B2098765 από την οδό Ομήρου 18, Παγκράτι."
+        }
+      ],
+      "private_email": [
+        {
+          "case_id": 20,
+          "register": "api_key_leak",
+          "text": "security@firm.gr",
+          "context": "yjWDarjtT1zdp7dc στο repo. Επικοινωνία με security@firm.gr για άμεση ανάκληση."
+        },
+        {
+          "case_id": 24,
+          "register": "firewall_rule",
+          "text": "netops@company.gr",
+          "context": "MAC source 00:1A:2B:3C:4D:5E. Approved by netops@company.gr."
+        },
+        {
+          "case_id": 43,
+          "register": "egov_login",
+          "text": "helpdesk@gov.gr",
+          "context": "μφανίζονται οι υπηρεσίες σας. Επικοινωνία helpdesk@gov.gr."
+        },
+        {
+          "case_id": 80,
+          "register": "salary_deposit_notice",
+          "text": "payroll@enterprise.gr",
+          "context": " Καρρά (ΑΜΑ ΙΚΑ 6789012). Επιβεβαίωση στο payroll@enterprise.gr."
+        },
+        {
+          "case_id": 86,
+          "register": "internal_doc_secret",
+          "text": "access@company.gr",
+          "context": "ProdK3y_a4b8c2d6e0f1g5h9i3j7. Restrict to access@company.gr."
+        },
+        {
+          "case_id": 97,
+          "register": "moving_company_quote",
+          "text": "fzisiq@email.gr",
+          "context": "ς 23, 10557 Αθήνα. Πελάτης: Φωτεινή Ζήση, fzisiq@email.gr, 6951234876."
+        },
+        {
+          "case_id": 105,
+          "register": "phishing_alert",
+          "text": "abuse@cert.gr",
+          "context": "id=4567 από IP 185.234.56.78. Ανέφερε στο abuse@cert.gr."
+        },
+        {
+          "case_id": 108,
+          "register": "internal_app_link_email",
+          "text": "admin@firm.gr",
+          "context": "ranet.firm.gr/q1-2026/dashboard. Login με admin@firm.gr."
+        }
+      ],
+      "ip_address": [
+        {
+          "case_id": 21,
+          "register": "system_admin_email",
+          "text": "192.168.10.45",
+          "context": "Νέος server pinned at 192.168.10.45. Admin: admin.ops@netcorp.gr. Κωδ. πρόσβα"
+        },
+        {
+          "case_id": 24,
+          "register": "firewall_rule",
+          "text": "195.78.234.10",
+          "context": "Allow inbound TCP/443 from 195.78.234.10 to 10.10.20.50, MAC source 00:1A:2B:3C:4D"
+        },
+        {
+          "case_id": 24,
+          "register": "firewall_rule",
+          "text": "10.10.20.50",
+          "context": "low inbound TCP/443 from 195.78.234.10 to 10.10.20.50, MAC source 00:1A:2B:3C:4D:5E. Approved b"
+        },
+        {
+          "case_id": 107,
+          "register": "ssh_dst_log",
+          "text": "78.123.45.67",
+          "context": "SSH connection from 78.123.45.67 to bastion 10.0.0.5 on port 22. User: ops"
+        },
+        {
+          "case_id": 107,
+          "register": "ssh_dst_log",
+          "text": "10.0.0.5",
+          "context": "H connection from 78.123.45.67 to bastion 10.0.0.5 on port 22. User: ops-greek-2026. Geoloca"
+        },
+        {
+          "case_id": 109,
+          "register": "ddos_alert",
+          "text": "192.168.1.50",
+          "context": "k source IP 203.45.187.102 hitting target 192.168.1.50 with 50k req/s. Mitigation: rate-limit at"
+        }
+      ],
+      "amka": [
+        {
+          "case_id": 25,
+          "register": "medical_referral",
+          "text": "14076512345",
+          "context": "Ασθενής: Αλέξανδρος Παρασκευόπουλος, ΑΜΚΑ 14076512345, ηλικίας 50 ετών. Διεύθυνση: Ευελπίδων 24"
+        },
+        {
+          "case_id": 27,
+          "register": "prescription",
+          "text": "09058723456",
+          "context": "Συνταγή για: Ηλίας Σταματόπουλος, ΑΜΚΑ 09058723456. Φάρμακο: Atorvastatin 20mg, 1 δισκίο/ημέ"
+        },
+        {
+          "case_id": 44,
+          "register": "social_benefit_application",
+          "text": "14056712345",
+          "context": "ς: Νικολέτα Καρρά, ΠΑΠ 234561987Z45, ΑΜΚΑ 14056712345. Καταβολή στον IBAN GR1102601200000045671"
+        },
+        {
+          "case_id": 47,
+          "register": "covid_certificate",
+          "text": "16078512345",
+          "context": "ήτρης Παπαδάκης. ΠΑΠ: 098765432Q03. ΑΜΚΑ: 16078512345."
+        },
+        {
+          "case_id": 87,
+          "register": "ama_card_renewal",
+          "text": "12056712345",
+          "context": "υστάθιος Σαμαράς. ΑΜΑ ΙΚΑ: 4567823. ΑΜΚΑ: 12056712345. Διεύθυνση: Θηβών 23, Πετρούπολη."
+        },
+        {
+          "case_id": 135,
+          "register": "scholarship_letter",
+          "text": "16018045678",
+          "context": "ευθερία Παπαθανασίου. ΑΦΜ 198432567. ΑΜΚΑ 16018045678. Καταβολή στον IBAN GR2401407901230012345"
+        },
+        {
+          "case_id": 141,
+          "register": "multi_pii_form",
+          "text": "03127895432",
+          "context": "αδόπουλος Νικόλαος | ΑΦΜ 087654321 | ΑΜΚΑ 03127895432 | ΑΔΤ ΑΖ-345678 | ΓΕΜΗ εταιρείας 24567830"
+        },
+        {
+          "case_id": 145,
+          "register": "registry_birth_certificate",
+          "text": "03031045678",
+          "context": "υ 2010. Διεύθυνση: Νάξου 12, Αθήνα. ΑΜΚΑ: 03031045678."
+        }
+      ],
+      "private_phone": [
+        {
+          "case_id": 25,
+          "register": "medical_referral",
+          "text": "6932145678",
+          "context": "ν. Διεύθυνση: Ευελπίδων 24, Κυψέλη. Τηλ.: 6932145678."
+        },
+        {
+          "case_id": 32,
+          "register": "mobile_contract",
+          "text": "6940987654",
+          "context": " Παύλος Καραβίτης, ΑΦΜ 167823945, αρ. SIM 6940987654."
+        },
+        {
+          "case_id": 37,
+          "register": "hr_email_signature",
+          "text": "6944112233",
+          "context": "s@enterprise.gr\\nΤηλ.: 210-9876543 | Κιν.: 6944112233\\nΛεωφ. Κηφισίας 124, 11526 Αμπελόκηποι"
+        },
+        {
+          "case_id": 117,
+          "register": "carrier_unlock",
+          "text": "6942345678",
+          "context": "hone 14 Pro. Κάτοχος: Ηρώ Κωσταρίδη, τηλ. 6942345678."
+        },
+        {
+          "case_id": 121,
+          "register": "support_ticket_open",
+          "text": "6912345670",
+          "context": "ικόλαος Παπαθανασίου, ΑΦΜ 187654321, τηλ. 6912345670."
+        },
+        {
+          "case_id": 153,
+          "register": "iban_dense_field",
+          "text": "6987234561",
+          "context": "4789|IBAN=GR8002601500000067812345678|τηλ=6987234561"
+        }
+      ],
+      "passport": [
+        {
+          "case_id": 33,
+          "register": "passport_application",
+          "text": "AΒ4567321",
+          "context": " αιτούντος: Φωτεινή Καλογήρου, διαβατήριο AΒ4567321 (παλαιό), ημ. γέννησης 22 Ιουλίου 1990, δ"
+        },
+        {
+          "case_id": 54,
+          "register": "passport_renewal_email",
+          "text": "AΗ5678901",
+          "context": "Παρελήφθη η αίτηση ανανέωσης διαβατηρίου AΗ5678901. Στοιχεία: Γιάννα Στράφορη (giannastrafor"
+        }
+      ],
+      "ama": [
+        {
+          "case_id": 36,
+          "register": "employment_contract",
+          "text": "9876543",
+          "context": "612000) και του Νεκτάριου Βασιλείου, ΑΦΜ 198765432, ΑΜΑ ΙΚΑ 9876543. Έναρξη: 1η Ιουνίου 202"
+        },
+        {
+          "case_id": 87,
+          "register": "ama_card_renewal",
+          "text": "4567823",
+          "context": ". Δικαιούχος: Ευστάθιος Σαμαράς. ΑΜΑ ΙΚΑ: 4567823. ΑΜΚΑ: 12056712345. Διεύθυνση: Θηβών 23, "
+        },
+        {
+          "case_id": 184,
+          "register": "ika_branch_letter",
+          "text": "4567890",
+          "context": "ρώνουμε ότι ο νέος ΑΜΑ ασφαλισμένου είναι 4567890. Επικοινωνία: ika.athens@efka.gr."
+        },
+        {
+          "case_id": 186,
+          "register": "ergani_form",
+          "text": "5678012",
+          "context": "ης. Εργαζόμενος: Στυλιανή Παππά. ΑΜΑ ΙΚΑ: 5678012. ΑΦΜ: 167823945. Έναρξη 15/05/2026."
+        }
+      ],
+      "cvv": [
+        {
+          "case_id": 57,
+          "register": "subscription_signup",
+          "text": "504",
+          "context": "δημητρίου. Κάρτα 4485 7821 6543 2109, CVC 504. Email: npapad@gmail.com."
+        },
+        {
+          "case_id": 58,
+          "register": "refund_request",
+          "text": "162",
+          "context": " στην κάρτα 5234 6789 1098 7654 (3-ψήφιος 162). Δικαιούχος: Σοφία Νικολαΐδου, IBAN GR83"
+        },
+        {
+          "case_id": 59,
+          "register": "atm_card_request",
+          "text": "738",
+          "context": "ρεωστική κάρτα 4921 5678 9012 3456 με CVV 738 παραδίδεται στη διεύθυνση Ναυαρίνου 8, 10"
+        }
+      ],
+      "card_pan": [
+        {
+          "case_id": 58,
+          "register": "refund_request",
+          "text": "5234 6789 1098 7654",
+          "context": "Επιστροφή χρημάτων στην κάρτα 5234 6789 1098 7654 (3-ψήφιος 162). Δικαιούχος: Σοφία Νικολαΐ"
+        }
+      ],
+      "license_plate": [
+        {
+          "case_id": 104,
+          "register": "driver_change_form",
+          "text": "ΖΕΥ-7821",
+          "context": "Αλλαγή οδηγού στο όχημα ΖΕΥ-7821. Νέος οδηγός: Παναγιώτης Ζαχαρόπουλος, δί"
+        }
+      ],
+      "adt": [
+        {
+          "case_id": 128,
+          "register": "power_of_attorney",
+          "text": "ΖΞ-345678",
+          "context": "ρεξουσιοδότης: Ιωάννης Παπαδημητρίου, ΑΔΤ ΖΞ-345678, ΑΦΜ 098765431. Πληρεξούσιος: Ευαγγελία Ν"
+        },
+        {
+          "case_id": 128,
+          "register": "power_of_attorney",
+          "text": "ΑΘ-901234",
+          "context": "31. Πληρεξούσιος: Ευαγγελία Νικολάου, ΑΔΤ ΑΘ-901234."
+        },
+        {
+          "case_id": 141,
+          "register": "multi_pii_form",
+          "text": "ΑΖ-345678",
+          "context": " | ΑΦΜ 087654321 | ΑΜΚΑ 03127895432 | ΑΔΤ ΑΖ-345678 | ΓΕΜΗ εταιρείας 245678300000 | Διπλ. οδή"
+        }
+      ],
+      "gemi": [
+        {
+          "case_id": 141,
+          "register": "multi_pii_form",
+          "text": "245678300000",
+          "context": "27895432 | ΑΔΤ ΑΖ-345678 | ΓΕΜΗ εταιρείας 245678300000 | Διπλ. οδήγησης 234578102 | IBAN GR16066"
+        }
+      ]
+    },
+    "boundary": {
+      "mac_address": [
+        {
+          "case_id": 19,
+          "register": "it_incident_log",
+          "expected": "AA:BB:CC:DD:EE:01",
+          "predicted": "CC:DD:EE:01",
+          "overlap_ratio": 1.0,
+          "context": "uspicious login from IP 78.45.123.67, MAC AA:BB:CC:DD:EE:01. User: alice@company.gr. Endpoint https:/"
+        },
+        {
+          "case_id": 73,
+          "register": "tech_support_ticket",
+          "expected": "5C:F9:38:AB:CD:01",
+          "predicted": "5C:F9:38",
+          "overlap_ratio": 1.0,
+          "context": "νατεί να συνδεθεί στο WiFi. MAC interface 5C:F9:38:AB:CD:01. User: kpapazafiri@firm.gr."
+        }
+      ],
+      "private_address": [
+        {
+          "case_id": 37,
+          "register": "hr_email_signature",
+          "expected": "Λεωφ. Κηφισίας 124, 11526 Αμπελόκηποι",
+          "predicted": "Κηφισίας 124, 11526 Αμπελόκηποι",
+          "overlap_ratio": 1.0,
+          "context": "e.gr\\nΤηλ.: 210-9876543 | Κιν.: 6944112233\\nΛεωφ. Κηφισίας 124, 11526 Αμπελόκηποι"
+        },
+        {
+          "case_id": 195,
+          "register": "abbreviated_form",
+          "expected": "Σολωμού 14, Αθ.",
+          "predicted": "Σολωμού 14, Αθ",
+          "overlap_ratio": 1.0,
+          "context": "ΚΑ 12087245678, τηλ.: 6912345678, διεύθ.: Σολωμού 14, Αθ."
+        },
+        {
+          "case_id": 196,
+          "register": "telegram_message",
+          "expected": "Πατησίων 89, Αθήνα",
+          "predicted": "🏠 Πατησίων 89, Αθήνα",
+          "overlap_ratio": 1.0,
+          "context": "εία:\\n📧 papas2026@gmail.com\\n📞 6987654321\\n🏠 Πατησίων 89, Αθήνα\\n💳 4716 9876 5432 1098\\nΕυχαριστώ!"
+        }
+      ],
+      "card_pan": [
+        {
+          "case_id": 61,
+          "register": "ecommerce_invoice",
+          "expected": "5403 2109 8765 4321",
+          "predicted": "Mastercard 5403 2109 8765 4321",
+          "overlap_ratio": 1.0,
+          "context": "1, Διονύσιος Σαμαράς. Πληρωμή: Mastercard 5403 2109 8765 4321 / CVV 951."
+        }
+      ],
+      "private_person": [
+        {
+          "case_id": 68,
+          "register": "driver_license_revocation",
+          "expected": "Στέφανος Παπαντωνίου",
+          "predicted": "Κάτοχος Στέφανος Παπαντωνίου",
+          "overlap_ratio": 1.0,
+          "context": "12340 για 6 μήνες λόγω παράβασης. Κάτοχος Στέφανος Παπαντωνίου, ΑΔΤ ΖΥ-345678."
+        },
+        {
+          "case_id": 88,
+          "register": "ika_doctor_visit",
+          "expected": "Παναγιώτα Κουτρά",
+          "predicted": "Δρ. Παναγιώτα Κουτρά",
+          "overlap_ratio": 1.0,
+          "context": "ς. ΑΜΑ ΙΚΑ ασθενούς: 3456789. Ιατρός: Δρ. Παναγιώτα Κουτρά. Συνταγή: Lansoprazole."
+        },
+        {
+          "case_id": 130,
+          "register": "court_decision_pdf",
+          "expected": "Δημήτριος Ζαχαρίας",
+          "predicted": "Ενάγων Δημήτριος Ζαχαρίας",
+          "overlap_ratio": 1.0,
+          "context": "4567/2026 Πολυμελούς Πρωτοδικείου. Ενάγων Δημήτριος Ζαχαρίας vs. Mediterranean Trade ΕΕ (ΓΕΜΗ 08945320"
+        },
+        {
+          "case_id": 138,
+          "register": "thesis_supervisor",
+          "expected": "Σπύρος Καρδαμίτσης",
+          "predicted": "Καθηγητής Δρ. Σπύρος Καρδαμίτσης",
+          "overlap_ratio": 1.0,
+          "context": "ρης Γαρδικιώτης. Επιβλέπων: Καθηγητής Δρ. Σπύρος Καρδαμίτσης. Email: sk@cs.uoa.gr."
+        },
+        {
+          "case_id": 144,
+          "register": "genitive_address",
+          "expected": "Ευαγγελίας Παπαδημητρίου",
+          "predicted": "Της κυρίας Ευαγγελίας Παπαδημητρίου",
+          "overlap_ratio": 1.0,
+          "context": "Παραλήπτης: Της κυρίας Ευαγγελίας Παπαδημητρίου, ΑΦΜ 089654321, διεύθυνση Νικαίας 14, Πει"
+        },
+        {
+          "case_id": 169,
+          "register": "ceo_intro_email",
+          "expected": "Δημήτρη Κωνσταντινίδη",
+          "predicted": "Κωνσταντινίδη",
+          "overlap_ratio": 1.0,
+          "context": "ερωτήσεις στρατηγικής στέλνονται στον CFO Δημήτρη Κωνσταντινίδη (dim.kon@enterprise.gr). Επιπρόσθετα, πλη"
+        },
+        {
+          "case_id": 173,
+          "register": "vocative_letter",
+          "expected": "Δημητρακάκη",
+          "predicted": "κύριε Δημητρακάκη",
+          "overlap_ratio": 1.0,
+          "context": "Αξιότιμε κύριε Δημητρακάκη, σας ενημερώνουμε ότι ολοκληρώθηκε η αίτη"
+        },
+        {
+          "case_id": 200,
+          "register": "linkedin_signature",
+          "expected": "Δημήτρης Καραντώνης",
+          "predicted": "μήτρης Καραντώνης",
+          "overlap_ratio": 1.0,
+          "context": "---\\nΔημήτρης Καραντώνης | Senior Engineer\\n📱 +30 6943217865\\n💼 dim."
+        }
+      ],
+      "secret": [
+        {
+          "case_id": 81,
+          "register": "github_secret_alert",
+          "expected": "AKMOIOSFODNN7EXAMPLE",
+          "predicted": "AKMOIOSFODNN7EXAMPLE exposed",
+          "overlap_ratio": 1.0,
+          "context": " Secret Scanning Alert: AWS_ACCESS_KEY_ID=AKMOIOSFODNN7EXAMPLE exposed in commit. Owner: dev.ops@payment"
+        },
+        {
+          "case_id": 85,
+          "register": "db_password_change",
+          "expected": "Database#2026Postgres$Pass!",
+          "predicted": "Database#2026Postgres$Pass",
+          "overlap_ratio": 1.0,
+          "context": "Νέος κωδικός βάσης δεδομένων: Database#2026Postgres$Pass! Μην τον μοιράζεστε. Επικοινωνία dba@firm."
+        }
+      ],
+      "private_url": [
+        {
+          "case_id": 105,
+          "register": "phishing_alert",
+          "expected": "http://secure-bank-login.tk/index.php?id=4567",
+          "predicted": "http://secure-bank-login",
+          "overlap_ratio": 1.0,
+          "context": "Ανιχνεύθηκε phishing site στο http://secure-bank-login.tk/index.php?id=4567 από IP 185.234.56.78. Ανέφερε στο abuse@c"
+        }
+      ],
+      "private_email": [
+        {
+          "case_id": 142,
+          "register": "informal_email",
+          "expected": "papas@yahoo.gr",
+          "predicted": "Στο papas@yahoo.gr",
+          "overlap_ratio": 1.0,
+          "context": "ι πινακίδα ΥΞΗ-3456 για το συμβόλαιο. Στο papas@yahoo.gr ok? Παύλος."
+        },
+        {
+          "case_id": 157,
+          "register": "ipv4_in_brackets",
+          "expected": "firewall.policy@netadmin.gr",
+          "predicted": "Μπλοκάρισμα σε firewall.policy@netadmin.gr",
+          "overlap_ratio": 1.0,
+          "context": "78.45.123.180] στις 14:32. Μπλοκάρισμα σε firewall.policy@netadmin.gr."
+        },
+        {
+          "case_id": 198,
+          "register": "international_invoice",
+          "expected": "finance@papadopoulos.gr",
+          "predicted": "@papadopoulos.gr",
+          "overlap_ratio": 1.0,
+          "context": "89370400440532013000 (German). Confirm at finance@papadopoulos.gr."
+        }
+      ],
+      "vehicle_vin": [
+        {
+          "case_id": 190,
+          "register": "vehicle_full_record",
+          "expected": "VF1RFB00264123987",
+          "predicted": "RFB00264123987",
+          "overlap_ratio": 1.0,
+          "context": "Στοιχεία οχήματος: Πινακίδα ΖΗΡ-9876, VIN VF1RFB00264123987, Ιδιοκτήτης Δημήτρης Παπακωνσταντίνου, ΑΦ"
+        }
+      ]
+    },
+    "hallucinated": {
+      "license_plate": [
+        {
+          "case_id": 22,
+          "register": "device_inventory",
+          "text": "Laptop ID DEV-2089",
+          "context": "Inventory entry: Laptop ID DEV-2089, MAC FF:11:22:33:44:55, IP 10.0.5.123, re"
+        }
+      ],
+      "private_url": [
+        {
+          "case_id": 23,
+          "register": "vpn_creds_email",
+          "text": "server=vpn-eu.acme.gr",
+          "context": "Στοιχεία VPN: server=vpn-eu.acme.gr, username=jvelis, password=Tr0ub4dor&3!Gr"
+        }
+      ],
+      "ama": [
+        {
+          "case_id": 36,
+          "register": "employment_contract",
+          "text": "9876543",
+          "context": "κτάριου Βασιλείου, ΑΦΜ 198765432, ΑΜΑ ΙΚΑ 9876543. Έναρξη: 1η Ιουνίου 2026. Αποδοχές: 1.450"
+        }
+      ],
+      "private_date": [
+        {
+          "case_id": 38,
+          "register": "payslip",
+          "text": "04/2026",
+          "context": "Μισθοδοσία 04/2026. Εργαζόμενος: Σοφία Χρυσικού. ΑΜΑ ΙΚΑ: 56"
+        },
+        {
+          "case_id": 51,
+          "register": "passport_lost_report",
+          "text": "4567/2026",
+          "context": " Δηλώθηκε στο ΑΤ Συντάγματος, αρ. δήλωσης 4567/2026."
+        },
+        {
+          "case_id": 63,
+          "register": "company_filing",
+          "text": "2025",
+          "context": "Υποβολή ισολογισμού 2025 για την εταιρεία Hellenic Tech Ltd, ΓΕΜΗ "
+        },
+        {
+          "case_id": 134,
+          "register": "school_certificate",
+          "text": "2025-2026",
+          "context": "λαο Παππά, ΑΜΚΑ 25088923456, σχολικό έτος 2025-2026, Α' Λυκείου."
+        }
+      ],
+      "cvv": [
+        {
+          "case_id": 49,
+          "register": "border_control_log",
+          "text": "672",
+          "context": "a Petridi, διαβατήριο AΓ7654321, πτήση A3-672, αναχώρηση 18:45."
+        }
+      ],
+      "private_person": [
+        {
+          "case_id": 51,
+          "register": "passport_lost_report",
+          "text": "Συντάγματος",
+          "context": "ας Καλλιόπης Σακελλαρίου. Δηλώθηκε στο ΑΤ Συντάγματος, αρ. δήλωσης 4567/2026."
+        },
+        {
+          "case_id": 74,
+          "register": "phone_blacklist",
+          "text": "Πατησίων",
+          "context": "32 (κλεμμένο). Αρ. δήλωσης: 8912/2026, ΑΤ Πατησίων."
+        },
+        {
+          "case_id": 88,
+          "register": "ika_doctor_visit",
+          "text": "Lansoprazole",
+          "context": "9. Ιατρός: Δρ. Παναγιώτα Κουτρά. Συνταγή: Lansoprazole."
+        },
+        {
+          "case_id": 156,
+          "register": "card_no_spaces",
+          "text": "Κάτοχος",
+          "context": "Αρ. κάρτας 4716987654321098 με CVV 472. Κάτοχος Σπύρος Λαζαρίδης."
+        },
+        {
+          "case_id": 166,
+          "register": "test_data_marker",
+          "text": "John Doe",
+          "context": "Test record: 'John Doe' (placeholder), εικονικός λογαριασμός 000"
+        }
+      ],
+      "amka": [
+        {
+          "case_id": 61,
+          "register": "ecommerce_invoice",
+          "text": "2026-04567",
+          "context": "Τιμολόγιο #INV-2026-04567. Πελάτης: ΑΦΜ 234567891, Διονύσιος Σαμαρά"
+        },
+        {
+          "case_id": 122,
+          "register": "delivery_complaint",
+          "text": "2026-08456",
+          "context": "Δεν παρέλαβα την παραγγελία #2026-08456. Διεύθυνση παράδοσης: Κρήτης 14, 11364 Αθ"
+        }
+      ],
+      "ip_address": [
+        {
+          "case_id": 74,
+          "register": "phone_blacklist",
+          "text": "8912/2026",
+          "context": " 357823195486732 (κλεμμένο). Αρ. δήλωσης: 8912/2026, ΑΤ Πατησίων."
+        }
+      ],
+      "secret": [
+        {
+          "case_id": 107,
+          "register": "ssh_dst_log",
+          "text": "ops-greek-2026",
+          "context": ".67 to bastion 10.0.0.5 on port 22. User: ops-greek-2026. Geolocation: Athens, GR."
+        },
+        {
+          "case_id": 152,
+          "register": "long_secret_kv",
+          "text": "pass@localhost/db",
+          "context": "890abcdefXY, DATABASE_URL=postgres://user:pass@localhost/db. Source: ops@firm.gr."
+        }
+      ],
+      "private_address": [
+        {
+          "case_id": 113,
+          "register": "savings_account",
+          "text": "Υπόλοιπο 12.456,78",
+          "context": "-78901-234. Κάτοχος: Αναστασία Καπετάνου. Υπόλοιπο 12.456,78€."
+        },
+        {
+          "case_id": 136,
+          "register": "teacher_assignment",
+          "text": "8ο Γυμνάσιο Αθηνών",
+          "context": "ριάνα Σταματάκη, ΑΜ ΑΣΕΠ 567824. Σχολείο: 8ο Γυμνάσιο Αθηνών. Έναρξη 01/09/2026."
+        },
+        {
+          "case_id": 163,
+          "register": "almost_iban_decoy",
+          "text": "κωδικός 5-ψήφιος",
+          "context": "ence number GR12345 (όχι IBAN, εσωτερικός κωδικός 5-ψήφιος). Επικοινωνία στο orders@shop.gr."
+        }
+      ],
+      "account_number": [
+        {
+          "case_id": 133,
+          "register": "university_enrollment",
+          "text": "1067201600",
+          "context": ". Φοιτητής: Πέτρος Καραβίτης. ΑΜ φοιτητή: 1067201600. ΑΦΜ: 165432198. Διεύθυνση: Σολωμού 87, Α"
+        },
+        {
+          "case_id": 166,
+          "register": "test_data_marker",
+          "text": "0000-00000-000",
+          "context": "Doe' (placeholder), εικονικός λογαριασμός 0000-00000-000. Δεν χρησιμοποιείται σε production."
+        }
+      ],
+      "adt": [
+        {
+          "case_id": 136,
+          "register": "teacher_assignment",
+          "text": "Π 567824",
+          "context": "τικού. Όνομα: Δημητριάνα Σταματάκη, ΑΜ ΑΣΕΠ 567824. Σχολείο: 8ο Γυμνάσιο Αθηνών. Έναρξη 01/0"
+        }
+      ],
+      "card_pan": [
+        {
+          "case_id": 159,
+          "register": "almost_pan_decoy",
+          "text": "4716-1234-5678-O123",
+          "context": "Παραγγελία αρ. 4716-1234-5678-O123 (όχι αριθμός κάρτας, internal ref). Επεξε"
+        },
+        {
+          "case_id": 165,
+          "register": "almost_card_decoy",
+          "text": "4716-9876-5432-O098",
+          "context": "Στο πρότζεκτ έχουμε ID #4716-9876-5432-O098 (γράμμα O, όχι κάρτα). Δες details στο ji"
+        }
+      ],
+      "driver_license": [
+        {
+          "case_id": 163,
+          "register": "almost_iban_decoy",
+          "text": "GR12345",
+          "context": "Παραγγελία reference number GR12345 (όχι IBAN, εσωτερικός κωδικός 5-ψήφιος). "
+        }
+      ],
+      "iban_gr": [
+        {
+          "case_id": 198,
+          "register": "international_invoice",
+          "text": "DE89370400440532013000",
+          "context": "5678300000, ΑΦΜ EL098765432. Wire to IBAN DE89370400440532013000 (German). Confirm at finance@papadopoulos"
+        }
+      ]
+    },
+    "confusion": {
+      "mac_address->vehicle_vin": [
+        {
+          "case_id": 24,
+          "register": "firewall_rule",
+          "expected_label": "mac_address",
+          "predicted_label": "vehicle_vin",
+          "expected": "00:1A:2B:3C:4D:5E",
+          "predicted": "00:1A:2B:3C:4D:5E",
+          "overlap_ratio": 1.0,
+          "context": " 195.78.234.10 to 10.10.20.50, MAC source 00:1A:2B:3C:4D:5E. Approved by netops@company.gr."
+        },
+        {
+          "case_id": 115,
+          "register": "switch_config",
+          "expected_label": "mac_address",
+          "predicted_label": "vehicle_vin",
+          "expected": "00:50:56:AB:CD:EF",
+          "predicted": "00:50:56:AB:CD:EF",
+          "overlap_ratio": 1.0,
+          "context": "Switch port assignment: port 24 → MAC 00:50:56:AB:CD:EF, VLAN 100. Documentation https://wiki.net"
+        }
+      ],
+      "private_phone->account_number": [
+        {
+          "case_id": 27,
+          "register": "prescription",
+          "expected_label": "private_phone",
+          "predicted_label": "account_number",
+          "expected": "6912345678",
+          "predicted": "6912345678",
+          "overlap_ratio": 1.0,
+          "context": "ξέταση: 30 Σεπτεμβρίου 2026. Επικοινωνία: 6912345678."
+        },
+        {
+          "case_id": 31,
+          "register": "lost_phone_report",
+          "expected_label": "private_phone",
+          "predicted_label": "account_number",
+          "expected": "6987123456",
+          "predicted": "6987123456",
+          "overlap_ratio": 1.0,
+          "context": "ε. Κάτοχος: Δέσποινα Λάππα, τηλ. αναφοράς 6987123456."
+        },
+        {
+          "case_id": 54,
+          "register": "passport_renewal_email",
+          "expected_label": "private_phone",
+          "predicted_label": "account_number",
+          "expected": "6948765432",
+          "predicted": "6948765432",
+          "overlap_ratio": 1.0,
+          "context": "ράφορη (giannastrafori@hotmail.com), τηλ. 6948765432. Παραλαβή: 22/06/2026."
+        },
+        {
+          "case_id": 97,
+          "register": "moving_company_quote",
+          "expected_label": "private_phone",
+          "predicted_label": "account_number",
+          "expected": "6951234876",
+          "predicted": "6951234876",
+          "overlap_ratio": 1.0,
+          "context": ". Πελάτης: Φωτεινή Ζήση, fzisiq@email.gr, 6951234876."
+        },
+        {
+          "case_id": 124,
+          "register": "shipping_label",
+          "expected_label": "private_phone",
+          "predicted_label": "account_number",
+          "expected": "6932109876",
+          "predicted": "6932109876",
+          "overlap_ratio": 1.0,
+          "context": "ύθυνση: Αχιλλέως 56, 17567 Π. Φάληρο\\nΤηλ: 6932109876\\nTracking: https://courier.gr/track/AB1234"
+        },
+        {
+          "case_id": 164,
+          "register": "almost_phone_decoy",
+          "expected_label": "private_phone",
+          "predicted_label": "account_number",
+          "expected": "6932148765",
+          "predicted": "6932148765",
+          "overlap_ratio": 1.0,
+          "context": "Ο γιατρός είπε ότι ο όγκος μειώθηκε κατά 6932148765 micrograms — όχι, αυτό είναι λάθος, πρέπε"
+        },
+        {
+          "case_id": 168,
+          "register": "long_medical_history",
+          "expected_label": "private_phone",
+          "predicted_label": "account_number",
+          "expected": "6987234561",
+          "predicted": "6987234561",
+          "overlap_ratio": 1.0,
+          "context": "ς: Δρ. Ευαγγελία Παππά, evpap@iatriko.gr, 6987234561."
+        }
+      ],
+      "private_person->private_address": [
+        {
+          "case_id": 124,
+          "register": "shipping_label",
+          "expected_label": "private_person",
+          "predicted_label": "private_address",
+          "expected": "Ευστράτιος Νικολόπουλος",
+          "predicted": "Ευστράτιος Νικολόπουλος",
+          "overlap_ratio": 1.0,
+          "context": "Παραλήπτης: Ευστράτιος Νικολόπουλος\\nΔιεύθυνση: Αχιλλέως 56, 17567 Π. Φάληρο\\nΤ"
+        }
+      ],
+      "imei->account_number": [
+        {
+          "case_id": 125,
+          "register": "warranty_lookup",
+          "expected_label": "imei",
+          "predicted_label": "account_number",
+          "expected": "359123456712345",
+          "predicted": "359123456712345",
+          "overlap_ratio": 1.0,
+          "context": "ου, snikolaidou@webmail.gr, IMEI συσκευής 359123456712345."
+        },
+        {
+          "case_id": 142,
+          "register": "informal_email",
+          "expected_label": "imei",
+          "predicted_label": "account_number",
+          "expected": "359123456789012",
+          "predicted": "359123456789012",
+          "overlap_ratio": 1.0,
+          "context": "Γιάννη μου, στείλε το νέο imei 359123456789012 και πινακίδα ΥΞΗ-3456 για το συμβόλαιο. Σ"
+        }
+      ],
+      "private_email->secret": [
+        {
+          "case_id": 138,
+          "register": "thesis_supervisor",
+          "expected_label": "private_email",
+          "predicted_label": "secret",
+          "expected": "sk@cs.uoa.gr",
+          "predicted": "sk@cs.uoa.gr",
+          "overlap_ratio": 1.0,
+          "context": " Καθηγητής Δρ. Σπύρος Καρδαμίτσης. Email: sk@cs.uoa.gr."
+        },
+        {
+          "case_id": 152,
+          "register": "long_secret_kv",
+          "expected_label": "private_email",
+          "predicted_label": "secret",
+          "expected": "ops@firm.gr",
+          "predicted": "ops@firm.gr",
+          "overlap_ratio": 1.0,
+          "context": "ostgres://user:pass@localhost/db. Source: ops@firm.gr."
+        }
+      ],
+      "private_person->private_email": [
+        {
+          "case_id": 168,
+          "register": "long_medical_history",
+          "expected_label": "private_person",
+          "predicted_label": "private_email",
+          "expected": "Ευαγγελία Παππά",
+          "predicted": "Δρ. Ευαγγελία Παππά, evpap@iatriko.gr",
+          "overlap_ratio": 1.0,
+          "context": "βήτης τύπου 2. Συντονιστής φροντίδας: Δρ. Ευαγγελία Παππά, evpap@iatriko.gr, 6987234561."
+        }
+      ],
+      "card_pan->iban_gr": [
+        {
+          "case_id": 171,
+          "register": "ride_share_receipt",
+          "expected_label": "card_pan",
+          "predicted_label": "iban_gr",
+          "expected": "5188 9234 7765 1234",
+          "predicted": "5188 9234 7765 1234",
+          "overlap_ratio": 1.0,
+          "context": "κόστος 38€ χρεώθηκε στην κάρτα Mastercard 5188 9234 7765 1234. Επιβάτης: Μαρία Ιωαννίδου, mioannidou@we"
+        }
+      ],
+      "afm->driver_license": [
+        {
+          "case_id": 173,
+          "register": "vocative_letter",
+          "expected_label": "afm",
+          "predicted_label": "driver_license",
+          "expected": "234578912",
+          "predicted": "234578912",
+          "overlap_ratio": 1.0,
+          "context": " ολοκληρώθηκε η αίτηση. ΑΦΜ ταυτοποίησης: 234578912."
+        }
+      ],
+      "mac_address->ip_address": [
+        {
+          "case_id": 183,
+          "register": "audit_report_macs",
+          "expected_label": "mac_address",
+          "predicted_label": "ip_address",
+          "expected": "FE:ED:FA:CE:00:01",
+          "predicted": "CE:00:01",
+          "overlap_ratio": 1.0,
+          "context": "E:48:00:11:22, MAC 12:34:56:78:9A:BC, MAC FE:ED:FA:CE:00:01. Σύνδεση στο https://nms.netadmin.gr/audi"
+        }
+      ]
+    }
+  }
+}
