@@ -85,12 +85,15 @@ def build_assistant_target(rec: dict, max_spans: int, shuffle: bool,
             continue
         spans.append({"label": cat, "value": value})
 
-    if max_spans and len(spans) > max_spans:
-        spans = spans[:max_spans]
-
+    # Shuffle FIRST so truncation drops a random subset, not always tail spans.
+    # Otherwise rare classes appearing at end of long records (e.g. vehicle_vin
+    # at record tail) are systematically excluded from training. (Reviewer I-5.)
     if shuffle and len(spans) > 1:
         spans = spans.copy()
         rng.shuffle(spans)
+
+    if max_spans and len(spans) > max_spans:
+        spans = spans[:max_spans]
 
     return json.dumps(spans, ensure_ascii=False, separators=(",", ":"))
 

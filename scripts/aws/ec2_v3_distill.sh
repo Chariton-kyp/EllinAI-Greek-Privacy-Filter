@@ -41,6 +41,8 @@ STUDENT_HF_ID="${STUDENT_HF_ID:-}"
 : "${BUCKET:?BUCKET env var required}"
 : "${IAM_INSTANCE_PROFILE:?IAM_INSTANCE_PROFILE env var required}"
 : "${V3_TIER:?V3_TIER required: mini | pro | max}"
+# HF_TOKEN optional (Unsloth mirrors are public)
+HF_TOKEN="${HF_TOKEN:-}"
 
 case "${V3_TIER}" in
   mini|pro|max) ;;
@@ -87,6 +89,12 @@ STUDENT_HF_ID="${STUDENT_HF_ID}"
 V3_CHAT_S3_PREFIX="${V3_CHAT_S3_PREFIX}"
 V3_PSEUDO_S3_PREFIX="${V3_PSEUDO_S3_PREFIX}"
 MAX_TRAIN_SAMPLES="${MAX_TRAIN_SAMPLES}"
+
+if [ -n "${HF_TOKEN}" ]; then
+  export HF_TOKEN="${HF_TOKEN}"
+  export HUGGING_FACE_HUB_TOKEN="${HF_TOKEN}"
+fi
+export HF_HUB_ENABLE_HF_TRANSFER=1
 
 _v3_log_pump() {
   while true; do
@@ -146,12 +154,25 @@ aws s3 sync "s3://\${RUN_BUCKET}/\${V3_PSEUDO_S3_PREFIX}/" \\
   /opt/gpf/data/processed/v3_pseudo/ \\
   --region "\${RUN_REGION}" --exclude "*" --include "*.jsonl" || true
 
-# Combine gold train + pseudo for student SFT
-cat /opt/gpf/data/processed/v3_chat/train.jsonl \\
-    /opt/gpf/data/processed/v3_pseudo/*.jsonl 2>/dev/null \\
-    > /opt/gpf/data/processed/train_with_pseudo.jsonl || \\
-    cp /opt/gpf/data/processed/v3_chat/train.jsonl \\
-       /opt/gpf/data/processed/train_with_pseudo.jsonl
+# Convert pseudo-labels (OPF span format) to chat format BEFORE concatenation
+# (gold train is already chat format; pseudo is OPF — they are NOT compatible
+# without this conversion, would crash trainer with KeyError 'messages').
+mkdir -p /opt/gpf/data/processed/v3_pseudo_chat
+PSEUDO_RAW="\$(ls /opt/gpf/data/processed/v3_pseudo/*.jsonl 2>/dev/null | head -1)"
+if [ -n "\${PSEUDO_RAW}" ]; then
+  python3 /opt/gpf/scripts/v3/convert_opf_to_chat.py \\
+    --input  "\${PSEUDO_RAW}" \\
+    --output /opt/gpf/data/processed/v3_pseudo_chat/pseudo_chat.jsonl \\
+    --label-space /opt/gpf/configs/label_space_v2.json \\
+    --shuffle-spans
+  cat /opt/gpf/data/processed/v3_chat/train.jsonl \\
+      /opt/gpf/data/processed/v3_pseudo_chat/pseudo_chat.jsonl \\
+      > /opt/gpf/data/processed/train_with_pseudo.jsonl
+else
+  # No pseudo-labels available — train on gold only (still useful for ablation)
+  cp /opt/gpf/data/processed/v3_chat/train.jsonl \\
+     /opt/gpf/data/processed/train_with_pseudo.jsonl
+fi
 
 # Train student
 mkdir -p /opt/gpf/artifacts/v3/students

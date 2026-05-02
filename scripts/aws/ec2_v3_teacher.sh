@@ -35,13 +35,16 @@ AVAIL_ZONE="${AVAIL_ZONE:-eu-north-1b}"
 INSTANCE_TYPE="${INSTANCE_TYPE:-g6e.xlarge}"
 MARKET_TYPE="${MARKET_TYPE:-spot}"
 SPOT_MAX_PRICE="${SPOT_MAX_PRICE:-1.00}"
-TEACHER_HF_ID="${TEACHER_HF_ID:-google/gemma-4-31B-it}"
+TEACHER_HF_ID="${TEACHER_HF_ID:-unsloth/gemma-4-31B-it-unsloth-bnb-4bit}"
 V3_DATA_S3_PREFIX="${V3_DATA_S3_PREFIX:-assembled/v3_chat}"
 V3_OUTPUT_S3_PREFIX="${V3_OUTPUT_S3_PREFIX:-v3/teacher}"
 MAX_TRAIN_SAMPLES="${MAX_TRAIN_SAMPLES:-}"
 
 : "${BUCKET:?BUCKET env var required}"
 : "${IAM_INSTANCE_PROFILE:?IAM_INSTANCE_PROFILE env var required}"
+# HF_TOKEN: only needed if TEACHER_HF_ID points to gated google/gemma-4-*
+# (Unsloth mirrors `unsloth/gemma-4-*-unsloth-bnb-4bit` are PUBLIC, no token).
+HF_TOKEN="${HF_TOKEN:-}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -81,6 +84,14 @@ RUN_PREFIX="${RUN_PREFIX}"
 TEACHER_HF_ID="${TEACHER_HF_ID}"
 V3_DATA_S3_PREFIX="${V3_DATA_S3_PREFIX}"
 MAX_TRAIN_SAMPLES="${MAX_TRAIN_SAMPLES}"
+
+# HuggingFace optional auth (only needed for gated google/* mirrors;
+# unsloth/* mirrors are public, so empty token works fine).
+if [ -n "${HF_TOKEN}" ]; then
+  export HF_TOKEN="${HF_TOKEN}"
+  export HUGGING_FACE_HUB_TOKEN="${HF_TOKEN}"
+fi
+export HF_HUB_ENABLE_HF_TRANSFER=1
 
 # Sync log every 30s for live monitoring
 _v3_log_pump() {
