@@ -152,6 +152,11 @@ def main() -> None:
         dataset_text_field="text",
         max_length=sft_cfg["max_seq_length"],
         packing=False,
+        # transformers 5.x's `_remove_unused_columns` strips `text` before
+        # SFTTrainer can tokenize it (forward sig only knows input_ids /
+        # labels / messages). Disable that pre-train pruning so SFTTrainer's
+        # dataset preprocessor sees the column it was told to read.
+        remove_unused_columns=False,
     )
 
     trainer = SFTTrainer(

@@ -142,6 +142,9 @@ def main() -> None:
         dataset_text_field="text",
         max_length=sft_cfg.get("max_seq_length", 4096),
         packing=False,
+        # transformers 5.x strips unknown columns before SFTTrainer tokenizes;
+        # disable so the `text` column survives to SFTTrainer's preprocessor.
+        remove_unused_columns=False,
     )
 
     trainer = SFTTrainer(
