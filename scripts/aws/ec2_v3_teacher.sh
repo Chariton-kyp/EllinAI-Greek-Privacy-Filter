@@ -1,14 +1,26 @@
 #!/usr/bin/env bash
-# ec2_v3_teacher.sh — Launch AWS EC2 instance to train v3 teacher.
+# ec2_v3_teacher.sh — Launch AWS EC2 instance to train v3 teacher inside the
+# official Unsloth Docker image (unsloth/unsloth:latest).
 #
 # Pipeline (user-data on the instance):
-#   1. Install Unsloth + trl + bitsandbytes + transformers stack
-#   2. Pull repo tar (uploaded by this launcher) + sync v3_chat data from S3
-#   3. Run scripts/v3/train_teacher.py
+#   1. Sync v3_chat data from S3 (read by container via bind mount)
+#   2. Pull unsloth/unsloth:latest (Python 3.12 + PyTorch 2.10 + CUDA 12.8 +
+#      bitsandbytes + trl + peft + transformers + datasets + accelerate)
+#   3. Run scripts/v3/train_teacher.py inside the container
 #        - LoRA Q4 SFT on gemma-4-31B-it (or override via TEACHER_HF_ID)
 #        - configs/v3_distillation.yaml hyperparameters
-#   4. Sync trained LoRA adapters + metrics → S3
+#   4. Sync trained LoRA adapters + metrics → S3 via EXIT trap on host
 #   5. EXIT trap: final sync + shutdown -h now (terminates spot instance)
+#
+# Why Docker (not pip on the DLAMI):
+#   - Mirrors the project's existing pattern (ec2_spot_generate.sh pulls
+#     ghcr.io/ggml-org/llama.cpp:server-cuda; this script pulls upstream
+#     unsloth/unsloth — same convention).
+#   - Eliminates the brittle conda/venv discovery problem hit by pilots
+#     v3 + v4 (DLAMI variants ship torch in non-standard locations).
+#   - "Use Unsloth Core fully" — the upstream image is the curated, tested
+#     combination of unsloth + its dep stack. Hand-rolled pip install can
+#     drift.
 #
 # Required env vars:
 #   BUCKET                — S3 bucket holding v3_chat data + receiving outputs
@@ -16,17 +28,15 @@
 #
 # Optional:
 #   AWS_REGION            — default eu-north-1
-#   AVAIL_ZONE            — default eu-north-1b (g6e.xlarge has reliable capacity here)
+#   AVAIL_ZONE            — default eu-north-1b
 #   INSTANCE_TYPE         — default g6e.xlarge (L40S 48GB)
 #   MARKET_TYPE           — spot (default) or ondemand
 #   SPOT_MAX_PRICE        — default 1.00
-#   TEACHER_HF_ID         — override teacher.hf_id from yaml (e.g. Qwen/Qwen3.6-35B-A3B-Instruct)
-#   V3_DATA_S3_PREFIX     — default assembled/v3_chat (under BUCKET)
-#   V3_OUTPUT_S3_PREFIX   — default v3/teacher (under BUCKET)
-#   MAX_TRAIN_SAMPLES     — for pilot runs, e.g. 500. Default empty (all 111k records)
-#
-# Recommended for full run: g6e.xlarge spot eu-north-1b, ~12 h, $7-8.
-# Pilot run: MAX_TRAIN_SAMPLES=500 reduces to ~30 min for sanity check.
+#   TEACHER_HF_ID         — override teacher.hf_id from yaml
+#   V3_DATA_S3_PREFIX     — default assembled/v3_chat
+#   V3_OUTPUT_S3_PREFIX   — default v3/teacher
+#   MAX_TRAIN_SAMPLES     — pilot runs (e.g. 500). Default empty (full set).
+#   UNSLOTH_IMAGE         — default unsloth/unsloth:latest
 
 set -euo pipefail
 
@@ -39,11 +49,10 @@ TEACHER_HF_ID="${TEACHER_HF_ID:-unsloth/gemma-4-31B-it-unsloth-bnb-4bit}"
 V3_DATA_S3_PREFIX="${V3_DATA_S3_PREFIX:-assembled/v3_chat}"
 V3_OUTPUT_S3_PREFIX="${V3_OUTPUT_S3_PREFIX:-v3/teacher}"
 MAX_TRAIN_SAMPLES="${MAX_TRAIN_SAMPLES:-}"
+UNSLOTH_IMAGE="${UNSLOTH_IMAGE:-unsloth/unsloth:latest}"
 
 : "${BUCKET:?BUCKET env var required}"
 : "${IAM_INSTANCE_PROFILE:?IAM_INSTANCE_PROFILE env var required}"
-# HF_TOKEN: only needed if TEACHER_HF_ID points to gated google/gemma-4-*
-# (Unsloth mirrors `unsloth/gemma-4-*-unsloth-bnb-4bit` are PUBLIC, no token).
 HF_TOKEN="${HF_TOKEN:-}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -53,20 +62,20 @@ REPO_KEY="code/gpf-v3-teacher-${TIMESTAMP}.tar.gz"
 RUN_PREFIX="${V3_OUTPUT_S3_PREFIX}/run-${TIMESTAMP}"
 REPO_TAR="/tmp/gpf-v3-teacher-${TIMESTAMP}.tar.gz"
 
-echo "[1/5] Pack repo (scripts/v3 + configs + requirements)"
+echo "[1/5] Pack repo (scripts/v3 + configs)"
 tar -czf "${REPO_TAR}" -C "${REPO_ROOT}" \
     scripts/v3/ scripts/aws/ configs/ \
-    requirements-unsloth.txt LICENSING.md NOTICE ATTRIBUTION.txt \
+    LICENSING.md NOTICE ATTRIBUTION.txt \
     docs/V3_DISTILLATION_PLAN.md
 
 echo "[2/5] Upload repo tar to s3://${BUCKET}/${REPO_KEY}"
 aws s3 cp "${REPO_TAR}" "s3://${BUCKET}/${REPO_KEY}" --region "${REGION}"
 
-echo "[3/5] Resolve Deep Learning PyTorch GPU AMI (ships PyTorch + conda env)"
+echo "[3/5] Resolve Deep Learning Base GPU AMI (ships Docker + nvidia-container-toolkit)"
 AMI_ID="$(aws ec2 describe-images --region "${REGION}" \
     --owners amazon \
     --filters \
-        'Name=name,Values=Deep Learning OSS Nvidia Driver AMI GPU PyTorch*Ubuntu 22.04*' \
+        'Name=name,Values=Deep Learning Base OSS Nvidia Driver GPU AMI (Ubuntu 22.04)*' \
         'Name=state,Values=available' \
     --query 'sort_by(Images, &CreationDate)[-1].ImageId' --output text)"
 echo "  AMI: ${AMI_ID}"
@@ -84,17 +93,14 @@ RUN_PREFIX="${RUN_PREFIX}"
 TEACHER_HF_ID="${TEACHER_HF_ID}"
 V3_DATA_S3_PREFIX="${V3_DATA_S3_PREFIX}"
 MAX_TRAIN_SAMPLES="${MAX_TRAIN_SAMPLES}"
+UNSLOTH_IMAGE="${UNSLOTH_IMAGE}"
 
-# HuggingFace optional auth (only needed for gated google/* mirrors;
-# unsloth/* mirrors are public, so empty token works fine).
 if [ -n "${HF_TOKEN}" ]; then
   export HF_TOKEN="${HF_TOKEN}"
   export HUGGING_FACE_HUB_TOKEN="${HF_TOKEN}"
 fi
-export HF_HUB_ENABLE_HF_TRANSFER=1
 
-# Progress marker — write a tiny file to S3 at each major step so we can
-# diagnose failures without relying on the full log_pump getting through.
+# Tiny stamp helper — single-line marker uploaded to S3 at each major step.
 _v3_stamp() {
   local label="\$1"
   local ts="\$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -104,7 +110,6 @@ _v3_stamp() {
     --region "\${RUN_REGION}" --quiet 2>/dev/null || true
 }
 
-# Sync log every 30s for live monitoring
 _v3_log_pump() {
   while true; do
     [ -f /var/log/gpf-v3-teacher.log ] && \\
@@ -115,7 +120,6 @@ _v3_log_pump() {
   done
 }
 
-# EXIT trap: always sync final artefacts + logs, then shutdown
 _v3_finalize() {
   set +e
   _v3_stamp "FINALIZE"
@@ -135,13 +139,11 @@ _v3_finalize() {
   _v3_stamp "SHUTDOWN"
   shutdown -h now
 }
-
-# Set trap FIRST so any failure below still triggers finalize + shutdown.
 trap _v3_finalize EXIT INT TERM
 _v3_log_pump &
 _PUMP_PID=\$!
 
-# STS identity + IAM diagnostic dump.
+# STS / IAM diagnostic dump (loud-fail if perms broken).
 {
   echo "=== STS identity ==="
   aws sts get-caller-identity --output json 2>&1 || echo "STS_FAIL"
@@ -149,36 +151,39 @@ _PUMP_PID=\$!
   TOKEN="\$(curl -sS -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' 2>&1)"
   curl -sS -H "X-aws-ec2-metadata-token: \${TOKEN}" 'http://169.254.169.254/latest/meta-data/iam/info' 2>&1
   echo
-  curl -sS -H "X-aws-ec2-metadata-token: \${TOKEN}" 'http://169.254.169.254/latest/meta-data/iam/security-credentials/' 2>&1
-  echo
 } > /var/log/gpf-v3-sts.log 2>&1
 aws s3 cp /var/log/gpf-v3-sts.log \\
   "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/sts.log" \\
   --region "\${RUN_REGION}" || true
 
-# BOOT stamp: NOT silenced. If S3 perms broken on v3/* prefix, set -e
-# kills the script and the trap (set above) fires finalize + shutdown.
-_v3_stamp_loud() {
-  local label="\$1"
-  local ts="\$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  echo "[stamp] \${ts} \${label}" >> /var/log/gpf-v3-stamps.log
-  aws s3 cp /var/log/gpf-v3-stamps.log \\
-    "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/stamps.log" \\
-    --region "\${RUN_REGION}"
-}
-_v3_stamp_loud "BOOT"
+_v3_stamp "BOOT"
 aws s3 ls "s3://\${RUN_BUCKET}/" --region "\${RUN_REGION}" >/dev/null
 _v3_stamp "S3_OK"
 
-# 1. Install AWS CLI v2 if missing (DLAMI usually has it)
-_v3_stamp "AWS_CLI_CHECK"
-if ! command -v aws >/dev/null 2>&1; then
-  curl -sSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
-  unzip -q /tmp/awscliv2.zip -d /tmp/
-  /tmp/aws/install
+# 1. Verify Docker + nvidia-container-toolkit (Base DLAMI ships both;
+# defensive install mirrors the existing ec2_spot_generate.sh pattern).
+_v3_stamp "DOCKER_CHECK"
+if ! command -v docker >/dev/null 2>&1; then
+  apt-get update -q
+  apt-get install -y --no-install-recommends docker.io
+  systemctl enable --now docker
 fi
+if ! docker info 2>&1 | grep -qi "nvidia"; then
+  distribution="\$(. /etc/os-release; echo \${ID}\${VERSION_ID})"
+  curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | \\
+    gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+  curl -fsSL "https://nvidia.github.io/libnvidia-container/\${distribution}/libnvidia-container.list" | \\
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' \\
+    > /etc/apt/sources.list.d/nvidia-container-toolkit.list
+  apt-get update -q
+  apt-get install -y nvidia-container-toolkit
+  nvidia-ctk runtime configure --runtime=docker
+  systemctl restart docker
+fi
+docker info >/dev/null
+nvidia-smi >/dev/null
 
-# 2. Pull repo tar
+# 2. Pull repo tar (only contains scripts + configs; no Python deps to install).
 _v3_stamp "PULL_REPO"
 mkdir -p /opt/gpf
 cd /opt/gpf
@@ -186,51 +191,56 @@ aws s3 cp "s3://\${RUN_BUCKET}/${REPO_KEY}" /tmp/gpf-v3-teacher.tar.gz \\
   --region "\${RUN_REGION}"
 tar -xzf /tmp/gpf-v3-teacher.tar.gz -C /opt/gpf/
 
-# 3. Install Unsloth on top of DLAMI's pre-installed PyTorch (no venv).
-# Deep Learning PyTorch DLAMI Ubuntu 22.04 ships PyTorch 2.x + CUDA 12.x in
-# the 'pytorch' conda env at /opt/conda. Activate that env so torch is on
-# the path. (The "Deep Learning Base" DLAMI does NOT ship PyTorch — that
-# variant trips a ModuleNotFoundError. Pilot v3 confirmed this.)
-_v3_stamp "PIP_INSTALL"
-if [ -f /opt/conda/etc/profile.d/conda.sh ]; then
-  source /opt/conda/etc/profile.d/conda.sh
-  # Try canonical envs in order; fall back to base.
-  conda activate pytorch 2>/dev/null \\
-    || conda activate pytorch_p310 2>/dev/null \\
-    || conda activate base 2>/dev/null || true
-fi
-PYBIN="\$(command -v python3)"
-echo "Using PYBIN=\${PYBIN}"
-\${PYBIN} -c "import torch; print('torch:', torch.__version__, 'cuda:', torch.cuda.is_available())"
-\${PYBIN} -m pip install --upgrade pip wheel
-# Install Unsloth + missing deps; skip torch (already in DLAMI)
-\${PYBIN} -m pip install --no-deps unsloth || \${PYBIN} -m pip install unsloth
-\${PYBIN} -m pip install trl bitsandbytes peft accelerate datasets seqeval sentencepiece pyyaml hf_transfer
+# 3. Pull Unsloth Docker image (~13GB compressed, ~5 min on EC2 backbone).
+_v3_stamp "DOCKER_PULL"
+docker pull "\${UNSLOTH_IMAGE}"
 
-# 4. Sync v3_chat data from S3
+# 4. Sync v3_chat data from S3 to a host dir bind-mounted into container.
 _v3_stamp "SYNC_DATA"
-mkdir -p /opt/gpf/data/processed/v3_chat
+mkdir -p /opt/gpf/data/processed/v3_chat /opt/gpf/artifacts/v3/teacher
 aws s3 sync "s3://\${RUN_BUCKET}/\${V3_DATA_S3_PREFIX}/" \\
   /opt/gpf/data/processed/v3_chat/ \\
   --region "\${RUN_REGION}" --exclude "*" --include "train.jsonl" --include "validation.jsonl"
 
-# 5. Train teacher
+# Persistent HF cache on the DLAMI's ephemeral NVMe (faster + larger than
+# the root EBS volume; 31B bnb-4bit weights are ~17GB).
+HF_CACHE_DIR="/opt/dlami/nvme/hf-cache"
+if [ ! -d /opt/dlami/nvme ]; then
+  HF_CACHE_DIR="/opt/gpf/.hf-cache"
+fi
+mkdir -p "\${HF_CACHE_DIR}"
+chmod 1777 "\${HF_CACHE_DIR}" /opt/gpf/artifacts /opt/gpf/data/processed
+
+# 5. Run training inside the Unsloth container.
+# --entrypoint /opt/venv/bin/python  bypasses the image's default
+#                                    Jupyter-launching entrypoint.sh
+# -u 0:0                             run as root so artifacts/ is writable
+# --ipc=host --shm-size=8g           dataloader workers need shared memory
+# HF cache + repo + artefacts dirs bind-mounted from host
 _v3_stamp "TRAIN_START"
-mkdir -p /opt/gpf/artifacts/v3/teacher
 TRAIN_ARGS=()
 if [ -n "\${MAX_TRAIN_SAMPLES}" ]; then
   TRAIN_ARGS+=( --max-train-samples "\${MAX_TRAIN_SAMPLES}" )
 fi
-\${PYBIN} /opt/gpf/scripts/v3/train_teacher.py \\
-  --config /opt/gpf/configs/v3_distillation.yaml \\
-  --output-dir "/opt/gpf/artifacts/v3/teacher/run-\${RUN_TIMESTAMP}" \\
-  --train-jsonl /opt/gpf/data/processed/v3_chat/train.jsonl \\
-  --eval-jsonl /opt/gpf/data/processed/v3_chat/validation.jsonl \\
+docker run --rm --gpus all --ipc=host --shm-size=8g \\
+  -u 0:0 \\
+  -v /opt/gpf:/workspace/gpf \\
+  -v "\${HF_CACHE_DIR}":/workspace/.cache/huggingface \\
+  -e HF_HOME=/workspace/.cache/huggingface \\
+  -e HF_HUB_ENABLE_HF_TRANSFER=1 \\
+  -e HF_TOKEN="\${HF_TOKEN:-}" \\
+  -e HUGGING_FACE_HUB_TOKEN="\${HF_TOKEN:-}" \\
+  --entrypoint /opt/venv/bin/python \\
+  "\${UNSLOTH_IMAGE}" \\
+  /workspace/gpf/scripts/v3/train_teacher.py \\
+  --config /workspace/gpf/configs/v3_distillation.yaml \\
+  --output-dir "/workspace/gpf/artifacts/v3/teacher/run-\${RUN_TIMESTAMP}" \\
+  --train-jsonl /workspace/gpf/data/processed/v3_chat/train.jsonl \\
+  --eval-jsonl /workspace/gpf/data/processed/v3_chat/validation.jsonl \\
   --model-override "\${TEACHER_HF_ID}" \\
   "\${TRAIN_ARGS[@]}"
 _v3_stamp "TRAIN_DONE"
 
-# 6. Final sync + auto-shutdown via EXIT trap
 echo "TEACHER SFT COMPLETE"
 EOF
 
@@ -265,7 +275,18 @@ cat > "${SPEC_FILE}" <<EOF
 EOF
 
 if [ "${MARKET_TYPE}" = "ondemand" ] || [ "${MARKET_TYPE}" = "on-demand" ]; then
-  python3 -c "import json,sys; d=json.load(open(sys.argv[1])); d.pop('InstanceMarketOptions', None); json.dump(d, open(sys.argv[1],'w'))" "${SPEC_FILE}"
+  PY_HOST=""
+  for cand in python python3 py; do
+    if command -v "$cand" >/dev/null 2>&1 && "$cand" --version >/dev/null 2>&1; then
+      PY_HOST="$cand"
+      break
+    fi
+  done
+  if [ -z "${PY_HOST}" ]; then
+    echo "FAIL: no working Python found on host"
+    exit 1
+  fi
+  "${PY_HOST}" -c "import json,sys; d=json.load(open(sys.argv[1])); d.pop('InstanceMarketOptions', None); json.dump(d, open(sys.argv[1],'w'))" "${SPEC_FILE}"
   echo "  market: on-demand (spot block removed)"
 else
   echo "  market: spot (max-price=${SPOT_MAX_PRICE}) AZ=${AVAIL_ZONE}"
@@ -280,9 +301,6 @@ INSTANCE_ID="$(aws ec2 run-instances --region "${REGION}" \
     --cli-input-json "file://${SPEC_FILE_NATIVE}" \
     --query 'Instances[0].InstanceId' --output text)"
 
-# Post-launch IAM profile verification — abort+terminate if profile is null
-# (caused silent failure on pilot v2: instance ran w/o S3 perms, all stamps
-# sank, ran shutdown after ~5 min with no diagnostics).
 echo "[4.5/5] Verify IAM profile attached"
 sleep 8
 ATTACHED_PROFILE="$(aws ec2 describe-instances --region "${REGION}" \
@@ -290,9 +308,7 @@ ATTACHED_PROFILE="$(aws ec2 describe-instances --region "${REGION}" \
     --query 'Reservations[0].Instances[0].IamInstanceProfile.Arn' \
     --output text 2>/dev/null || echo None)"
 if [ -z "${ATTACHED_PROFILE}" ] || [ "${ATTACHED_PROFILE}" = "None" ] || [ "${ATTACHED_PROFILE}" = "null" ]; then
-  echo "FAIL: instance ${INSTANCE_ID} launched WITHOUT IAM profile."
-  echo "      requested profile name: '${IAM_INSTANCE_PROFILE}'"
-  echo "      terminating to avoid silent stamp failure."
+  echo "FAIL: instance ${INSTANCE_ID} launched WITHOUT IAM profile (name='${IAM_INSTANCE_PROFILE}')."
   aws ec2 terminate-instances --region "${REGION}" --instance-ids "${INSTANCE_ID}" >/dev/null
   exit 1
 fi
@@ -302,6 +318,7 @@ echo "[5/5] Instance: ${INSTANCE_ID}"
 echo
 echo "Run ID:      ${TIMESTAMP}"
 echo "Git commit:  ${GIT_COMMIT}"
+echo "Image:       ${UNSLOTH_IMAGE}"
 echo "Teacher HF:  ${TEACHER_HF_ID}"
 echo "Data S3:     s3://${BUCKET}/${V3_DATA_S3_PREFIX}/"
 echo "Output S3:   s3://${BUCKET}/${RUN_PREFIX}/"
@@ -309,5 +326,5 @@ echo
 echo "Tail live log:"
 echo "  aws s3 cp s3://${BUCKET}/${RUN_PREFIX}/logs/gpf-v3-teacher.live.log - --region ${REGION}"
 echo
-echo "Watch instance:"
-echo "  aws ec2 describe-instances --region ${REGION} --instance-ids ${INSTANCE_ID}"
+echo "Stamps log:"
+echo "  aws s3 cp s3://${BUCKET}/${RUN_PREFIX}/logs/stamps.log - --region ${REGION}"

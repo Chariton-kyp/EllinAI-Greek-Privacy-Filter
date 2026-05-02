@@ -1,21 +1,20 @@
 #!/usr/bin/env bash
-# ec2_v3_pseudo.sh — AWS GPU spot to (a) download Greek corpus, (b) chunk
-# it, (c) run trained teacher LoRA over it via local vLLM/llama.cpp, (d)
-# upload pseudo-labelled JSONL to S3.
+# ec2_v3_pseudo.sh — Run teacher pseudo-label generation inside the
+# unsloth/unsloth Docker image on EC2 spot.
 #
 # Pipeline (user-data on the instance):
-#   1. Install Unsloth + datasets + vllm
-#   2. Pull repo tar
-#   3. Run scripts/v3/load_greek_corpus.py to fetch + chunk corpus
-#   4. Sync teacher LoRA adapter from S3
-#   5. Start vLLM serving the teacher on localhost:8080 (OpenAI-compatible)
-#   6. Run scripts/v3/generate_pseudo_labels.py against localhost:8080
-#   7. Upload pseudo-labels to S3
+#   1. Pull unsloth/unsloth:latest
+#   2. Pull repo tar + sync teacher LoRA adapter from S3
+#   3. Container A: load + chunk Greek corpus (commercial-clean sources)
+#   4. Container B: run generate_pseudo_labels_unsloth.py
+#      (Unsloth FastLanguageModel direct inference: bnb-4bit + LoRA)
+#   5. Upload pseudo_labels.jsonl + corpus + logs to S3
 #
 # Required env vars:
 #   BUCKET                — S3 bucket
 #   IAM_INSTANCE_PROFILE  — EC2 profile R/W to BUCKET
-#   TEACHER_S3_PREFIX     — path to LoRA adapters under BUCKET (e.g. v3/teacher/run-XXX/artifacts)
+#   TEACHER_S3_PREFIX     — path to LoRA adapters under BUCKET
+#                           (e.g. v3/teacher/run-XXX/artifacts)
 #
 # Optional:
 #   AWS_REGION            — default eu-north-1
@@ -23,9 +22,10 @@
 #   INSTANCE_TYPE         — default g6e.xlarge
 #   MARKET_TYPE           — spot (default) or ondemand
 #   SPOT_MAX_PRICE        — default 1.00
-#   TEACHER_HF_ID         — base model id (default google/gemma-4-31B-it)
+#   TEACHER_HF_ID         — base model id
 #   V3_OUTPUT_S3_PREFIX   — default v3/pseudo
 #   CORPUS_TARGET_RECORDS — default 500000
+#   UNSLOTH_IMAGE         — default unsloth/unsloth:latest
 
 set -euo pipefail
 
@@ -37,11 +37,11 @@ SPOT_MAX_PRICE="${SPOT_MAX_PRICE:-1.00}"
 TEACHER_HF_ID="${TEACHER_HF_ID:-unsloth/gemma-4-31B-it-unsloth-bnb-4bit}"
 V3_OUTPUT_S3_PREFIX="${V3_OUTPUT_S3_PREFIX:-v3/pseudo}"
 CORPUS_TARGET_RECORDS="${CORPUS_TARGET_RECORDS:-500000}"
+UNSLOTH_IMAGE="${UNSLOTH_IMAGE:-unsloth/unsloth:latest}"
 
 : "${BUCKET:?BUCKET env var required}"
 : "${IAM_INSTANCE_PROFILE:?IAM_INSTANCE_PROFILE env var required}"
-: "${TEACHER_S3_PREFIX:?TEACHER_S3_PREFIX env var required (e.g. v3/teacher/run-XXX/artifacts)}"
-# HF_TOKEN optional (Unsloth mirrors are public)
+: "${TEACHER_S3_PREFIX:?TEACHER_S3_PREFIX env var required}"
 HF_TOKEN="${HF_TOKEN:-}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -54,17 +54,17 @@ REPO_TAR="/tmp/gpf-v3-pseudo-${TIMESTAMP}.tar.gz"
 echo "[1/5] Pack repo"
 tar -czf "${REPO_TAR}" -C "${REPO_ROOT}" \
     scripts/v3/ scripts/aws/ configs/ \
-    requirements-unsloth.txt LICENSING.md NOTICE ATTRIBUTION.txt \
+    LICENSING.md NOTICE ATTRIBUTION.txt \
     docs/V3_DISTILLATION_PLAN.md
 
 echo "[2/5] Upload repo tar"
 aws s3 cp "${REPO_TAR}" "s3://${BUCKET}/${REPO_KEY}" --region "${REGION}"
 
-echo "[3/5] Resolve Deep Learning PyTorch GPU AMI"
+echo "[3/5] Resolve Deep Learning Base GPU AMI"
 AMI_ID="$(aws ec2 describe-images --region "${REGION}" \
     --owners amazon \
     --filters \
-        'Name=name,Values=Deep Learning OSS Nvidia Driver AMI GPU PyTorch*Ubuntu 22.04*' \
+        'Name=name,Values=Deep Learning Base OSS Nvidia Driver GPU AMI (Ubuntu 22.04)*' \
         'Name=state,Values=available' \
     --query 'sort_by(Images, &CreationDate)[-1].ImageId' --output text)"
 echo "  AMI: ${AMI_ID}"
@@ -82,26 +82,21 @@ RUN_PREFIX="${RUN_PREFIX}"
 TEACHER_HF_ID="${TEACHER_HF_ID}"
 TEACHER_S3_PREFIX="${TEACHER_S3_PREFIX}"
 CORPUS_TARGET_RECORDS="${CORPUS_TARGET_RECORDS}"
+UNSLOTH_IMAGE="${UNSLOTH_IMAGE}"
 
 if [ -n "${HF_TOKEN}" ]; then
   export HF_TOKEN="${HF_TOKEN}"
   export HUGGING_FACE_HUB_TOKEN="${HF_TOKEN}"
 fi
-export HF_HUB_ENABLE_HF_TRANSFER=1
 
-# STS / IAM diagnostic dump (loud failure if perms broken).
-{
-  echo "=== STS identity ==="
-  aws sts get-caller-identity --output json 2>&1 || echo "STS_FAIL"
-  echo "=== Instance metadata IAM ==="
-  TOKEN="\$(curl -sS -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' 2>&1)"
-  curl -sS -H "X-aws-ec2-metadata-token: \${TOKEN}" 'http://169.254.169.254/latest/meta-data/iam/info' 2>&1
-  echo
-} > /var/log/gpf-v3-sts.log 2>&1
-aws s3 cp /var/log/gpf-v3-sts.log \\
-  "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/sts.log" \\
-  --region "\${RUN_REGION}"
-aws s3 ls "s3://\${RUN_BUCKET}/" --region "\${RUN_REGION}" >/dev/null
+_v3_stamp() {
+  local label="\$1"
+  local ts="\$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "[stamp] \${ts} \${label}" >> /var/log/gpf-v3-stamps.log
+  aws s3 cp /var/log/gpf-v3-stamps.log \\
+    "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/stamps.log" \\
+    --region "\${RUN_REGION}" --quiet 2>/dev/null || true
+}
 
 _pump() {
   while true; do
@@ -112,11 +107,10 @@ _pump() {
     sleep 30
   done
 }
-_pump &
-_PUMP_PID=\$!
 
 _finalize() {
   set +e
+  _v3_stamp "FINALIZE"
   kill \$_PUMP_PID 2>/dev/null || true
   echo "[finalize] uploading pseudo-labels + logs"
   if [ -f /opt/gpf/data/v3_pseudo/pseudo_labels.jsonl ]; then
@@ -132,52 +126,71 @@ _finalize() {
   aws s3 cp /var/log/gpf-v3-pseudo.log \\
     "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/gpf-v3-pseudo.log" \\
     --region "\${RUN_REGION}" --only-show-errors
+  aws s3 cp /var/log/cloud-init-output.log \\
+    "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/cloud-init-output.log" \\
+    --region "\${RUN_REGION}" --only-show-errors 2>/dev/null
+  _v3_stamp "SHUTDOWN"
   shutdown -h now
 }
 trap _finalize EXIT INT TERM
+_pump &
+_PUMP_PID=\$!
 
-if ! command -v aws >/dev/null 2>&1; then
-  curl -sSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
-  unzip -q /tmp/awscliv2.zip -d /tmp/
-  /tmp/aws/install
+# STS / IAM diagnostic dump.
+{
+  echo "=== STS identity ==="
+  aws sts get-caller-identity --output json 2>&1 || echo "STS_FAIL"
+} > /var/log/gpf-v3-sts.log 2>&1
+aws s3 cp /var/log/gpf-v3-sts.log \\
+  "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/sts.log" \\
+  --region "\${RUN_REGION}" || true
+
+_v3_stamp "BOOT"
+aws s3 ls "s3://\${RUN_BUCKET}/" --region "\${RUN_REGION}" >/dev/null
+_v3_stamp "S3_OK"
+
+# 1. Verify Docker + nvidia-container-toolkit (Base DLAMI ships both).
+_v3_stamp "DOCKER_CHECK"
+if ! command -v docker >/dev/null 2>&1; then
+  apt-get update -q
+  apt-get install -y --no-install-recommends docker.io
+  systemctl enable --now docker
 fi
+if ! docker info 2>&1 | grep -qi "nvidia"; then
+  distribution="\$(. /etc/os-release; echo \${ID}\${VERSION_ID})"
+  curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | \\
+    gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+  curl -fsSL "https://nvidia.github.io/libnvidia-container/\${distribution}/libnvidia-container.list" | \\
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' \\
+    > /etc/apt/sources.list.d/nvidia-container-toolkit.list
+  apt-get update -q
+  apt-get install -y nvidia-container-toolkit
+  nvidia-ctk runtime configure --runtime=docker
+  systemctl restart docker
+fi
+docker info >/dev/null
+nvidia-smi >/dev/null
 
-# Pull repo
+# 2. Pull repo.
+_v3_stamp "PULL_REPO"
 mkdir -p /opt/gpf
 cd /opt/gpf
 aws s3 cp "s3://\${RUN_BUCKET}/${REPO_KEY}" /tmp/gpf-v3.tar.gz \\
   --region "\${RUN_REGION}"
 tar -xzf /tmp/gpf-v3.tar.gz -C /opt/gpf/
 
-# Activate DLAMI's pytorch conda env (ships torch + CUDA pre-built).
-if [ -f /opt/conda/etc/profile.d/conda.sh ]; then
-  source /opt/conda/etc/profile.d/conda.sh
-  conda activate pytorch 2>/dev/null \\
-    || conda activate pytorch_p310 2>/dev/null \\
-    || conda activate base 2>/dev/null || true
-fi
-PYBIN="\$(command -v python3)"
-echo "Using PYBIN=\${PYBIN}"
-\${PYBIN} -c "import torch; print('torch:', torch.__version__, 'cuda:', torch.cuda.is_available())"
-\${PYBIN} -m pip install --upgrade pip wheel
-\${PYBIN} -m pip install --no-deps unsloth || \${PYBIN} -m pip install unsloth
-\${PYBIN} -m pip install trl bitsandbytes peft accelerate datasets seqeval sentencepiece pyyaml hf_transfer
+# 3. Pull Unsloth Docker image.
+_v3_stamp "DOCKER_PULL"
+docker pull "\${UNSLOTH_IMAGE}"
 
-# Step A: Download + chunk Greek corpus (commercial-clean sources only)
-mkdir -p /opt/gpf/data/v3_corpus
-\${PYBIN} /opt/gpf/scripts/v3/load_greek_corpus.py \\
-  --output /opt/gpf/data/v3_corpus/greek_corpus.jsonl \\
-  --target-records "\${CORPUS_TARGET_RECORDS}" \\
-  --sources greek_pd common_voice greek_legal
-
-# Step B: Download teacher LoRA adapter from S3
-mkdir -p /opt/gpf/teacher_adapter
+# 4. Sync teacher LoRA adapter from S3.
+_v3_stamp "SYNC_ADAPTER"
+mkdir -p /opt/gpf/teacher_adapter /opt/gpf/data/v3_corpus /opt/gpf/data/v3_pseudo
 aws s3 sync "s3://\${RUN_BUCKET}/\${TEACHER_S3_PREFIX}/" \\
   /opt/gpf/teacher_adapter/ \\
   --region "\${RUN_REGION}"
 
-# Use canonical adapter path (output_dir/lora_adapters from train_teacher.py).
-# Pre-glob to first match — avoids picking mid-training checkpoint subdirs.
+# Resolve canonical adapter path (output_dir/lora_adapters from train_teacher.py).
 ADAPTER_DIR=""
 for cand in /opt/gpf/teacher_adapter/run-*/lora_adapters \\
             /opt/gpf/teacher_adapter/lora_adapters \\
@@ -195,19 +208,54 @@ if [ -z "\${ADAPTER_DIR}" ]; then
   exit 1
 fi
 echo "Using LoRA adapter: \${ADAPTER_DIR}"
+ADAPTER_REL="\${ADAPTER_DIR#/opt/gpf/}"
 
-# Step C: Run pseudo-label generation via Unsloth DIRECT inference.
-# (Reviewer C-NEW-1/C-NEW-2: vLLM merge+serve approach OOMs L40S 48GB and
-# bnb-4bit merge_and_unload is unreliable. Unsloth FastLanguageModel runs
-# bnb-4bit base + LoRA adapter inference natively in ~22GB VRAM, batched.)
-mkdir -p /opt/gpf/data/v3_pseudo
-\${PYBIN} /opt/gpf/scripts/v3/generate_pseudo_labels_unsloth.py \\
+# Persistent HF cache on DLAMI's NVMe.
+HF_CACHE_DIR="/opt/dlami/nvme/hf-cache"
+if [ ! -d /opt/dlami/nvme ]; then
+  HF_CACHE_DIR="/opt/gpf/.hf-cache"
+fi
+mkdir -p "\${HF_CACHE_DIR}"
+chmod 1777 "\${HF_CACHE_DIR}" /opt/gpf/data /opt/gpf/teacher_adapter
+
+# 5. Step A: Greek corpus (commercial-clean sources only).
+_v3_stamp "CORPUS"
+docker run --rm --gpus all --ipc=host --shm-size=8g \\
+  -u 0:0 \\
+  -v /opt/gpf:/workspace/gpf \\
+  -v "\${HF_CACHE_DIR}":/workspace/.cache/huggingface \\
+  -e HF_HOME=/workspace/.cache/huggingface \\
+  -e HF_HUB_ENABLE_HF_TRANSFER=1 \\
+  -e HF_TOKEN="\${HF_TOKEN:-}" \\
+  --entrypoint /opt/venv/bin/python \\
+  "\${UNSLOTH_IMAGE}" \\
+  /workspace/gpf/scripts/v3/load_greek_corpus.py \\
+  --output /workspace/gpf/data/v3_corpus/greek_corpus.jsonl \\
+  --target-records "\${CORPUS_TARGET_RECORDS}" \\
+  --sources greek_pd common_voice greek_legal
+
+# 6. Step B: pseudo-label generation via Unsloth direct inference.
+# (Reviewer C-NEW-1/C-NEW-2: vLLM merge+serve OOMs L40S 48GB; bnb-4bit
+# merge_and_unload is unreliable. FastLanguageModel runs bnb-4bit + LoRA
+# natively in ~22GB VRAM, batched.)
+_v3_stamp "PSEUDO_GEN"
+docker run --rm --gpus all --ipc=host --shm-size=8g \\
+  -u 0:0 \\
+  -v /opt/gpf:/workspace/gpf \\
+  -v "\${HF_CACHE_DIR}":/workspace/.cache/huggingface \\
+  -e HF_HOME=/workspace/.cache/huggingface \\
+  -e HF_HUB_ENABLE_HF_TRANSFER=1 \\
+  -e HF_TOKEN="\${HF_TOKEN:-}" \\
+  --entrypoint /opt/venv/bin/python \\
+  "\${UNSLOTH_IMAGE}" \\
+  /workspace/gpf/scripts/v3/generate_pseudo_labels_unsloth.py \\
   --base-model "\${TEACHER_HF_ID}" \\
-  --lora-adapter "\${ADAPTER_DIR}" \\
-  --input /opt/gpf/data/v3_corpus/greek_corpus.jsonl \\
-  --output /opt/gpf/data/v3_pseudo/pseudo_labels.jsonl \\
+  --lora-adapter "/workspace/gpf/\${ADAPTER_REL}" \\
+  --input /workspace/gpf/data/v3_corpus/greek_corpus.jsonl \\
+  --output /workspace/gpf/data/v3_pseudo/pseudo_labels.jsonl \\
   --batch-size 8 \\
   --max-records "\${CORPUS_TARGET_RECORDS}"
+_v3_stamp "PSEUDO_DONE"
 
 echo "PSEUDO-LABEL GENERATION COMPLETE"
 EOF
@@ -242,7 +290,18 @@ cat > "${SPEC_FILE}" <<EOF
 EOF
 
 if [ "${MARKET_TYPE}" = "ondemand" ] || [ "${MARKET_TYPE}" = "on-demand" ]; then
-  python3 -c "import json,sys; d=json.load(open(sys.argv[1])); d.pop('InstanceMarketOptions', None); json.dump(d, open(sys.argv[1],'w'))" "${SPEC_FILE}"
+  PY_HOST=""
+  for cand in python python3 py; do
+    if command -v "$cand" >/dev/null 2>&1 && "$cand" --version >/dev/null 2>&1; then
+      PY_HOST="$cand"
+      break
+    fi
+  done
+  if [ -z "${PY_HOST}" ]; then
+    echo "FAIL: no working Python found on host"
+    exit 1
+  fi
+  "${PY_HOST}" -c "import json,sys; d=json.load(open(sys.argv[1])); d.pop('InstanceMarketOptions', None); json.dump(d, open(sys.argv[1],'w'))" "${SPEC_FILE}"
 fi
 
 echo "[4/5] Request EC2 instance"
@@ -254,7 +313,6 @@ INSTANCE_ID="$(aws ec2 run-instances --region "${REGION}" \
     --cli-input-json "file://${SPEC_FILE_NATIVE}" \
     --query 'Instances[0].InstanceId' --output text)"
 
-# Post-launch IAM profile verification — abort+terminate if profile null.
 echo "[4.5/5] Verify IAM profile attached"
 sleep 8
 ATTACHED_PROFILE="$(aws ec2 describe-instances --region "${REGION}" \
@@ -270,6 +328,7 @@ echo "  IAM profile: ${ATTACHED_PROFILE}"
 
 echo "[5/5] Instance: ${INSTANCE_ID}"
 echo "Run ID:        ${TIMESTAMP}"
+echo "Image:         ${UNSLOTH_IMAGE}"
 echo "Teacher LoRA:  s3://${BUCKET}/${TEACHER_S3_PREFIX}"
 echo "Output S3:     s3://${BUCKET}/${RUN_PREFIX}/"
 echo "Tail log:      aws s3 cp s3://${BUCKET}/${RUN_PREFIX}/logs/gpf-v3-pseudo.live.log - --region ${REGION}"

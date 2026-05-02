@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# ec2_v3_distill.sh — Launch AWS EC2 instance to distill ONE v3 student tier.
+# ec2_v3_distill.sh — Run student tier distillation inside the unsloth/unsloth
+# Docker image on EC2 spot.
 #
 # Required env vars:
-#   BUCKET                — S3 bucket holding v3_chat + v3_pseudo data
-#   IAM_INSTANCE_PROFILE  — EC2 profile with R/W access to BUCKET
-#   V3_TIER               — one of: mini | pro | max
-#                            (lite uses scripts/run_opf_train.py — different path)
-#                            (ultra ships teacher itself — no extra training)
+#   BUCKET                — S3 bucket
+#   IAM_INSTANCE_PROFILE  — EC2 profile R/W
+#   V3_TIER               — mini | pro | max
 #
 # Optional:
 #   AWS_REGION            — default eu-north-1
@@ -14,16 +13,12 @@
 #   INSTANCE_TYPE         — default g6.xlarge (L4 24GB)
 #   MARKET_TYPE           — spot (default) or ondemand
 #   SPOT_MAX_PRICE        — default 0.50
-#   STUDENT_HF_ID         — override student.hf_id from yaml
+#   STUDENT_HF_ID         — override student.hf_id
 #   V3_CHAT_S3_PREFIX     — default assembled/v3_chat
 #   V3_PSEUDO_S3_PREFIX   — default v3/pseudo
 #   V3_OUTPUT_S3_PREFIX   — default v3/students
 #   MAX_TRAIN_SAMPLES     — for pilot runs
-#
-# Example: train all 3 causal-LM students in parallel
-#   for tier in mini pro max; do
-#     V3_TIER=$tier bash scripts/aws/ec2_v3_distill.sh &
-#   done
+#   UNSLOTH_IMAGE         — default unsloth/unsloth:latest
 
 set -euo pipefail
 
@@ -37,11 +32,11 @@ V3_PSEUDO_S3_PREFIX="${V3_PSEUDO_S3_PREFIX:-v3/pseudo}"
 V3_OUTPUT_S3_PREFIX="${V3_OUTPUT_S3_PREFIX:-v3/students}"
 MAX_TRAIN_SAMPLES="${MAX_TRAIN_SAMPLES:-}"
 STUDENT_HF_ID="${STUDENT_HF_ID:-}"
+UNSLOTH_IMAGE="${UNSLOTH_IMAGE:-unsloth/unsloth:latest}"
 
 : "${BUCKET:?BUCKET env var required}"
 : "${IAM_INSTANCE_PROFILE:?IAM_INSTANCE_PROFILE env var required}"
 : "${V3_TIER:?V3_TIER required: mini | pro | max}"
-# HF_TOKEN optional (Unsloth mirrors are public)
 HF_TOKEN="${HF_TOKEN:-}"
 
 case "${V3_TIER}" in
@@ -56,20 +51,20 @@ REPO_KEY="code/gpf-v3-${V3_TIER}-${TIMESTAMP}.tar.gz"
 RUN_PREFIX="${V3_OUTPUT_S3_PREFIX}/${V3_TIER}/run-${TIMESTAMP}"
 REPO_TAR="/tmp/gpf-v3-${V3_TIER}-${TIMESTAMP}.tar.gz"
 
-echo "[1/5] Pack repo (scripts/v3 + configs + requirements)"
+echo "[1/5] Pack repo (scripts/v3 + configs)"
 tar -czf "${REPO_TAR}" -C "${REPO_ROOT}" \
     scripts/v3/ scripts/aws/ configs/ \
-    requirements-unsloth.txt LICENSING.md NOTICE ATTRIBUTION.txt \
+    LICENSING.md NOTICE ATTRIBUTION.txt \
     docs/V3_DISTILLATION_PLAN.md
 
 echo "[2/5] Upload repo tar to s3://${BUCKET}/${REPO_KEY}"
 aws s3 cp "${REPO_TAR}" "s3://${BUCKET}/${REPO_KEY}" --region "${REGION}"
 
-echo "[3/5] Resolve Deep Learning PyTorch GPU AMI"
+echo "[3/5] Resolve Deep Learning Base GPU AMI"
 AMI_ID="$(aws ec2 describe-images --region "${REGION}" \
     --owners amazon \
     --filters \
-        'Name=name,Values=Deep Learning OSS Nvidia Driver AMI GPU PyTorch*Ubuntu 22.04*' \
+        'Name=name,Values=Deep Learning Base OSS Nvidia Driver GPU AMI (Ubuntu 22.04)*' \
         'Name=state,Values=available' \
     --query 'sort_by(Images, &CreationDate)[-1].ImageId' --output text)"
 echo "  AMI: ${AMI_ID}"
@@ -89,26 +84,21 @@ STUDENT_HF_ID="${STUDENT_HF_ID}"
 V3_CHAT_S3_PREFIX="${V3_CHAT_S3_PREFIX}"
 V3_PSEUDO_S3_PREFIX="${V3_PSEUDO_S3_PREFIX}"
 MAX_TRAIN_SAMPLES="${MAX_TRAIN_SAMPLES}"
+UNSLOTH_IMAGE="${UNSLOTH_IMAGE}"
 
 if [ -n "${HF_TOKEN}" ]; then
   export HF_TOKEN="${HF_TOKEN}"
   export HUGGING_FACE_HUB_TOKEN="${HF_TOKEN}"
 fi
-export HF_HUB_ENABLE_HF_TRANSFER=1
 
-# STS / IAM diagnostic dump (loud failure if perms broken).
-{
-  echo "=== STS identity ==="
-  aws sts get-caller-identity --output json 2>&1 || echo "STS_FAIL"
-  echo "=== Instance metadata IAM ==="
-  TOKEN="\$(curl -sS -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' 2>&1)"
-  curl -sS -H "X-aws-ec2-metadata-token: \${TOKEN}" 'http://169.254.169.254/latest/meta-data/iam/info' 2>&1
-  echo
-} > /var/log/gpf-v3-sts.log 2>&1
-aws s3 cp /var/log/gpf-v3-sts.log \\
-  "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/sts.log" \\
-  --region "\${RUN_REGION}"
-aws s3 ls "s3://\${RUN_BUCKET}/" --region "\${RUN_REGION}" >/dev/null
+_v3_stamp() {
+  local label="\$1"
+  local ts="\$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "[stamp] \${ts} \${label}" >> /var/log/gpf-v3-stamps.log
+  aws s3 cp /var/log/gpf-v3-stamps.log \\
+    "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/stamps.log" \\
+    --region "\${RUN_REGION}" --quiet 2>/dev/null || true
+}
 
 _v3_log_pump() {
   while true; do
@@ -119,11 +109,10 @@ _v3_log_pump() {
     sleep 30
   done
 }
-_v3_log_pump &
-_PUMP_PID=\$!
 
 _v3_finalize() {
   set +e
+  _v3_stamp "FINALIZE"
   kill \$_PUMP_PID 2>/dev/null || true
   echo "[finalize] uploading artefacts + logs"
   if [ -d /opt/gpf/artifacts/v3/students ]; then
@@ -134,40 +123,67 @@ _v3_finalize() {
   aws s3 cp /var/log/gpf-v3-\${V3_TIER}.log \\
     "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/gpf-v3-\${V3_TIER}.log" \\
     --region "\${RUN_REGION}" --only-show-errors
+  aws s3 cp /var/log/cloud-init-output.log \\
+    "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/cloud-init-output.log" \\
+    --region "\${RUN_REGION}" --only-show-errors 2>/dev/null
+  _v3_stamp "SHUTDOWN"
   shutdown -h now
 }
 trap _v3_finalize EXIT INT TERM
+_v3_log_pump &
+_PUMP_PID=\$!
 
-# Install AWS CLI if missing
-if ! command -v aws >/dev/null 2>&1; then
-  curl -sSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
-  unzip -q /tmp/awscliv2.zip -d /tmp/
-  /tmp/aws/install
+# STS / IAM diagnostic dump.
+{
+  echo "=== STS identity ==="
+  aws sts get-caller-identity --output json 2>&1 || echo "STS_FAIL"
+} > /var/log/gpf-v3-sts.log 2>&1
+aws s3 cp /var/log/gpf-v3-sts.log \\
+  "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/sts.log" \\
+  --region "\${RUN_REGION}" || true
+
+_v3_stamp "BOOT"
+aws s3 ls "s3://\${RUN_BUCKET}/" --region "\${RUN_REGION}" >/dev/null
+_v3_stamp "S3_OK"
+
+# 1. Verify Docker + nvidia-container-toolkit (Base DLAMI ships both).
+_v3_stamp "DOCKER_CHECK"
+if ! command -v docker >/dev/null 2>&1; then
+  apt-get update -q
+  apt-get install -y --no-install-recommends docker.io
+  systemctl enable --now docker
 fi
+if ! docker info 2>&1 | grep -qi "nvidia"; then
+  distribution="\$(. /etc/os-release; echo \${ID}\${VERSION_ID})"
+  curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | \\
+    gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+  curl -fsSL "https://nvidia.github.io/libnvidia-container/\${distribution}/libnvidia-container.list" | \\
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' \\
+    > /etc/apt/sources.list.d/nvidia-container-toolkit.list
+  apt-get update -q
+  apt-get install -y nvidia-container-toolkit
+  nvidia-ctk runtime configure --runtime=docker
+  systemctl restart docker
+fi
+docker info >/dev/null
+nvidia-smi >/dev/null
 
-# Pull repo
+# 2. Pull repo.
+_v3_stamp "PULL_REPO"
 mkdir -p /opt/gpf
 cd /opt/gpf
 aws s3 cp "s3://\${RUN_BUCKET}/${REPO_KEY}" /tmp/gpf-v3.tar.gz \\
   --region "\${RUN_REGION}"
 tar -xzf /tmp/gpf-v3.tar.gz -C /opt/gpf/
 
-# Activate DLAMI's pytorch conda env (ships torch + CUDA pre-built).
-if [ -f /opt/conda/etc/profile.d/conda.sh ]; then
-  source /opt/conda/etc/profile.d/conda.sh
-  conda activate pytorch 2>/dev/null \\
-    || conda activate pytorch_p310 2>/dev/null \\
-    || conda activate base 2>/dev/null || true
-fi
-PYBIN="\$(command -v python3)"
-echo "Using PYBIN=\${PYBIN}"
-\${PYBIN} -c "import torch; print('torch:', torch.__version__, 'cuda:', torch.cuda.is_available())"
-\${PYBIN} -m pip install --upgrade pip wheel
-\${PYBIN} -m pip install --no-deps unsloth || \${PYBIN} -m pip install unsloth
-\${PYBIN} -m pip install trl bitsandbytes peft accelerate datasets seqeval sentencepiece pyyaml hf_transfer
+# 3. Pull Unsloth Docker image.
+_v3_stamp "DOCKER_PULL"
+docker pull "\${UNSLOTH_IMAGE}"
 
-# Sync v3_chat (gold) + v3_pseudo (teacher pseudo-labels)
+# 4. Sync v3_chat (gold) + v3_pseudo (teacher pseudo-labels).
+_v3_stamp "SYNC_DATA"
 mkdir -p /opt/gpf/data/processed/v3_chat /opt/gpf/data/processed/v3_pseudo
+mkdir -p /opt/gpf/data/processed/v3_pseudo_chat /opt/gpf/artifacts/v3/students
 aws s3 sync "s3://\${RUN_BUCKET}/\${V3_CHAT_S3_PREFIX}/" \\
   /opt/gpf/data/processed/v3_chat/ \\
   --region "\${RUN_REGION}" --exclude "*" --include "train.jsonl" --include "validation.jsonl"
@@ -175,42 +191,62 @@ aws s3 sync "s3://\${RUN_BUCKET}/\${V3_PSEUDO_S3_PREFIX}/" \\
   /opt/gpf/data/processed/v3_pseudo/ \\
   --region "\${RUN_REGION}" --exclude "*" --include "pseudo_labels.jsonl" || true
 
-# Convert pseudo-labels (OPF span format) to chat format BEFORE concatenation
-# (gold train is already chat format; pseudo is OPF — they are NOT compatible
-# without this conversion, would crash trainer with KeyError 'messages').
-mkdir -p /opt/gpf/data/processed/v3_pseudo_chat
+# Persistent HF cache on DLAMI's NVMe.
+HF_CACHE_DIR="/opt/dlami/nvme/hf-cache"
+if [ ! -d /opt/dlami/nvme ]; then
+  HF_CACHE_DIR="/opt/gpf/.hf-cache"
+fi
+mkdir -p "\${HF_CACHE_DIR}"
+chmod 1777 "\${HF_CACHE_DIR}" /opt/gpf/data/processed /opt/gpf/artifacts
+
+# 5. Convert pseudo-labels (OPF span format) to chat format BEFORE concat.
+# Reviewer C-NEW-3: do NOT pass --shuffle-spans here. Pseudo-labels were
+# generated by the teacher in document order and the strict-cursor resolver
+# in generate_pseudo_labels.py already enforces that ordering.
+_v3_stamp "CONVERT_PSEUDO"
 PSEUDO_RAW="\$(ls /opt/gpf/data/processed/v3_pseudo/*.jsonl 2>/dev/null | head -1)"
 if [ -n "\${PSEUDO_RAW}" ]; then
-  # NOTE: do NOT pass --shuffle-spans here. Pseudo-labels were generated by the
-  # teacher in document order; the strict-cursor resolver in generate_pseudo_labels.py
-  # already enforces that. Shuffling here would reorder spans and the student would
-  # learn an output ordering that contradicts the teacher's. (Reviewer C-NEW-3.)
-  \${PYBIN} /opt/gpf/scripts/v3/convert_opf_to_chat.py \\
-    --input  "\${PSEUDO_RAW}" \\
-    --output /opt/gpf/data/processed/v3_pseudo_chat/pseudo_chat.jsonl \\
-    --label-space /opt/gpf/configs/label_space_v2.json
+  PSEUDO_RAW_REL="\${PSEUDO_RAW#/opt/gpf/}"
+  docker run --rm \\
+    -u 0:0 \\
+    -v /opt/gpf:/workspace/gpf \\
+    --entrypoint /opt/venv/bin/python \\
+    "\${UNSLOTH_IMAGE}" \\
+    /workspace/gpf/scripts/v3/convert_opf_to_chat.py \\
+    --input  "/workspace/gpf/\${PSEUDO_RAW_REL}" \\
+    --output /workspace/gpf/data/processed/v3_pseudo_chat/pseudo_chat.jsonl \\
+    --label-space /workspace/gpf/configs/label_space_v2.json
   cat /opt/gpf/data/processed/v3_chat/train.jsonl \\
       /opt/gpf/data/processed/v3_pseudo_chat/pseudo_chat.jsonl \\
       > /opt/gpf/data/processed/train_with_pseudo.jsonl
 else
-  # No pseudo-labels available — train on gold only (still useful for ablation)
   cp /opt/gpf/data/processed/v3_chat/train.jsonl \\
      /opt/gpf/data/processed/train_with_pseudo.jsonl
 fi
 
-# Train student
-mkdir -p /opt/gpf/artifacts/v3/students
+# 6. Train student inside Unsloth container.
+_v3_stamp "TRAIN_START"
 TRAIN_ARGS=()
 if [ -n "\${MAX_TRAIN_SAMPLES}" ]; then
   TRAIN_ARGS+=( --max-train-samples "\${MAX_TRAIN_SAMPLES}" )
 fi
-\${PYBIN} /opt/gpf/scripts/v3/train_student_distill.py \\
-  --config /opt/gpf/configs/v3_distillation.yaml \\
+docker run --rm --gpus all --ipc=host --shm-size=8g \\
+  -u 0:0 \\
+  -v /opt/gpf:/workspace/gpf \\
+  -v "\${HF_CACHE_DIR}":/workspace/.cache/huggingface \\
+  -e HF_HOME=/workspace/.cache/huggingface \\
+  -e HF_HUB_ENABLE_HF_TRANSFER=1 \\
+  -e HF_TOKEN="\${HF_TOKEN:-}" \\
+  --entrypoint /opt/venv/bin/python \\
+  "\${UNSLOTH_IMAGE}" \\
+  /workspace/gpf/scripts/v3/train_student_distill.py \\
+  --config /workspace/gpf/configs/v3_distillation.yaml \\
   --tier "\${V3_TIER}" \\
-  --output-dir "/opt/gpf/artifacts/v3/students/\${V3_TIER}-\${RUN_TIMESTAMP}" \\
-  --train-jsonl /opt/gpf/data/processed/train_with_pseudo.jsonl \\
-  --eval-jsonl /opt/gpf/data/processed/v3_chat/validation.jsonl \\
+  --output-dir "/workspace/gpf/artifacts/v3/students/\${V3_TIER}-\${RUN_TIMESTAMP}" \\
+  --train-jsonl /workspace/gpf/data/processed/train_with_pseudo.jsonl \\
+  --eval-jsonl /workspace/gpf/data/processed/v3_chat/validation.jsonl \\
   "\${TRAIN_ARGS[@]}"
+_v3_stamp "TRAIN_DONE"
 
 echo "STUDENT \${V3_TIER} DISTILL COMPLETE"
 EOF
@@ -245,7 +281,18 @@ cat > "${SPEC_FILE}" <<EOF
 EOF
 
 if [ "${MARKET_TYPE}" = "ondemand" ] || [ "${MARKET_TYPE}" = "on-demand" ]; then
-  python3 -c "import json,sys; d=json.load(open(sys.argv[1])); d.pop('InstanceMarketOptions', None); json.dump(d, open(sys.argv[1],'w'))" "${SPEC_FILE}"
+  PY_HOST=""
+  for cand in python python3 py; do
+    if command -v "$cand" >/dev/null 2>&1 && "$cand" --version >/dev/null 2>&1; then
+      PY_HOST="$cand"
+      break
+    fi
+  done
+  if [ -z "${PY_HOST}" ]; then
+    echo "FAIL: no working Python found on host"
+    exit 1
+  fi
+  "${PY_HOST}" -c "import json,sys; d=json.load(open(sys.argv[1])); d.pop('InstanceMarketOptions', None); json.dump(d, open(sys.argv[1],'w'))" "${SPEC_FILE}"
 fi
 
 echo "[4/5] Request EC2 instance (tier=${V3_TIER}, ${INSTANCE_TYPE} ${MARKET_TYPE})"
@@ -257,7 +304,6 @@ INSTANCE_ID="$(aws ec2 run-instances --region "${REGION}" \
     --cli-input-json "file://${SPEC_FILE_NATIVE}" \
     --query 'Instances[0].InstanceId' --output text)"
 
-# Post-launch IAM profile verification — abort+terminate if profile null.
 echo "[4.5/5] Verify IAM profile attached"
 sleep 8
 ATTACHED_PROFILE="$(aws ec2 describe-instances --region "${REGION}" \
@@ -274,5 +320,6 @@ echo "  IAM profile: ${ATTACHED_PROFILE}"
 echo "[5/5] Instance: ${INSTANCE_ID}"
 echo "Tier:        ${V3_TIER}"
 echo "Run ID:      ${TIMESTAMP}"
+echo "Image:       ${UNSLOTH_IMAGE}"
 echo "Output S3:   s3://${BUCKET}/${RUN_PREFIX}/"
 echo "Tail log:    aws s3 cp s3://${BUCKET}/${RUN_PREFIX}/logs/gpf-v3-${V3_TIER}.live.log - --region ${REGION}"
