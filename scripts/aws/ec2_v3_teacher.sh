@@ -230,8 +230,9 @@ docker run --rm --gpus all --ipc=host --shm-size=8g \\
   -e HF_HUB_ENABLE_HF_TRANSFER=1 \\
   -e HF_TOKEN="\${HF_TOKEN:-}" \\
   -e HUGGING_FACE_HUB_TOKEN="\${HF_TOKEN:-}" \\
-  --entrypoint /opt/venv/bin/python \\
+  --entrypoint /bin/bash \\
   "\${UNSLOTH_IMAGE}" \\
+  /workspace/gpf/scripts/v3/_run_in_container.sh \\
   /workspace/gpf/scripts/v3/train_teacher.py \\
   --config /workspace/gpf/configs/v3_distillation.yaml \\
   --output-dir "/workspace/gpf/artifacts/v3/teacher/run-\${RUN_TIMESTAMP}" \\

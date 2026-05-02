@@ -227,8 +227,9 @@ docker run --rm --gpus all --ipc=host --shm-size=8g \\
   -e HF_HOME=/workspace/.cache/huggingface \\
   -e HF_HUB_ENABLE_HF_TRANSFER=1 \\
   -e HF_TOKEN="\${HF_TOKEN:-}" \\
-  --entrypoint /opt/venv/bin/python \\
+  --entrypoint /bin/bash \\
   "\${UNSLOTH_IMAGE}" \\
+  /workspace/gpf/scripts/v3/_run_in_container.sh \\
   /workspace/gpf/scripts/v3/load_greek_corpus.py \\
   --output /workspace/gpf/data/v3_corpus/greek_corpus.jsonl \\
   --target-records "\${CORPUS_TARGET_RECORDS}" \\
@@ -246,8 +247,9 @@ docker run --rm --gpus all --ipc=host --shm-size=8g \\
   -e HF_HOME=/workspace/.cache/huggingface \\
   -e HF_HUB_ENABLE_HF_TRANSFER=1 \\
   -e HF_TOKEN="\${HF_TOKEN:-}" \\
-  --entrypoint /opt/venv/bin/python \\
+  --entrypoint /bin/bash \\
   "\${UNSLOTH_IMAGE}" \\
+  /workspace/gpf/scripts/v3/_run_in_container.sh \\
   /workspace/gpf/scripts/v3/generate_pseudo_labels_unsloth.py \\
   --base-model "\${TEACHER_HF_ID}" \\
   --lora-adapter "/workspace/gpf/\${ADAPTER_REL}" \\

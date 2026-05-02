@@ -207,11 +207,14 @@ _v3_stamp "CONVERT_PSEUDO"
 PSEUDO_RAW="\$(ls /opt/gpf/data/processed/v3_pseudo/*.jsonl 2>/dev/null | head -1)"
 if [ -n "\${PSEUDO_RAW}" ]; then
   PSEUDO_RAW_REL="\${PSEUDO_RAW#/opt/gpf/}"
+  # convert_opf_to_chat.py uses only stdlib — skip the transformers upgrade.
   docker run --rm \\
     -u 0:0 \\
     -v /opt/gpf:/workspace/gpf \\
-    --entrypoint /opt/venv/bin/python \\
+    -e SKIP_TRANSFORMERS_UPGRADE=1 \\
+    --entrypoint /bin/bash \\
     "\${UNSLOTH_IMAGE}" \\
+    /workspace/gpf/scripts/v3/_run_in_container.sh \\
     /workspace/gpf/scripts/v3/convert_opf_to_chat.py \\
     --input  "/workspace/gpf/\${PSEUDO_RAW_REL}" \\
     --output /workspace/gpf/data/processed/v3_pseudo_chat/pseudo_chat.jsonl \\
@@ -237,8 +240,9 @@ docker run --rm --gpus all --ipc=host --shm-size=8g \\
   -e HF_HOME=/workspace/.cache/huggingface \\
   -e HF_HUB_ENABLE_HF_TRANSFER=1 \\
   -e HF_TOKEN="\${HF_TOKEN:-}" \\
-  --entrypoint /opt/venv/bin/python \\
+  --entrypoint /bin/bash \\
   "\${UNSLOTH_IMAGE}" \\
+  /workspace/gpf/scripts/v3/_run_in_container.sh \\
   /workspace/gpf/scripts/v3/train_student_distill.py \\
   --config /workspace/gpf/configs/v3_distillation.yaml \\
   --tier "\${V3_TIER}" \\
