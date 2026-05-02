@@ -15,7 +15,10 @@
 set -euo pipefail
 
 if [ "${SKIP_TRANSFORMERS_UPGRADE:-0}" != "1" ]; then
-  /opt/venv/bin/pip install -q --upgrade --force-reinstall --no-deps \
+  # Match Unsloth's documented upgrade pattern (no --no-deps; transformers
+  # from git typically bumps `huggingface_hub` and `tokenizers` requirements
+  # that must travel with it).
+  /opt/venv/bin/pip install -q --upgrade --force-reinstall \
     git+https://github.com/huggingface/transformers.git
   /opt/venv/bin/python -c "import transformers; print('transformers:', transformers.__version__)"
 fi
