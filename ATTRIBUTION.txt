@@ -21,6 +21,35 @@ Qwen3.6-35B-A3B (Apache License 2.0)
   https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF
 
 -----------------------------------------------------------------------
+v3 distillation bases (Apache License 2.0; ship in tier weights)
+-----------------------------------------------------------------------
+Gemma 4 31B Instruct (Apache License 2.0)
+  Google DeepMind
+  https://huggingface.co/google/gemma-4-31B-it
+  Unsloth bnb-4bit mirror:
+  https://huggingface.co/unsloth/gemma-4-31B-it-unsloth-bnb-4bit
+  Used as: v3 teacher + Ultra tier base.
+
+Gemma 4 E4B Instruct (Apache License 2.0)
+  Google DeepMind
+  https://huggingface.co/google/gemma-4-E4B-it
+  Unsloth bnb-4bit mirror:
+  https://huggingface.co/unsloth/gemma-4-E4B-it-unsloth-bnb-4bit
+  Used as: v3 Pro tier base.
+
+Gemma 4 E2B Instruct (Apache License 2.0)
+  Google DeepMind
+  https://huggingface.co/google/gemma-4-E2B-it
+  Unsloth bnb-4bit mirror:
+  https://huggingface.co/unsloth/gemma-4-E2B-it-unsloth-bnb-4bit
+  Used as: v3 Mini tier base.
+
+Qwen3 4B (Apache License 2.0)
+  Alibaba Qwen team
+  https://huggingface.co/Qwen/Qwen3-4B
+  Used as: v3 Max tier base.
+
+-----------------------------------------------------------------------
 Training-data sources (carrier text)
 -----------------------------------------------------------------------
 PleIAs/Greek-PD (Public Domain)

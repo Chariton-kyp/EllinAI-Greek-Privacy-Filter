@@ -24,7 +24,11 @@ use only.
 
 | Component | Licence |
 |---|---|
-| `openai/privacy-filter` — base weights and training code | Apache License, Version 2.0. |
+| `openai/privacy-filter` — Lite tier base + base for v1/v2 weights | Apache License, Version 2.0. |
+| `google/gemma-4-31B-it` (via `unsloth/gemma-4-31B-it-unsloth-bnb-4bit`) — v3 teacher + Ultra tier base | Apache License, Version 2.0. |
+| `google/gemma-4-E4B-it` (via `unsloth/gemma-4-E4B-it-unsloth-bnb-4bit`) — v3 Pro tier base | Apache License, Version 2.0. |
+| `google/gemma-4-E2B-it` (via `unsloth/gemma-4-E2B-it-unsloth-bnb-4bit`) — v3 Mini tier base | Apache License, Version 2.0. |
+| `Qwen/Qwen3-4B` — v3 Max tier base | Apache License, Version 2.0. |
 | `unsloth/Qwen3.6-35B-A3B-GGUF` — local synthetic-data generator | Apache License, Version 2.0. |
 | `ilsp/Meltemi-7B-Instruct-v1.5` — evaluated as an alternate generator | Apache License, Version 2.0. |
 | `PleIAs/Greek-PD` — Greek public-domain carrier text | Public domain. |

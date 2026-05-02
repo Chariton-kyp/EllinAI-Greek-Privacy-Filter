@@ -94,22 +94,28 @@ def parse_spans(content: str) -> list[dict] | None:
         return None
 
 
-def resolve_offsets(text: str, spans: list[dict]) -> list[dict]:
-    """Convert {label,value} → {category,start,end} via verbatim find."""
+def resolve_offsets(text: str, spans: list[dict]) -> list[dict] | None:
+    """Convert {label,value} → {category,start,end} via verbatim find.
+
+    Strict mode: cursor advances after each match so duplicate values don't
+    collapse to the same offset. If any span fails to resolve (cursor-only,
+    no fallback to text.find with cursor=0), the WHOLE record returns None
+    so the caller drops it — keeps span data clean.
+    (Reviewer I-1: previous version had cursor-bypass fallback that
+    silently produced duplicate offsets on repeated PII values.)
+    """
     out = []
     cursor = 0
     for s in spans:
         if not isinstance(s, dict):
-            continue
+            return None
         lbl = s.get("label")
         val = s.get("value")
         if not lbl or not val:
-            continue
+            return None
         idx = text.find(val, cursor)
         if idx < 0:
-            idx = text.find(val)
-        if idx < 0:
-            continue  # span text not in input → drop
+            return None  # cannot resolve at-or-after cursor → drop whole record
         out.append({
             "category": lbl,
             "start": idx,
@@ -186,12 +192,11 @@ def main() -> None:
                 continue
 
             resolved = resolve_offsets(text, spans)
-            if len(resolved) != len(spans):
+            if resolved is None:
+                # Any span unresolvable at-or-after cursor → drop record
+                # to avoid teaching student bad boundaries.
                 skipped_offsets += 1
-                # If even one span fails to resolve, drop the record entirely
-                # to avoid teaching the student bad boundaries.
-                if not resolved or len(resolved) < len(spans):
-                    continue
+                continue
 
             out_rec = {
                 "text": text,

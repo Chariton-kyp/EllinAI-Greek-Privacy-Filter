@@ -34,13 +34,15 @@ AVAIL_ZONE="${AVAIL_ZONE:-eu-north-1b}"
 INSTANCE_TYPE="${INSTANCE_TYPE:-g6e.xlarge}"
 MARKET_TYPE="${MARKET_TYPE:-spot}"
 SPOT_MAX_PRICE="${SPOT_MAX_PRICE:-1.00}"
-TEACHER_HF_ID="${TEACHER_HF_ID:-google/gemma-4-31B-it}"
+TEACHER_HF_ID="${TEACHER_HF_ID:-unsloth/gemma-4-31B-it-unsloth-bnb-4bit}"
 V3_OUTPUT_S3_PREFIX="${V3_OUTPUT_S3_PREFIX:-v3/pseudo}"
 CORPUS_TARGET_RECORDS="${CORPUS_TARGET_RECORDS:-500000}"
 
 : "${BUCKET:?BUCKET env var required}"
 : "${IAM_INSTANCE_PROFILE:?IAM_INSTANCE_PROFILE env var required}"
 : "${TEACHER_S3_PREFIX:?TEACHER_S3_PREFIX env var required (e.g. v3/teacher/run-XXX/artifacts)}"
+# HF_TOKEN optional (Unsloth mirrors are public)
+HF_TOKEN="${HF_TOKEN:-}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -80,6 +82,12 @@ RUN_PREFIX="${RUN_PREFIX}"
 TEACHER_HF_ID="${TEACHER_HF_ID}"
 TEACHER_S3_PREFIX="${TEACHER_S3_PREFIX}"
 CORPUS_TARGET_RECORDS="${CORPUS_TARGET_RECORDS}"
+
+if [ -n "${HF_TOKEN}" ]; then
+  export HF_TOKEN="${HF_TOKEN}"
+  export HUGGING_FACE_HUB_TOKEN="${HF_TOKEN}"
+fi
+export HF_HUB_ENABLE_HF_TRANSFER=1
 
 _pump() {
   while true; do
@@ -153,15 +161,35 @@ if [ -z "\${ADAPTER_DIR}" ]; then
   echo "FAIL: no lora_adapters/ found under teacher S3 prefix"
   exit 1
 fi
+export ADAPTER_DIR
+export TEACHER_HF_ID
 echo "Using LoRA adapter: \${ADAPTER_DIR}"
 
-# Step C: Start vLLM with base + LoRA on localhost:8080
+# Step C: Merge LoRA adapter into base BEFORE serving (vLLM bnb+lora-modules
+# is unsupported as of v0.20). Merged checkpoint is bf16 ~60GB on disk for
+# 31B model — fits the 250GB EBS provisioned for this instance.
+mkdir -p /opt/gpf/teacher_merged
+python3 - <<'PYEOF'
+import os
+from peft import PeftModel
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
+base_id = os.environ["TEACHER_HF_ID"]
+adapter = os.environ["ADAPTER_DIR"]
+out = "/opt/gpf/teacher_merged"
+
+tok = AutoTokenizer.from_pretrained(base_id)
+base = AutoModelForCausalLM.from_pretrained(base_id, dtype=torch.bfloat16, device_map="auto")
+peft = PeftModel.from_pretrained(base, adapter)
+merged = peft.merge_and_unload()
+merged.save_pretrained(out, safe_serialization=True)
+tok.save_pretrained(out)
+print("merged ->", out)
+PYEOF
+
 nohup python3 -m vllm.entrypoints.openai.api_server \\
-  --model "\${TEACHER_HF_ID}" \\
-  --enable-lora \\
-  --lora-modules "teacher=\${ADAPTER_DIR}" \\
-  --quantization bitsandbytes \\
-  --load-format bitsandbytes \\
+  --model /opt/gpf/teacher_merged \\
   --max-model-len 4096 \\
   --gpu-memory-utilization 0.92 \\
   --port 8080 \\
@@ -184,7 +212,7 @@ python3 /opt/gpf/scripts/v3/generate_pseudo_labels.py \\
   --engine openai-server \\
   --host http://127.0.0.1:8080 \\
   --teacher-id "\${TEACHER_HF_ID}" \\
-  --model teacher \\
+  --model /opt/gpf/teacher_merged \\
   --input /opt/gpf/data/v3_corpus/greek_corpus.jsonl \\
   --output /opt/gpf/data/v3_pseudo/pseudo_labels.jsonl \\
   --max-records "\${CORPUS_TARGET_RECORDS}"
