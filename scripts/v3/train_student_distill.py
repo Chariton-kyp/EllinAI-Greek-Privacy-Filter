@@ -74,8 +74,7 @@ def main() -> None:
     print(f"[v3-student/{args.tier}] loading {hf_id} (4-bit + LoRA)...", flush=True)
     from unsloth import FastLanguageModel
     from datasets import load_dataset
-    from trl import SFTTrainer
-    from transformers import TrainingArguments
+    from trl import SFTTrainer, SFTConfig
 
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=hf_id,
@@ -102,14 +101,22 @@ def main() -> None:
     if args.max_train_samples:
         train_ds = train_ds.select(range(min(len(train_ds), args.max_train_samples)))
 
-    def _format(rec):
-        return {"text": tokenizer.apply_chat_template(
-            rec["messages"], tokenize=False, add_generation_prompt=False)}
+    def _format(batch):
+        return {
+            "text": [
+                tokenizer.apply_chat_template(
+                    convo, tokenize=False, add_generation_prompt=False,
+                )
+                for convo in batch["messages"]
+            ]
+        }
 
-    train_ds = train_ds.map(_format, remove_columns=train_ds.column_names)
-    eval_ds = eval_ds.map(_format, remove_columns=eval_ds.column_names)
+    train_ds = train_ds.map(_format, batched=True,
+                              remove_columns=train_ds.column_names)
+    eval_ds = eval_ds.map(_format, batched=True,
+                            remove_columns=eval_ds.column_names)
 
-    training_args = TrainingArguments(
+    sft_config = SFTConfig(
         output_dir=str(args.output_dir / "checkpoints"),
         num_train_epochs=sft_cfg.get("epochs", 2),
         per_device_train_batch_size=sft_cfg.get("batch_size", 4),
@@ -120,7 +127,7 @@ def main() -> None:
         optim="adamw_8bit",
         save_strategy="steps",
         save_steps=500,
-        eval_strategy="steps",          # transformers >=4.45 default is "no" (silently skips eval)
+        eval_strategy="steps",
         eval_steps=500,
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
@@ -131,16 +138,18 @@ def main() -> None:
         gradient_checkpointing=True,
         save_total_limit=2,
         seed=2042,
+        # SFT-specific (moved from constructor in TRL ≥ 0.21):
+        dataset_text_field="text",
+        max_length=sft_cfg.get("max_seq_length", 4096),
+        packing=False,
     )
 
     trainer = SFTTrainer(
         model=model,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,  # `tokenizer=` removed in TRL ≥ 0.21
         train_dataset=train_ds,
         eval_dataset=eval_ds,
-        dataset_text_field="text",
-        max_seq_length=sft_cfg.get("max_seq_length", 4096),
-        args=training_args,
+        args=sft_config,
     )
 
     t0 = time.time()

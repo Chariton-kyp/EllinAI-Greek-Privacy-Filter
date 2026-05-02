@@ -74,8 +74,7 @@ def main() -> None:
           flush=True)
     from unsloth import FastLanguageModel  # type: ignore
     from datasets import load_dataset      # type: ignore
-    from trl import SFTTrainer             # type: ignore
-    from transformers import TrainingArguments  # type: ignore
+    from trl import SFTTrainer, SFTConfig  # type: ignore
 
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=hf_id,
@@ -106,24 +105,39 @@ def main() -> None:
         train_ds = train_ds.select(range(min(len(train_ds), args.max_train_samples)))
         print(f"[v3-teacher] limited to {len(train_ds)} train samples", flush=True)
 
-    def _format(rec):
-        return {"text": to_chat_text(rec, tokenizer)}
+    # Apply chat template once → "text" column. Pre-formatting + dataset_text_field
+    # is the canonical Unsloth pattern; passing raw "messages" lets TRL re-format
+    # at every batch which is slower for 31B models. Use batched map for speed.
+    def _format(batch):
+        return {
+            "text": [
+                tokenizer.apply_chat_template(
+                    convo, tokenize=False, add_generation_prompt=False,
+                )
+                for convo in batch["messages"]
+            ]
+        }
 
-    train_ds = train_ds.map(_format, remove_columns=train_ds.column_names)
-    eval_ds = eval_ds.map(_format, remove_columns=eval_ds.column_names)
+    train_ds = train_ds.map(_format, batched=True,
+                              remove_columns=train_ds.column_names)
+    eval_ds = eval_ds.map(_format, batched=True,
+                            remove_columns=eval_ds.column_names)
 
-    training_args = TrainingArguments(
+    sft_config = SFTConfig(
         output_dir=str(args.output_dir / "checkpoints"),
         num_train_epochs=sft_cfg["epochs"],
         per_device_train_batch_size=sft_cfg["per_device_batch_size"],
         gradient_accumulation_steps=sft_cfg["gradient_accumulation_steps"],
         learning_rate=sft_cfg["learning_rate"],
-        warmup_ratio=sft_cfg["warmup_ratio"],
+        # Newer transformers/TRL prefers `warmup_steps`. Convert from ratio if
+        # only `warmup_ratio` is provided in yaml.
+        warmup_steps=sft_cfg.get("warmup_steps", 0),
+        warmup_ratio=sft_cfg.get("warmup_ratio", 0.0),
         weight_decay=sft_cfg["weight_decay"],
         optim=sft_cfg["optim"],
         save_strategy="steps",
         save_steps=sft_cfg["save_steps"],
-        eval_strategy="steps",          # explicit (transformers >=4.45 default is "no")
+        eval_strategy="steps",
         eval_steps=sft_cfg["eval_steps"],
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
@@ -134,16 +148,18 @@ def main() -> None:
         gradient_checkpointing=True,
         save_total_limit=2,
         seed=sft_cfg["seed"],
+        # SFT-specific (moved from constructor in TRL ≥ 0.21):
+        dataset_text_field="text",
+        max_length=sft_cfg["max_seq_length"],
+        packing=False,
     )
 
     trainer = SFTTrainer(
         model=model,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,  # `tokenizer=` removed in TRL ≥ 0.21
         train_dataset=train_ds,
         eval_dataset=eval_ds,
-        dataset_text_field="text",
-        max_seq_length=sft_cfg["max_seq_length"],
-        args=training_args,
+        args=sft_config,
     )
 
     t0 = time.time()
