@@ -36,7 +36,11 @@ KNOWN_STRATEGY_PREFIXES = (
     "llm-server/",  # e.g. llm-server/<model>/batch, llm-server/<model>/slot
 )
 
-KNOWN_SOURCES = {"commercial_safe_generator", "golden_seeds"}
+KNOWN_SOURCES = {
+    "commercial_safe_generator",
+    "golden_seeds",
+    "local_qwen_contrastive_v2_13",
+}
 
 KNOWN_DIFFICULTIES = {"easy", "medium", "hard", "hard_negative"}
 
