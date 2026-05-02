@@ -206,8 +206,12 @@ else
 fi
 
 echo "[4/5] Request EC2 instance"
+SPEC_FILE_NATIVE="${SPEC_FILE}"
+if command -v cygpath >/dev/null 2>&1; then
+  SPEC_FILE_NATIVE="$(cygpath -w "${SPEC_FILE}")"
+fi
 INSTANCE_ID="$(aws ec2 run-instances --region "${REGION}" \
-    --cli-input-json "file://${SPEC_FILE}" \
+    --cli-input-json "file://${SPEC_FILE_NATIVE}" \
     --query 'Instances[0].InstanceId' --output text)"
 
 echo "[5/5] Instance: ${INSTANCE_ID}"
