@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import argparse
 import subprocess
+import sys
 from pathlib import Path
 
 import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from src.privacy_filter_ft.label_space import assert_datasets_match_label_space
 
 
 def parse_args() -> argparse.Namespace:
@@ -173,6 +178,10 @@ def main() -> None:
             label_space_path = legacy
 
     if label_space_path is not None:
+        assert_datasets_match_label_space(
+            [train_file, validation_file],
+            label_space_path,
+        )
         command.extend(["--label-space-json", str(label_space_path)])
         print(f"[run_opf_train] Using custom label space: {label_space_path}")
     else:

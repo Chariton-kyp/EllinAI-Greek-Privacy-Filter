@@ -13,9 +13,9 @@ PREFIX="${PREFIX:-greek-privacy-filter}"
 REGION="${REGION:-us-east-1}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-DATA="${REPO_ROOT}/data/processed"
+DATA="${DATA:-${REPO_ROOT}/data/processed}"
 CKPT="${REPO_ROOT}/checkpoints/base/privacy-filter"
-LABELS="${REPO_ROOT}/configs/label_space.json"
+LABELS="${LABELS:-${REPO_ROOT}/configs/label_space.json}"
 
 for required in \
   "${DATA}/train.jsonl" \
@@ -31,6 +31,7 @@ done
 
 echo "Region: ${REGION}"
 echo "Bucket: s3://${BUCKET}/${PREFIX}"
+echo "Labels: ${LABELS}"
 
 aws s3 cp  "${DATA}/train.jsonl"       "s3://${BUCKET}/${PREFIX}/data/train/train.jsonl"           --region "${REGION}"
 aws s3 cp  "${DATA}/validation.jsonl"  "s3://${BUCKET}/${PREFIX}/data/validation/validation.jsonl" --region "${REGION}"
