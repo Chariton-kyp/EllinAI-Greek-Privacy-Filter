@@ -1,0 +1,47 @@
+project:
+  name: greek-privacy-filter-ft-v2
+  model: openai/privacy-filter
+  task: opf-token-classification
+  language: el
+
+opf:
+  upstream_repo_url: https://github.com/openai/privacy-filter.git
+  upstream_pinned_commit: f7f00ca7fb869683eb732c010299d901457f19c3
+  upstream_local_dir: external/privacy-filter
+  hf_repo_id: openai/privacy-filter
+  hf_revision: 7ffa9a043d54d1be65afb281eddf0ffbe629385b
+  checkpoint_local_dir: checkpoints/base/privacy-filter
+  device: cuda
+  n_ctx: 256
+
+data:
+  train_file: data/processed/v2_combined/train.jsonl
+  validation_file: data/processed/v2_combined/validation.jsonl
+  test_file: data/processed/v2_combined/test.jsonl
+  hard_test_file: data/processed/v2_combined/hard_test.jsonl
+  schema_note: "24-class v2 OPF JSONL with text + label spans."
+
+label_space:
+  path: configs/label_space_v2.json
+
+training:
+  epochs: 3
+  batch_size: 4
+  grad_accum_steps: 4
+  learning_rate: 5.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  seed: 1337
+  overwrite_output: true
+  output_param_dtype: bf16
+
+output:
+  checkpoints_dir: artifacts/checkpoints
+  final_model_dir: artifacts/model/finetuned-opf-v2
+  baseline_metrics_file: artifacts/metrics/baseline_v2_test_metrics.json
+  finetuned_metrics_file: artifacts/metrics/finetuned_v2_test_metrics.json
+  hard_test_metrics_file: artifacts/metrics/finetuned_v2_hard_test_metrics.json
+  train_log: artifacts/logs/train_v2.log
+
+evaluation:
+  eval_mode: typed
