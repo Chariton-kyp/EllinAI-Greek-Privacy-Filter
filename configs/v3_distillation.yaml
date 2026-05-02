@@ -1,0 +1,162 @@
+# v3 Distillation pipeline configuration
+# ───────────────────────────────────────
+# 5-tier student ladder distilled from a single teacher.
+# All bases are Apache 2.0 → final weights ship under the project's existing
+# dual-license (NC for third parties, commercial-for-owner).
+
+teacher:
+  # Pick ONE of:
+  #   google/gemma-4-31B-it       (dense, 31B, Apache 2.0, multilingual incl. Greek)
+  #   Qwen/Qwen3.6-35B-A3B-Instruct  (MoE 35B/3B-active, Apache 2.0, already cached locally)
+  hf_id: "google/gemma-4-31B-it"
+  load_in_4bit: true                    # bitsandbytes Q4 for VRAM fit
+  use_unsloth_bnb_4bit: true            # use Unsloth's pre-quantized variant if available
+
+  lora:
+    r: 32
+    alpha: 64
+    dropout: 0.05
+    target_modules:
+      - q_proj
+      - k_proj
+      - v_proj
+      - o_proj
+      - gate_proj
+      - up_proj
+      - down_proj
+
+  sft:
+    epochs: 2
+    per_device_batch_size: 4
+    gradient_accumulation_steps: 4
+    learning_rate: 2.0e-4
+    warmup_ratio: 0.03
+    weight_decay: 0.01
+    max_seq_length: 4096
+    optim: "adamw_8bit"
+    save_steps: 500
+    eval_steps: 500
+    seed: 2042
+
+  # Optional GRPO RL phase (run AFTER SFT to fine-tune via span-F1 reward)
+  grpo:
+    enabled: false                      # toggle ON when SFT teacher is solid
+    steps: 1000
+    num_generations: 4                  # rollouts per prompt
+    learning_rate: 1.0e-5
+    reward_kl_coeff: 0.1
+
+
+students:
+  # Each student trains on the same pseudo-labelled corpus produced by the teacher.
+
+  - name: lite
+    hf_id: "openai/privacy-filter"
+    architecture: "token_classifier"     # different training loop (token-level BIO)
+    inference_size_gb: 2.6
+    expected_f1: [0.88, 0.92]
+    sft:
+      epochs: 3
+      lr: 5.0e-5
+      batch_size: 4
+      grad_accum: 4
+
+  - name: mini
+    hf_id: "google/gemma-4-E2B-it"
+    architecture: "causal_lm"
+    inference_size_gb: 2.5
+    expected_f1: [0.89, 0.92]
+    lora:
+      r: 16
+      alpha: 32
+    sft:
+      epochs: 3
+      lr: 2.0e-4
+      max_seq_length: 4096
+
+  - name: pro
+    hf_id: "google/gemma-4-E4B-it"      # alternative: Qwen/Qwen3-1.7B
+    architecture: "causal_lm"
+    inference_size_gb: 5.0
+    expected_f1: [0.92, 0.95]
+    lora:
+      r: 16
+      alpha: 32
+    sft:
+      epochs: 3
+      lr: 2.0e-4
+      max_seq_length: 4096
+
+  - name: max
+    hf_id: "Qwen/Qwen3-4B-Instruct"     # alternative: gemma-4-26B-A4B-it
+    architecture: "causal_lm"
+    inference_size_gb: 9.0
+    expected_f1: [0.93, 0.96]
+    lora:
+      r: 32
+      alpha: 64
+    sft:
+      epochs: 2
+      lr: 2.0e-4
+      max_seq_length: 4096
+
+  - name: ultra
+    # Ships teacher itself; no extra training.
+    hf_id: "google/gemma-4-31B-it"
+    architecture: "causal_lm"
+    inference_size_gb: 18.0
+    expected_f1: [0.94, 0.97]
+    sft: null
+
+
+corpus:
+  # Greek text sources for pseudo-labelling — STRICT COMMERCIAL DEFAULT.
+  # Only Public Domain / CC0 / CC-BY are enabled. CC-BY-SA (Wikipedia) and
+  # mC4 (Common-Crawl-derived) are RISKY for commercial weight redistribution
+  # — see docs/V3_DISTILLATION_PLAN.md §License-audit.
+  sources:
+    - greek_pd          # Public Domain — classical / pre-1884 prose
+    - common_voice      # CC0 — conversational modern Greek
+    - greek_legal       # CC-BY-4.0 — Greek legislation (attribution required)
+  # OPT-IN ONLY (require legal review before enabling):
+  # - wiki_el           # CC-BY-SA-4.0 — share-alike clause may force NC weights to inherit SA
+  # - mc4_el            # ODC-BY + Common Crawl underlying content with mixed copyrights
+
+  target_records: 500000
+  min_chunk_chars: 50
+  max_chunk_chars: 600
+  min_greek_ratio: 0.55
+
+
+pseudo_label:
+  # Generation through teacher — runs locally via llama.cpp Docker.
+  host: "http://127.0.0.1:8080"
+  temperature: 0.0                      # greedy — deterministic, no rollouts
+  max_tokens: 1024
+  confidence_threshold: 0.85
+  rejection_filter:
+    # If the teacher emits any of these markers, drop the record.
+    forbidden_label_ids: true           # reject "mac_address", "afm" as natural text
+    require_valid_json: true
+
+
+eval:
+  benchmark_jsonl: "data/realworld_benchmark/cases.jsonl"
+  metrics_dir: "artifacts/metrics"
+  decoder: "viterbi"
+
+
+aws:
+  region: "eu-north-1"
+  bucket: "<your-gpf-bucket>"
+  iam_instance_profile: "<your-iam-instance-profile>"
+  teacher_instance: "g6e.xlarge"        # L40S 48GB
+  student_instance: "g6.xlarge"         # L4 24GB
+  spot_max_price: 1.00
+
+
+repo:
+  v3_chat_dir:    "data/processed/v3_chat"
+  v3_corpus_dir:  "data/processed/v3_corpus"
+  v3_pseudo_dir:  "data/processed/v3_pseudo"
+  artifacts_dir:  "artifacts/v3"

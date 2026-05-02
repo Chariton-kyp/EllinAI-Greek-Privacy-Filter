@@ -1,0 +1,20 @@
+{
+  "files": {
+    "data/processed/v2_13_phone_account.jsonl": {
+      "total": 500,
+      "missing_info": 0,
+      "unknown_strategy": 0,
+      "unknown_source": 0,
+      "unknown_difficulty": 0,
+      "strategies": {
+        "llm-server/qwen/local": 500
+      },
+      "sources": {
+        "local_qwen_contrastive_v2_13": 500
+      },
+      "difficulties": {
+        "hard": 500
+      }
+    }
+  }
+}

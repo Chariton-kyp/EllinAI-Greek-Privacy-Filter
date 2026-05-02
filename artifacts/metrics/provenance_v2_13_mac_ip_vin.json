@@ -1,0 +1,20 @@
+{
+  "files": {
+    "data/processed/v2_13_mac_ip_vin.jsonl": {
+      "total": 365,
+      "missing_info": 0,
+      "unknown_strategy": 0,
+      "unknown_source": 0,
+      "unknown_difficulty": 0,
+      "strategies": {
+        "llm-server/qwen/local": 365
+      },
+      "sources": {
+        "local_qwen_contrastive_v2_13": 365
+      },
+      "difficulties": {
+        "hard": 365
+      }
+    }
+  }
+}
