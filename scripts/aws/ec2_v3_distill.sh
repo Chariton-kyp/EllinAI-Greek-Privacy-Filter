@@ -176,9 +176,12 @@ aws s3 cp "s3://\${RUN_BUCKET}/${REPO_KEY}" /tmp/gpf-v3.tar.gz \\
   --region "\${RUN_REGION}"
 tar -xzf /tmp/gpf-v3.tar.gz -C /opt/gpf/
 
-# 3. Pull Unsloth Docker image.
+# 3. Pull Unsloth Docker image (with timeout + retry against pull hang).
 _v3_stamp "DOCKER_PULL"
-docker pull "\${UNSLOTH_IMAGE}"
+if ! timeout 1500 docker pull "\${UNSLOTH_IMAGE}"; then
+  echo "[docker] pull stalled, retrying"
+  timeout 1500 docker pull "\${UNSLOTH_IMAGE}"
+fi
 
 # 4. Sync v3_chat (gold) + v3_pseudo (teacher pseudo-labels).
 _v3_stamp "SYNC_DATA"
@@ -271,7 +274,7 @@ cat > "${SPEC_FILE}" <<EOF
     "SpotOptions": {"MaxPrice": "${SPOT_MAX_PRICE}", "SpotInstanceType": "one-time", "InstanceInterruptionBehavior": "terminate"}
   },
   "BlockDeviceMappings": [
-    {"DeviceName": "/dev/sda1", "Ebs": {"VolumeSize": 150, "VolumeType": "gp3", "DeleteOnTermination": true}}
+    {"DeviceName": "/dev/sda1", "Ebs": {"VolumeSize": 150, "VolumeType": "gp3", "Iops": 16000, "Throughput": 1000, "DeleteOnTermination": true}}
   ],
   "TagSpecifications": [
     {"ResourceType": "instance", "Tags": [

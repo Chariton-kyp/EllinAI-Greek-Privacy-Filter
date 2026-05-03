@@ -192,8 +192,13 @@ aws s3 cp "s3://\${RUN_BUCKET}/${REPO_KEY}" /tmp/gpf-v3-teacher.tar.gz \\
 tar -xzf /tmp/gpf-v3-teacher.tar.gz -C /opt/gpf/
 
 # 3. Pull Unsloth Docker image (~13GB compressed, ~5 min on EC2 backbone).
+# Wrap in `timeout 1500` (25 min) — past pulls hung indefinitely once. On
+# timeout, retry once. If second attempt also fails, exit and let trap fire.
 _v3_stamp "DOCKER_PULL"
-docker pull "\${UNSLOTH_IMAGE}"
+if ! timeout 1500 docker pull "\${UNSLOTH_IMAGE}"; then
+  echo "[docker] pull stalled, retrying"
+  timeout 1500 docker pull "\${UNSLOTH_IMAGE}"
+fi
 
 # 4. Sync v3_chat data from S3 to a host dir bind-mounted into container.
 _v3_stamp "SYNC_DATA"
@@ -262,7 +267,7 @@ cat > "${SPEC_FILE}" <<EOF
     "SpotOptions": {"MaxPrice": "${SPOT_MAX_PRICE}", "SpotInstanceType": "one-time", "InstanceInterruptionBehavior": "terminate"}
   },
   "BlockDeviceMappings": [
-    {"DeviceName": "/dev/sda1", "Ebs": {"VolumeSize": 200, "VolumeType": "gp3", "DeleteOnTermination": true}}
+    {"DeviceName": "/dev/sda1", "Ebs": {"VolumeSize": 200, "VolumeType": "gp3", "Iops": 16000, "Throughput": 1000, "DeleteOnTermination": true}}
   ],
   "TagSpecifications": [
     {"ResourceType": "instance", "Tags": [
