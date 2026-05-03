@@ -105,22 +105,46 @@ def main() -> None:
     # with transformers 5.x dropped reliable `dataset_text_field` auto-tokenize.
     max_seq = sft_cfg.get("max_seq_length", 4096)
 
+    def _to_blocks(content):
+        # Gemma 4 chat template needs content as multimodal blocks
+        # (string content → TypeError on text[0] in template renderer).
+        if isinstance(content, str):
+            return [{"type": "text", "text": content}]
+        return content
+
     def _format_and_tokenize(batch):
-        texts = [
-            tokenizer.apply_chat_template(
-                convo, tokenize=False, add_generation_prompt=False,
+        texts = []
+        for convo in batch["messages"]:
+            normalized = [
+                {"role": m["role"], "content": _to_blocks(m["content"])}
+                for m in convo
+            ]
+            texts.append(
+                tokenizer.apply_chat_template(
+                    normalized, tokenize=False, add_generation_prompt=False,
+                )
             )
-            for convo in batch["messages"]
-        ]
         enc = tokenizer(
-            texts,
+            text=texts,
             truncation=True,
             max_length=max_seq,
             padding=False,
             return_attention_mask=True,
         )
-        enc["labels"] = [list(ids) for ids in enc["input_ids"]]
-        return enc
+
+        # Drop Gemma4Processor's `mm_token_type_ids` and any other extra
+        # columns: the default collator can't pad those as ints, which
+        # crashes at eval. See train_teacher.py for full reasoning.
+        def _flatten_one(x):
+            while isinstance(x, list) and len(x) > 0 and isinstance(x[0], list):
+                x = x[0]
+            return list(x)
+
+        return {
+            "input_ids": [_flatten_one(ids) for ids in enc["input_ids"]],
+            "attention_mask": [_flatten_one(a) for a in enc["attention_mask"]],
+            "labels": [_flatten_one(ids) for ids in enc["input_ids"]],
+        }
 
     train_ds = train_ds.map(_format_and_tokenize, batched=True,
                               remove_columns=train_ds.column_names)
@@ -153,12 +177,21 @@ def main() -> None:
         packing=False,
     )
 
+    text_tokenizer = getattr(tokenizer, "tokenizer", tokenizer)
+    from transformers import DataCollatorForSeq2Seq  # type: ignore
+    data_collator = DataCollatorForSeq2Seq(
+        tokenizer=text_tokenizer,
+        padding=True,
+        return_tensors="pt",
+    )
+
     trainer = SFTTrainer(
         model=model,
-        processing_class=tokenizer,  # `tokenizer=` removed in TRL ≥ 0.21
+        processing_class=text_tokenizer,  # `tokenizer=` removed in TRL ≥ 0.21
         train_dataset=train_ds,
         eval_dataset=eval_ds,
         args=sft_config,
+        data_collator=data_collator,
     )
 
     t0 = time.time()

@@ -4,9 +4,11 @@
 # are NOT tuned — completion of one optimiser step = pass.
 
 teacher:
-  hf_id: "unsloth/gemma-3-270m-it"
-  load_in_4bit: false
-  use_unsloth_bnb_4bit: false
+  # Smallest Gemma 4 — exercises the same multimodal chat template that
+  # the 31B teacher uses. Fits in 12GB laptop VRAM.
+  hf_id: "unsloth/gemma-4-E2B-it-unsloth-bnb-4bit"
+  load_in_4bit: true
+  use_unsloth_bnb_4bit: true
 
   lora:
     r: 4

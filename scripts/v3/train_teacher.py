@@ -115,22 +115,65 @@ def main() -> None:
     # `attention_mask` / `labels`, so the default collator just pads.
     max_seq = sft_cfg["max_seq_length"]
 
+    def _to_blocks(content):
+        # Gemma 4 (multimodal) chat template expects content to be a list of
+        # typed blocks (e.g. [{"type":"text","text":...}]). Plain string
+        # content trips a TypeError inside transformers' template renderer:
+        #   TypeError: 'NoneType' object is not subscriptable (text[0])
+        # Wrap any string content in a single text block; pass through if
+        # already a list (vision/audio prep happens elsewhere).
+        if isinstance(content, str):
+            return [{"type": "text", "text": content}]
+        return content
+
     def _format_and_tokenize(batch):
-        texts = [
-            tokenizer.apply_chat_template(
-                convo, tokenize=False, add_generation_prompt=False,
+        texts = []
+        for convo in batch["messages"]:
+            normalized = [
+                {"role": m["role"], "content": _to_blocks(m["content"])}
+                for m in convo
+            ]
+            texts.append(
+                tokenizer.apply_chat_template(
+                    normalized, tokenize=False, add_generation_prompt=False,
+                )
             )
-            for convo in batch["messages"]
-        ]
+        # Pass text= as a kwarg, not positional. Gemma4Processor
+        # (the wrapper "tokenizer" returned for Gemma 4) routes the first
+        # positional arg through a multimodal-aware patched call that
+        # surfaces it as text=None when there are no images/videos. The
+        # processor then tries text[0] and crashes with
+        #   TypeError: 'NoneType' object is not subscriptable
+        # Passing text= explicitly (kwarg) avoids that branch.
         enc = tokenizer(
-            texts,
+            text=texts,
             truncation=True,
             max_length=max_seq,
             padding=False,
             return_attention_mask=True,
         )
-        enc["labels"] = [list(ids) for ids in enc["input_ids"]]
-        return enc
+
+        # Gemma4Processor wraps each example's input_ids in an extra outer
+        # list (multimodal "channel" axis). Flatten that wrap so the
+        # default data collator gets list[int] per example, not
+        # list[list[int]]. Otherwise pad() raises:
+        #   "your features (`labels` in this case) have excessive nesting"
+        def _flatten_one(x):
+            while isinstance(x, list) and len(x) > 0 and isinstance(x[0], list):
+                x = x[0]
+            return list(x)
+
+        # Return ONLY the three columns the default collator pads on
+        # text-only causal LM. Gemma4Processor adds `mm_token_type_ids`
+        # (multimodal channel mask) which the collator can't pad as ints
+        # and trips ValueError "excessive nesting (`labels` in this case)"
+        # at eval time. Reconstruct as a plain dict to also avoid the
+        # BatchEncoding wrapper datasets/Arrow handles oddly.
+        return {
+            "input_ids": [_flatten_one(ids) for ids in enc["input_ids"]],
+            "attention_mask": [_flatten_one(a) for a in enc["attention_mask"]],
+            "labels": [_flatten_one(ids) for ids in enc["input_ids"]],
+        }
 
     train_ds = train_ds.map(_format_and_tokenize, batched=True,
                               remove_columns=train_ds.column_names)
@@ -166,12 +209,25 @@ def main() -> None:
         packing=False,
     )
 
+    # Gemma 4's `tokenizer` is a multimodal Gemma4Processor. The Trainer's
+    # default collator + .pad() expect a plain text tokenizer, so route
+    # through `processor.tokenizer` if present (Gemma 4) and fall back to
+    # the object itself for text-only models (gemma-3, qwen, etc).
+    text_tokenizer = getattr(tokenizer, "tokenizer", tokenizer)
+    from transformers import DataCollatorForSeq2Seq  # type: ignore
+    data_collator = DataCollatorForSeq2Seq(
+        tokenizer=text_tokenizer,
+        padding=True,
+        return_tensors="pt",
+    )
+
     trainer = SFTTrainer(
         model=model,
-        processing_class=tokenizer,  # `tokenizer=` removed in TRL ≥ 0.21
+        processing_class=text_tokenizer,  # `tokenizer=` removed in TRL ≥ 0.21
         train_dataset=train_ds,
         eval_dataset=eval_ds,
         args=sft_config,
+        data_collator=data_collator,
     )
 
     t0 = time.time()
