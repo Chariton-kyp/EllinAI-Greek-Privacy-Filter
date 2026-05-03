@@ -32,9 +32,9 @@ teacher:
     # Gemma 4 has head_dim=512 (vs 128 for Llama/Gemma 1-3) — full attention
     # at seq_len=4096, batch=4 OOMs. Settings below validated by Unsloth recipes
     # for 31B-class models on 48GB GPUs.
-    epochs: 2
-    per_device_batch_size: 1            # was 4 — OOM risk on L40S 48GB
-    gradient_accumulation_steps: 16     # effective batch 16 (same as before)
+    epochs: 1                           # 111k samples × 1 epoch is sufficient
+    per_device_batch_size: 2            # pilot v12 used 1; ~60% VRAM, headroom
+    gradient_accumulation_steps: 8      # effective batch 16 (= 2*8)
     learning_rate: 5.0e-5               # was 2e-4 — 4x reduction for 31B stability
     warmup_ratio: 0.03
     weight_decay: 0.01
