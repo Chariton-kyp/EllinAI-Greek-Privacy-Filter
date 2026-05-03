@@ -101,19 +101,30 @@ def main() -> None:
     if args.max_train_samples:
         train_ds = train_ds.select(range(min(len(train_ds), args.max_train_samples)))
 
-    def _format(batch):
-        return {
-            "text": [
-                tokenizer.apply_chat_template(
-                    convo, tokenize=False, add_generation_prompt=False,
-                )
-                for convo in batch["messages"]
-            ]
-        }
+    # Pre-tokenize ourselves — same rationale as train_teacher.py: TRL ≥ 0.21
+    # with transformers 5.x dropped reliable `dataset_text_field` auto-tokenize.
+    max_seq = sft_cfg.get("max_seq_length", 4096)
 
-    train_ds = train_ds.map(_format, batched=True,
+    def _format_and_tokenize(batch):
+        texts = [
+            tokenizer.apply_chat_template(
+                convo, tokenize=False, add_generation_prompt=False,
+            )
+            for convo in batch["messages"]
+        ]
+        enc = tokenizer(
+            texts,
+            truncation=True,
+            max_length=max_seq,
+            padding=False,
+            return_attention_mask=True,
+        )
+        enc["labels"] = [list(ids) for ids in enc["input_ids"]]
+        return enc
+
+    train_ds = train_ds.map(_format_and_tokenize, batched=True,
                               remove_columns=train_ds.column_names)
-    eval_ds = eval_ds.map(_format, batched=True,
+    eval_ds = eval_ds.map(_format_and_tokenize, batched=True,
                             remove_columns=eval_ds.column_names)
 
     sft_config = SFTConfig(
@@ -138,13 +149,8 @@ def main() -> None:
         gradient_checkpointing=True,
         save_total_limit=2,
         seed=2042,
-        # SFT-specific (moved from constructor in TRL ≥ 0.21):
-        dataset_text_field="text",
-        max_length=sft_cfg.get("max_seq_length", 4096),
+        max_length=max_seq,
         packing=False,
-        # transformers 5.x strips unknown columns before SFTTrainer tokenizes;
-        # disable so the `text` column survives to SFTTrainer's preprocessor.
-        remove_unused_columns=False,
     )
 
     trainer = SFTTrainer(

@@ -105,22 +105,36 @@ def main() -> None:
         train_ds = train_ds.select(range(min(len(train_ds), args.max_train_samples)))
         print(f"[v3-teacher] limited to {len(train_ds)} train samples", flush=True)
 
-    # Apply chat template once → "text" column. Pre-formatting + dataset_text_field
-    # is the canonical Unsloth pattern; passing raw "messages" lets TRL re-format
-    # at every batch which is slower for 31B models. Use batched map for speed.
-    def _format(batch):
-        return {
-            "text": [
-                tokenizer.apply_chat_template(
-                    convo, tokenize=False, add_generation_prompt=False,
-                )
-                for convo in batch["messages"]
-            ]
-        }
+    # Pre-tokenize the dataset ourselves. In TRL ≥ 0.21 with transformers
+    # 5.x the SFTTrainer's auto-tokenization path via `dataset_text_field`
+    # has shifted under us twice (pilots v8/v9): the trainer's data
+    # collator then calls `tokenizer.pad(batch)` and crashes with
+    #   "ValueError: ... that includes input_ids, but you provided ['text']"
+    # because the column was never tokenized. Pre-tokenizing makes us
+    # version-agnostic — the dataset already carries `input_ids` /
+    # `attention_mask` / `labels`, so the default collator just pads.
+    max_seq = sft_cfg["max_seq_length"]
 
-    train_ds = train_ds.map(_format, batched=True,
+    def _format_and_tokenize(batch):
+        texts = [
+            tokenizer.apply_chat_template(
+                convo, tokenize=False, add_generation_prompt=False,
+            )
+            for convo in batch["messages"]
+        ]
+        enc = tokenizer(
+            texts,
+            truncation=True,
+            max_length=max_seq,
+            padding=False,
+            return_attention_mask=True,
+        )
+        enc["labels"] = [list(ids) for ids in enc["input_ids"]]
+        return enc
+
+    train_ds = train_ds.map(_format_and_tokenize, batched=True,
                               remove_columns=train_ds.column_names)
-    eval_ds = eval_ds.map(_format, batched=True,
+    eval_ds = eval_ds.map(_format_and_tokenize, batched=True,
                             remove_columns=eval_ds.column_names)
 
     sft_config = SFTConfig(
@@ -129,8 +143,6 @@ def main() -> None:
         per_device_train_batch_size=sft_cfg["per_device_batch_size"],
         gradient_accumulation_steps=sft_cfg["gradient_accumulation_steps"],
         learning_rate=sft_cfg["learning_rate"],
-        # Newer transformers/TRL prefers `warmup_steps`. Convert from ratio if
-        # only `warmup_ratio` is provided in yaml.
         warmup_steps=sft_cfg.get("warmup_steps", 0),
         warmup_ratio=sft_cfg.get("warmup_ratio", 0.0),
         weight_decay=sft_cfg["weight_decay"],
@@ -148,15 +160,10 @@ def main() -> None:
         gradient_checkpointing=True,
         save_total_limit=2,
         seed=sft_cfg["seed"],
-        # SFT-specific (moved from constructor in TRL ≥ 0.21):
-        dataset_text_field="text",
-        max_length=sft_cfg["max_seq_length"],
+        # max_length kept for collator-side truncation safety; dataset is
+        # already tokenized so the trainer doesn't have to re-process text.
+        max_length=max_seq,
         packing=False,
-        # transformers 5.x's `_remove_unused_columns` strips `text` before
-        # SFTTrainer can tokenize it (forward sig only knows input_ids /
-        # labels / messages). Disable that pre-train pruning so SFTTrainer's
-        # dataset preprocessor sees the column it was told to read.
-        remove_unused_columns=False,
     )
 
     trainer = SFTTrainer(
