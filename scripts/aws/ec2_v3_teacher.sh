@@ -36,6 +36,8 @@
 #   V3_DATA_S3_PREFIX     — default assembled/v3_chat
 #   V3_OUTPUT_S3_PREFIX   — default v3/teacher
 #   MAX_TRAIN_SAMPLES     — pilot runs (e.g. 500). Default empty (full set).
+#   MAX_EVAL_SAMPLES      — subset eval set. Default 1000 (full eval = 14k records,
+#                           ~50 min per round on L40S; 1000 = ~3 min, stable loss).
 #   UNSLOTH_IMAGE         — default unsloth/unsloth:latest
 
 set -euo pipefail
@@ -49,6 +51,7 @@ TEACHER_HF_ID="${TEACHER_HF_ID:-unsloth/gemma-4-31B-it-unsloth-bnb-4bit}"
 V3_DATA_S3_PREFIX="${V3_DATA_S3_PREFIX:-assembled/v3_chat}"
 V3_OUTPUT_S3_PREFIX="${V3_OUTPUT_S3_PREFIX:-v3/teacher}"
 MAX_TRAIN_SAMPLES="${MAX_TRAIN_SAMPLES:-}"
+MAX_EVAL_SAMPLES="${MAX_EVAL_SAMPLES:-1000}"
 UNSLOTH_IMAGE="${UNSLOTH_IMAGE:-unsloth/unsloth:latest}"
 
 : "${BUCKET:?BUCKET env var required}"
@@ -93,6 +96,7 @@ RUN_PREFIX="${RUN_PREFIX}"
 TEACHER_HF_ID="${TEACHER_HF_ID}"
 V3_DATA_S3_PREFIX="${V3_DATA_S3_PREFIX}"
 MAX_TRAIN_SAMPLES="${MAX_TRAIN_SAMPLES}"
+MAX_EVAL_SAMPLES="${MAX_EVAL_SAMPLES}"
 UNSLOTH_IMAGE="${UNSLOTH_IMAGE}"
 
 if [ -n "${HF_TOKEN}" ]; then
@@ -226,6 +230,9 @@ _v3_stamp "TRAIN_START"
 TRAIN_ARGS=()
 if [ -n "\${MAX_TRAIN_SAMPLES}" ]; then
   TRAIN_ARGS+=( --max-train-samples "\${MAX_TRAIN_SAMPLES}" )
+fi
+if [ -n "\${MAX_EVAL_SAMPLES}" ]; then
+  TRAIN_ARGS+=( --max-eval-samples "\${MAX_EVAL_SAMPLES}" )
 fi
 docker run --rm --gpus all --ipc=host --shm-size=8g \\
   -u 0:0 \\

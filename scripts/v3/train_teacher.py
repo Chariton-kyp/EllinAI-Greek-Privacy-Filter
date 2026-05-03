@@ -59,6 +59,10 @@ def main() -> None:
                     help="Override teacher.hf_id from config.")
     p.add_argument("--max-train-samples", type=int, default=None,
                     help="Subset for fast pilot runs (default: all).")
+    p.add_argument("--max-eval-samples", type=int, default=None,
+                    help="Subset eval set for faster eval rounds. "
+                         "Full set on 14k+ records takes ~50 min/round on L40S; "
+                         "1000 random samples gives a stable eval_loss in ~3 min.")
     args = p.parse_args()
 
     cfg = load_yaml(args.config)
@@ -104,6 +108,12 @@ def main() -> None:
     if args.max_train_samples:
         train_ds = train_ds.select(range(min(len(train_ds), args.max_train_samples)))
         print(f"[v3-teacher] limited to {len(train_ds)} train samples", flush=True)
+    if args.max_eval_samples:
+        eval_ds = eval_ds.shuffle(seed=sft_cfg["seed"]).select(
+            range(min(len(eval_ds), args.max_eval_samples))
+        )
+        print(f"[v3-teacher] limited to {len(eval_ds)} eval samples (seed={sft_cfg['seed']})",
+              flush=True)
 
     # Pre-tokenize the dataset ourselves. In TRL ≥ 0.21 with transformers
     # 5.x the SFTTrainer's auto-tokenization path via `dataset_text_field`
