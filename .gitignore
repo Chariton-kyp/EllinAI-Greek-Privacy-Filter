@@ -39,11 +39,31 @@ artifacts/checkpoints/
 # These are reproducible from the public dataset + manifest hash; the
 # weights themselves stay out of git history to keep the repo lean.
 artifacts/finetune-*/
+# v3 student/teacher artefacts (LoRA adapters, predictions, training
+# metrics) live in the non-public audit records.
+artifacts/v3/
 artifacts/*.txt
 artifacts/**/*.txt
 artifacts/*.json
 !artifacts/manifest/*.json
 !artifacts/metrics/*.json
+
+# Proprietary v3 commercial moat — kept in the non-public audit records
+# `non-public release records`. These files are intentionally
+# untracked here:
+#   - regex_pii_postpass.py  (non-public calibration layer)
+#   - benchmark_teacher.py   (full prompt με few-shot examples)
+#   - aggregate_tier_evaluation     (per-tier benchmark harness)
+#   - ec2_v3_benchmark.sh    (benchmark launcher)
+#   - iam_ssm_teacher_policy.json  (IAM with account ID)
+scripts/v3/regex_pii_postpass.py
+scripts/v3/benchmark_teacher.py
+aggregate tier evaluation
+scripts/aws/ec2_v3_benchmark.sh
+scripts/aws/iam_ssm_teacher_policy.json
+
+# Proprietary OOD test set — not part of public release.
+data/realworld_benchmark/cases.jsonl
 
 # OS / IDE
 .DS_Store
