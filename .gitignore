@@ -53,17 +53,19 @@ artifacts/*.json
 # untracked here:
 #   - regex_pii_postpass.py  (non-public calibration layer)
 #   - benchmark_teacher.py   (full prompt με few-shot examples)
-#   - aggregate_tier_evaluation     (per-tier benchmark harness)
 #   - ec2_v3_benchmark.sh    (benchmark launcher)
 #   - iam_ssm_teacher_policy.json  (IAM with account ID)
 scripts/v3/regex_pii_postpass.py
 scripts/v3/benchmark_teacher.py
-aggregate tier evaluation
 scripts/aws/ec2_v3_benchmark.sh
 scripts/aws/iam_ssm_teacher_policy.json
 
-# Proprietary OOD test set — not part of public release.
+# Proprietary 200-case OOD test set — not part of public release.
+# This includes the JSONL artefact AND the Python source modules
+# that produce it (cases_batch1.py..cases_batch5.py + the builder).
 data/realworld_benchmark/cases.jsonl
+scripts/realworld_benchmark/
+scripts/build_realworld_benchmark.py
 
 # OS / IDE
 .DS_Store
