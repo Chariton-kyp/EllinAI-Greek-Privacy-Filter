@@ -71,8 +71,9 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Claude Code per-user settings
-.claude/settings.local.json
+# Claude Code per-user settings (entire folder — also covers
+# scheduled_tasks.lock, transcripts, session state).
+.claude/
 .playwright-mcp/
 
 # Controller-private records.
