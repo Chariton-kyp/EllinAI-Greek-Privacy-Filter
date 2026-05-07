@@ -28,14 +28,28 @@ import sys
 import time
 from pathlib import Path
 
-# Reuse the EXACT prompt + regex post-pass that drove F1 0.979 on the
-# 200-case OOD benchmark (run-20260504T181047Z). Without these, pseudo
-# labels degrade to F1 0.25 (broken prompt) or 0.91 (correct prompt but
-# no regex polish) — proven empirically across runs T121052Z (no few-shot,
-# no regex), T140625Z (few-shot + regex v3), T181047Z (all v4 fixes).
-sys.path.insert(0, str(Path(__file__).parent))
-from benchmark_teacher import SYSTEM_PROMPT  # type: ignore
-from regex_pii_postpass import augment_with_regex  # type: ignore
+# Abbreviated 24-class system prompt suitable for proof-of-concept
+# pseudo-labelling. Production-grade prompt (with class enumeration,
+# Greek-language descriptions, calibrated few-shot examples) lives in
+# the non-public audit records — the abbreviated version below is the
+# minimum that produces parseable JSON output from the teacher.
+SYSTEM_PROMPT = (
+    "Είσαι Greek PII detector. Επιστρέφεις ΑΥΣΤΗΡΑ JSON λίστα με το format "
+    '[{"label": "<class>", "value": "<exact substring>"}, ...]. '
+    "Κλάσεις: account_number, adt, afm, ama, amka, card_pan, cvv, "
+    "driver_license, gemi, iban_gr, imei, ip_address, license_plate, "
+    "mac_address, passport, pcn, private_address, private_date, "
+    "private_email, private_person, private_phone, private_url, secret, "
+    "vehicle_vin. Αν το κείμενο δεν περιέχει PII, επιστρέφεις []."
+)
+
+
+# Optional post-processing hook. The default is identity (return spans
+# unchanged). Commercial deployments may inject a more sophisticated
+# post-processor here; see maintainer audit records for the commercial
+# license that covers the production-grade implementation.
+def augment_with_regex(text: str, spans: list[dict]) -> list[dict]:
+    return spans
 
 _JSON_LIST_RE = re.compile(r"\[\s*(?:\{.*?\})?\s*(?:,\s*\{.*?\}\s*)*\]", re.DOTALL)
 
@@ -111,8 +125,7 @@ def main() -> None:
     # adapter using its quantized-wrapper-aware code path. PEFT's
     # PeftModel.from_pretrained crashes on Gemma 4 with
     #   ValueError: Target module Gemma4ClippableLinear(...) is not supported
-    # because the base ships custom-wrapped Linear modules. (Same bug fix
-    # as benchmark_teacher.py.)
+    # because the base ships custom-wrapped Linear modules.
     print(f"[unsloth] loading LoRA dir {args.lora_adapter} (base auto-resolved)",
           flush=True)
     from unsloth import FastLanguageModel  # type: ignore
@@ -200,10 +213,8 @@ def main() -> None:
                 if resolved is None:
                     skipped_offsets += 1
                     continue
-                # Apply v4 regex post-pass — same hybrid path that drove
-                # bench F1 from 0.91 (model raw) to 0.979 (model+regex).
-                # Without this, pseudo-labels lose recall on URL/email/
-                # AMKA/date/IP/AFM/ADT/IBAN classes.
+                # Optional post-pass hook (identity by default). Commercial
+                # deployments may inject regex / cascade post-processors here.
                 augmented = augment_with_regex(rec["text"], resolved)
                 # Strip the diagnostic 'text' field; the consumer schema
                 # is {label, start, end} only.

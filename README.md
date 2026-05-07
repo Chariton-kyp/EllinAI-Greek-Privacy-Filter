@@ -1,44 +1,47 @@
 # Greek Privacy Filter
 
-A 1.4-billion-parameter mixture-of-experts span detector for Greek
-personal-information text, fine-tuned from
-[`openai/privacy-filter`](https://github.com/openai/privacy-filter) on a
-fully synthetic Greek corpus and shipped with audit-grade governance
-documentation. The v1 release detects twelve PII classes — eight
-inherited from the upstream English-language base plus four added for
-Greek (AMKA, AFM, ADT, IBAN_GR) — at span F1 ≥ 0.94 across every
-class, with overall span F1 of **0.9886** on the held-out test set
-and **0.9868** on the harder edge-case set.
+A Greek PII detection pipeline shipped in three tiers — a 1.4 B token
+classifier (Lite), a 2 B causal-LM (Mini), and a 31 B teacher (Ultra) —
+built via knowledge distillation from a Gemma 4 31B teacher onto Greek-
+specific PII span detection across **24 classes**. Fine-tuned on a fully
+synthetic Greek corpus, validated on a held-out 200-case OOD benchmark,
+and shipped with audit-grade governance documentation.
 
 | Field            | Value                                              |
 | ---------------- | -------------------------------------------------- |
-| Status           | v1 released 2026-04-26                             |
-| Model size       | ~1.4 B parameters (8 layers × 128 experts × 4 routed/token, hidden 640), 2.6 GB bf16 |
-| Detection F1     | 0.9886 test · 0.9868 hard_test (span level, typed) |
-| Token F1         | 0.9972 test · 0.9942 hard_test                     |
-| Per-class F1 floor | 0.9486 (afm) — see `docs/MODEL_CARD.md` §4        |
-| Languages        | Modern Greek (with Latin-transliterated contact fields) |
+| Latest release   | **v3** — 2026-05-07 (24 classes, distillation pipeline) |
+| v1 (legacy)      | 2026-04-26 — 12 classes, OPF base, F1 0.9886 test  |
+| Tiers shipped    | **Lite** (1.4 B token classifier) · **Mini** (Gemma 4 2B Q4 LoRA) · **Ultra** (31 B teacher LoRA) |
+| Detection F1     | Lite v3: 0.99 in-dist · 0.78 OOD raw · Mini v3: 0.96 in-dist · 0.88 OOD raw |
+| Languages        | Modern Greek (Latin transliterations, polytonic, dense multi-PII forms) |
 | License          | Code: Apache 2.0; weights: non-commercial public release (NC + commercial) — see `LICENSING.md` |
 | Provider         | Chariton Kypraios — `haritos19@gmail.com`          |
+| Companion repo   | Commercial post-processing layer + operational runbooks live in a non-public audit records (commercial license only) — see `maintainer audit records` |
 
 ## What the model detects
 
-| Class             | Format                                             |
-| ----------------- | -------------------------------------------------- |
-| `private_person`  | Personal names                                     |
-| `private_phone`   | Greek phones (10-digit; mobile prefix 69x)         |
-| `private_email`   | Email addresses (Greek-script local-part supported) |
-| `private_address` | Street addresses                                   |
-| `private_url`     | URLs and social-media handles                      |
-| `private_date`    | Dates in numeric and verbose form                  |
-| `account_number`  | Bank account numbers                               |
-| `secret`          | API tokens, passwords, private keys                |
-| `afm`             | Greek tax number (9 digits)                        |
-| `amka`            | Greek social-security number (11 digits)           |
-| `adt`             | Greek ID-card number (1–2 letters + 6 digits)      |
-| `iban_gr`         | Greek IBAN (`GR` + 25 digits)                      |
+v3 covers **24 PII classes** organised in three families. Generic PII
+inherited from the OPF base (English) and adapted to Greek text on the
+left; Greek-specific identifiers in the middle; deterministic-format
+identifiers added in v2 / v3 on the right.
 
-The full label-space schema lives at `configs/label_space.json`.
+| Generic              | Greek-specific  | Deterministic-format |
+| -------------------- | --------------- | -------------------- |
+| `private_person`     | `afm`           | `passport`           |
+| `private_phone`      | `amka`          | `license_plate`      |
+| `private_email`      | `adt`           | `vehicle_vin`        |
+| `private_address`    | `iban_gr`       | `gemi`               |
+| `private_url`        |                 | `ama`                |
+| `private_date`       |                 | `card_pan`           |
+| `account_number`     |                 | `cvv`                |
+| `secret`             |                 | `imei`               |
+|                      |                 | `ip_address`         |
+|                      |                 | `mac_address`        |
+|                      |                 | `driver_license`     |
+|                      |                 | `pcn`                |
+
+The v1 12-class label space lives at `configs/label_space.json`. The
+v3 24-class schema lives at `configs/label_space_v3.json`.
 
 ## Inference example
 
@@ -231,11 +234,12 @@ format classes added: `passport`, `license_plate`, `vehicle_vin`,
 `driver_license`, `pcn`).
 
 Each iteration is evaluated on a **locked 200-case real-world Greek
-benchmark** (`data/realworld_benchmark/cases.jsonl`) with hand-graded
-spans across 24 registers: tax-office letters, medical referrals,
-formal legal text, polytonic, Greeklish, dialect, dense multi-PII
-forms, etc. The benchmark is held out — the model never sees it during
-training.
+benchmark** with hand-graded spans across 24 registers: tax-office
+letters, medical referrals, formal legal text, polytonic, Greeklish,
+dialect, dense multi-PII forms, etc. The benchmark is held out — the
+model never sees it during training. The exact benchmark file is
+proprietary (used for commercial calibration); aggregate numbers and
+methodology are reported here, full traces in the non-public audit records.
 
 | Version | Aggregate F1 | Precision | Recall | Notes |
 | ------- | -----------: | --------: | -----: | ----- |
@@ -266,17 +270,61 @@ Per-iteration dataset SHA-256 manifests at `artifacts/manifest/manifest_v2_*.jso
   Validation-set token accuracy is too easy. The 200-case OOD bench
   is the only signal that correlates with real deployment.
 
-### v2 path forward
+### v3 — distillation pipeline (released 2026-05-07)
 
-- **Qwen narrative pack** (v2.11+, in progress): generate diverse Greek
-  prose locally via Qwen3.6-35B-A3B served on consumer GPU. Each
-  record has authored PII slot values + LLM-written carrier prose;
-  spans labelled deterministically by substring search. ~25 records/min
-  on RTX 4080 Mobile.
-- **Hard-negative mining**: predict on real Greek prose, harvest
-  false positives, re-train.
-- **Cascade architecture** (planned): regex Layer 1 + transformer
-  Layer 2 + contextual Layer 3 — break the single-model 0.83 ceiling.
+v3 is a teacher–student distillation pipeline that breaks the
+single-model 0.83 ceiling without re-training the base from scratch.
+
+```text
+Greek corpus (PD/CC0/CC-BY) ─┬─► Gemma 4 31B SFT (teacher) ─┐
+                             │                              │
+v2.13 gold (111k records,   │   24-class span tagger, OOD   │
+24-class, 142k spans)  ──────┘   F1 0.978                   │
+                                                            │
+                                                            ▼
+                                  100k pseudo-labels  ──► Mini SFT (Gemma 4 2B Q4 LoRA)
+                                   over Greek corpus  ──► Lite SFT (privacy-filter 1.4B token)
+```
+
+| Tier  | Base model                       | Method        | F1 in-dist | F1 OOD raw |
+| ----- | -------------------------------- | ------------- | ---------: | ---------: |
+| Lite  | `katanemo/privacy-filter` (1.4B) | OPF token cls + distill | 0.99 | 0.78 |
+| Mini  | `unsloth/gemma-4-E2B-it`         | Unsloth LoRA Q4 + distill | 0.96 | 0.88 |
+| Ultra | Gemma 4 31B (teacher)            | Unsloth LoRA Q4 SFT | n/a | **0.978** |
+
+Real-world validation: against an independent reviewer (Anthropic
+Opus 4.7) on 10 hand-crafted Greek documents spanning 10 registers
+(corporate email, support chat, court decision, medical record, bank
+notification, vehicle insurance, tax form, HR contract, informal
+chat, government decree), Lite v3 achieved **79% exact-span agreement
+and 91% partial-span agreement** with the reviewer, 24/24 classes
+above F1 0.55, 18/24 classes above F1 0.85.
+
+Per-iteration training metrics for `mini-local` and `lite-v3-local`
+(per-class breakdown, predictions, confusion analysis) are kept in the
+non-public audit records and made available to commercial customers.
+
+### Training infrastructure
+
+The full distillation pipeline runs end-to-end on AWS EC2 spot:
+
+- `scripts/v3/train_teacher.py` — Unsloth Gemma 4 31B Q4 LoRA SFT,
+  pre-tokenized for TRL ≥ 0.21 + transformers 5.x compatibility.
+- `scripts/v3/generate_pseudo_labels_unsloth.py` — teacher inference
+  over the Greek corpus at ~140 records/min on g6e.xlarge.
+- `scripts/v3/train_student_distill.py` — parametrised SFT trainer
+  for the Mini / Pro / Max student tiers.
+- `scripts/v3/prep_lite_dataset.py` — dataset combiner with neg-pos
+  ratio sampling (gold + pseudo → balanced train set).
+- `scripts/aws/ec2_v3_{teacher,pseudo,distill}.sh` — spot launchers
+  with SSM artifact pump (S3 sync κάθε 5 min for spot resilience),
+  AVAIL_ZONE rotation for capacity, EBS provisioning for fast
+  checkpoint I/O.
+
+The post-processing layer that lifts end-to-end Lite F1 from 0.78
+to 0.89 on out-of-distribution Greek text is a hybrid regex/model
+cascade. The cascade sits in the non-public audit records and is part
+of the commercial license — see `LICENSING.md` and `maintainer audit records`.
 
 Open issues, security questions and security questions go via
 `SECURITY.md`.

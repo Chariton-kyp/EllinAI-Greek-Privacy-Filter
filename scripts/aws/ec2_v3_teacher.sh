@@ -44,7 +44,7 @@
 #                           starting a new TIMESTAMP run; downloads checkpoints
 #                           on boot and passes --resume-from-checkpoint to the
 #                           trainer. Use after a spot interruption.
-#                           Example: RESUME_RUN_PREFIX=v3/teacher/run-20260503T110650Z
+#                           Example: RESUME_RUN_PREFIX=v3/teacher/run-<TIMESTAMP>
 
 set -euo pipefail
 
