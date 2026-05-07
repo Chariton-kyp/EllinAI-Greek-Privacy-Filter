@@ -320,6 +320,18 @@ if [ "${MARKET_TYPE}" = "ondemand" ] || [ "${MARKET_TYPE}" = "on-demand" ]; then
 else
   echo "  market: spot (max-price=${SPOT_MAX_PRICE})"
 fi
+
+# Pin to a specific AZ when AVAIL_ZONE is set — capacity rotates per AZ,
+# so iterating AZs is the cheap way to find a slot when AWS-default
+# placement keeps returning InsufficientInstanceCapacity.
+if [ -n "${AVAIL_ZONE:-}" ]; then
+  if [ -z "${_PY_LOCAL}" ]; then
+    echo "FAIL: AVAIL_ZONE set but no local Python 3 found." >&2
+    exit 1
+  fi
+  GPF_AVAIL_ZONE="${AVAIL_ZONE}" ${_PY_LOCAL} -c "import json, os; p=os.environ['GPF_SPEC_FILE']; d=json.load(open(p)); d['Placement']={'AvailabilityZone': os.environ['GPF_AVAIL_ZONE']}; json.dump(d, open(p,'w'))"
+  echo "  placement: AZ=${AVAIL_ZONE}"
+fi
 unset GPF_SPEC_FILE
 
 SPEC_JSON="$(cat "${SPEC_FILE}")"

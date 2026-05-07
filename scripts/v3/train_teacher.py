@@ -63,6 +63,14 @@ def main() -> None:
                     help="Subset eval set for faster eval rounds. "
                          "Full set on 14k+ records takes ~50 min/round on L40S; "
                          "1000 random samples gives a stable eval_loss in ~3 min.")
+    p.add_argument("--resume-from-checkpoint", default=None,
+                    help="'auto' = pick latest checkpoint-* in output dir; "
+                         "or explicit path. Used after spot interruption to "
+                         "continue training from the last saved step.")
+    p.add_argument("--max-steps", type=int, default=None,
+                    help="Cap training at N optimiser steps (overrides "
+                         "num_train_epochs). Use to early-stop at the "
+                         "convergence plateau without changing the config.")
     args = p.parse_args()
 
     cfg = load_yaml(args.config)
@@ -193,6 +201,7 @@ def main() -> None:
     sft_config = SFTConfig(
         output_dir=str(args.output_dir / "checkpoints"),
         num_train_epochs=sft_cfg["epochs"],
+        max_steps=args.max_steps if args.max_steps is not None else -1,
         per_device_train_batch_size=sft_cfg["per_device_batch_size"],
         gradient_accumulation_steps=sft_cfg["gradient_accumulation_steps"],
         learning_rate=sft_cfg["learning_rate"],
@@ -240,8 +249,17 @@ def main() -> None:
         data_collator=data_collator,
     )
 
+    resume_arg: bool | str = False
+    if args.resume_from_checkpoint:
+        if args.resume_from_checkpoint == "auto":
+            # Trainer auto-detects latest checkpoint-* in output_dir.
+            resume_arg = True
+        else:
+            resume_arg = args.resume_from_checkpoint
+        print(f"[v3-teacher] resuming from checkpoint: {resume_arg}", flush=True)
+
     t0 = time.time()
-    train_result = trainer.train()
+    train_result = trainer.train(resume_from_checkpoint=resume_arg)
     elapsed = time.time() - t0
 
     # Save LoRA adapters (NOT merged base — saves 60GB+ disk)

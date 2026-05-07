@@ -31,6 +31,7 @@ V3_CHAT_S3_PREFIX="${V3_CHAT_S3_PREFIX:-assembled/v3_chat}"
 V3_PSEUDO_S3_PREFIX="${V3_PSEUDO_S3_PREFIX:-v3/pseudo}"
 V3_OUTPUT_S3_PREFIX="${V3_OUTPUT_S3_PREFIX:-v3/students}"
 MAX_TRAIN_SAMPLES="${MAX_TRAIN_SAMPLES:-}"
+MAX_STEPS="${MAX_STEPS:-}"
 STUDENT_HF_ID="${STUDENT_HF_ID:-}"
 UNSLOTH_IMAGE="${UNSLOTH_IMAGE:-unsloth/unsloth:latest}"
 
@@ -84,6 +85,7 @@ STUDENT_HF_ID="${STUDENT_HF_ID}"
 V3_CHAT_S3_PREFIX="${V3_CHAT_S3_PREFIX}"
 V3_PSEUDO_S3_PREFIX="${V3_PSEUDO_S3_PREFIX}"
 MAX_TRAIN_SAMPLES="${MAX_TRAIN_SAMPLES}"
+MAX_STEPS="${MAX_STEPS}"
 UNSLOTH_IMAGE="${UNSLOTH_IMAGE}"
 
 if [ -n "${HF_TOKEN}" ]; then
@@ -110,10 +112,47 @@ _v3_log_pump() {
   done
 }
 
+# Periodic checkpoint mirror to S3 — survives spot kill, OOM, hardware
+# fail. aws s3 sync is idempotent; only new/changed files upload.
+# Reason: a previous Mini run was reclaimed at step ~1885/4000 and the
+# EXIT trap finalize never synced the in-progress checkpoint folder
+# before the instance died — losing 4h of compute.
+_v3_artifact_pump() {
+  while true; do
+    if [ -d /opt/gpf/artifacts/v3/students ]; then
+      aws s3 sync /opt/gpf/artifacts/v3/students/ \\
+        "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/artifacts/" \\
+        --region "\${RUN_REGION}" --quiet --only-show-errors 2>/dev/null || true
+    fi
+    sleep 60
+  done
+}
+
+# Spot interruption watcher — IMDSv2 polls /spot/instance-action
+# (AWS sets that endpoint ~2 min before forced termination).
+_v3_spot_watcher() {
+  while true; do
+    TOKEN="\$(curl -sS --max-time 3 -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' 2>/dev/null || true)"
+    [ -n "\${TOKEN}" ] || { sleep 5; continue; }
+    CODE="\$(curl -sS --max-time 3 -o /dev/null -w '%{http_code}' -H "X-aws-ec2-metadata-token: \${TOKEN}" 'http://169.254.169.254/latest/meta-data/spot/instance-action' 2>/dev/null || echo 000)"
+    if [ "\${CODE}" = "200" ]; then
+      _v3_stamp "SPOT_INTERRUPT"
+      if [ -d /opt/gpf/artifacts/v3/students ]; then
+        aws s3 sync /opt/gpf/artifacts/v3/students/ \\
+          "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/artifacts/" \\
+          --region "\${RUN_REGION}" --only-show-errors 2>/dev/null || true
+      fi
+      _v3_stamp "SPOT_PREEMPT_SYNCED"
+      break
+    fi
+    sleep 5
+  done
+}
+
 _v3_finalize() {
   set +e
   _v3_stamp "FINALIZE"
-  kill \$_PUMP_PID 2>/dev/null || true
+  kill \$_PUMP_PID \$_ART_PID \$_SPOT_PID 2>/dev/null || true
   echo "[finalize] uploading artefacts + logs"
   if [ -d /opt/gpf/artifacts/v3/students ]; then
     aws s3 sync /opt/gpf/artifacts/v3/students/ \\
@@ -132,6 +171,10 @@ _v3_finalize() {
 trap _v3_finalize EXIT INT TERM
 _v3_log_pump &
 _PUMP_PID=\$!
+_v3_artifact_pump &
+_ART_PID=\$!
+_v3_spot_watcher &
+_SPOT_PID=\$!
 
 # STS / IAM diagnostic dump.
 {
@@ -222,8 +265,11 @@ if [ -n "\${PSEUDO_RAW}" ]; then
     --input  "/workspace/gpf/\${PSEUDO_RAW_REL}" \\
     --output /workspace/gpf/data/processed/v3_pseudo_chat/pseudo_chat.jsonl \\
     --label-space /workspace/gpf/configs/label_space_v2.json
+  # Shuffle the concatenation so MAX_TRAIN_SAMPLES (or partial-epoch
+  # truncation) gets a balanced gold/pseudo mix instead of all-gold-first.
   cat /opt/gpf/data/processed/v3_chat/train.jsonl \\
       /opt/gpf/data/processed/v3_pseudo_chat/pseudo_chat.jsonl \\
+    | shuf --random-source=/dev/urandom \\
       > /opt/gpf/data/processed/train_with_pseudo.jsonl
 else
   cp /opt/gpf/data/processed/v3_chat/train.jsonl \\
@@ -235,6 +281,12 @@ _v3_stamp "TRAIN_START"
 TRAIN_ARGS=()
 if [ -n "\${MAX_TRAIN_SAMPLES}" ]; then
   TRAIN_ARGS+=( --max-train-samples "\${MAX_TRAIN_SAMPLES}" )
+fi
+if [ -n "\${MAX_STEPS}" ]; then
+  TRAIN_ARGS+=( --max-steps "\${MAX_STEPS}" )
+fi
+if [ -n "\${STUDENT_HF_ID}" ]; then
+  TRAIN_ARGS+=( --model-override "\${STUDENT_HF_ID}" )
 fi
 docker run --rm --gpus all --ipc=host --shm-size=8g \\
   -u 0:0 \\

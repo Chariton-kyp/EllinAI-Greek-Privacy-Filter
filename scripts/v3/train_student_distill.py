@@ -52,6 +52,12 @@ def main() -> None:
     p.add_argument("--train-jsonl", type=Path, required=True)
     p.add_argument("--eval-jsonl", type=Path, required=True)
     p.add_argument("--max-train-samples", type=int, default=None)
+    p.add_argument("--resume-from-checkpoint", default=None,
+                    help="'auto' = latest checkpoint-* in output dir; or path.")
+    p.add_argument("--max-steps", type=int, default=None,
+                    help="Cap training at N optimiser steps (overrides epochs).")
+    p.add_argument("--model-override", default=None,
+                    help="Override student.hf_id from config yaml.")
     args = p.parse_args()
 
     cfg = load_yaml(args.config)
@@ -63,7 +69,7 @@ def main() -> None:
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    hf_id = student_cfg["hf_id"]
+    hf_id = args.model_override or student_cfg["hf_id"]
     sft_cfg = student_cfg["sft"]
     lora_cfg = student_cfg.get("lora", {"r": 16, "alpha": 32, "dropout": 0.05,
                                          "target_modules": [
@@ -154,6 +160,7 @@ def main() -> None:
     sft_config = SFTConfig(
         output_dir=str(args.output_dir / "checkpoints"),
         num_train_epochs=sft_cfg.get("epochs", 2),
+        max_steps=args.max_steps if args.max_steps is not None else -1,
         per_device_train_batch_size=sft_cfg.get("batch_size", 4),
         gradient_accumulation_steps=sft_cfg.get("grad_accum", 4),
         learning_rate=sft_cfg.get("lr", 2e-4),
@@ -194,8 +201,13 @@ def main() -> None:
         data_collator=data_collator,
     )
 
+    resume_arg: bool | str = False
+    if args.resume_from_checkpoint:
+        resume_arg = True if args.resume_from_checkpoint == "auto" else args.resume_from_checkpoint
+        print(f"[v3-student/{args.tier}] resume: {resume_arg}", flush=True)
+
     t0 = time.time()
-    train_result = trainer.train()
+    train_result = trainer.train(resume_from_checkpoint=resume_arg)
     elapsed = time.time() - t0
 
     final = args.output_dir / "lora_adapters"

@@ -28,17 +28,16 @@ import sys
 import time
 from pathlib import Path
 
+# Reuse the EXACT prompt + regex post-pass that drove F1 0.979 on the
+# 200-case OOD benchmark (run-20260504T181047Z). Without these, pseudo
+# labels degrade to F1 0.25 (broken prompt) or 0.91 (correct prompt but
+# no regex polish) — proven empirically across runs T121052Z (no few-shot,
+# no regex), T140625Z (few-shot + regex v3), T181047Z (all v4 fixes).
+sys.path.insert(0, str(Path(__file__).parent))
+from benchmark_teacher import SYSTEM_PROMPT  # type: ignore
+from regex_pii_postpass import augment_with_regex  # type: ignore
+
 _JSON_LIST_RE = re.compile(r"\[\s*(?:\{.*?\})?\s*(?:,\s*\{.*?\}\s*)*\]", re.DOTALL)
-
-
-SYSTEM_PROMPT = (
-    "Είσαι σύστημα ανίχνευσης ευαίσθητων προσωπικών δεδομένων (PII) σε "
-    "ελληνικό κείμενο. Όταν σου δίνεται ένα κείμενο, απαντάς ΑΠΟΚΛΕΙΣΤΙΚΑ "
-    "με μια έγκυρη JSON λίστα της μορφής:\n"
-    "  [{\"label\": \"<class>\", \"value\": \"<αυτούσιο απόσπασμα>\"}, ...]\n"
-    "Εντόπισε τα PII στη σειρά που εμφανίζονται στο κείμενο (αριστερά → δεξιά). "
-    "Αν δεν υπάρχει κανένα PII, απάντησε []. ΟΧΙ σχόλια, ΟΧΙ markdown."
-)
 
 
 def parse_spans(content: str):
@@ -73,7 +72,7 @@ def resolve_offsets(text: str, spans):
         idx = text.find(val, cursor)
         if idx < 0:
             return None
-        out.append({"category": lbl, "start": idx, "end": idx + len(val)})
+        out.append({"label": lbl, "start": idx, "end": idx + len(val), "text": val})
         cursor = idx + len(val)
     return out
 
@@ -107,21 +106,27 @@ def main() -> None:
                     continue
         print(f"[resume] skipping {len(seen)} already-labelled", flush=True)
 
-    print(f"[unsloth] loading {args.base_model} + LoRA {args.lora_adapter}", flush=True)
+    # Unsloth-native LoRA load: pass the adapter dir as model_name so
+    # Unsloth reads adapter_config.json → resolves base + attaches the
+    # adapter using its quantized-wrapper-aware code path. PEFT's
+    # PeftModel.from_pretrained crashes on Gemma 4 with
+    #   ValueError: Target module Gemma4ClippableLinear(...) is not supported
+    # because the base ships custom-wrapped Linear modules. (Same bug fix
+    # as benchmark_teacher.py.)
+    print(f"[unsloth] loading LoRA dir {args.lora_adapter} (base auto-resolved)",
+          flush=True)
     from unsloth import FastLanguageModel  # type: ignore
     import torch
 
     model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=args.base_model,
+        model_name=args.lora_adapter,
         max_seq_length=args.max_seq_length,
         dtype=None,
         load_in_4bit=True,
     )
-    # Load LoRA adapter into the base
-    from peft import PeftModel  # type: ignore
-    model = PeftModel.from_pretrained(model, args.lora_adapter)
     FastLanguageModel.for_inference(model)
     model.eval()
+    text_tokenizer = getattr(tokenizer, "tokenizer", tokenizer)
 
     # Load corpus
     records = []
@@ -145,34 +150,48 @@ def main() -> None:
     skipped_offsets = 0
     t_start = time.time()
 
+    # Gemma 4 chat template needs content as list of multimodal blocks,
+    # not a plain string. Wrap user text once per request.
+    def _to_blocks(content: str) -> list[dict]:
+        return [{"type": "text", "text": content}]
+
     with args.output.open("a" if args.resume else "w", encoding="utf-8") as fout:
         for i in range(0, len(records), args.batch_size):
             batch = records[i:i + args.batch_size]
             prompts = []
             for rec in batch:
                 msg = [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user",   "content": rec["text"]},
+                    {"role": "system", "content": _to_blocks(SYSTEM_PROMPT)},
+                    {"role": "user",   "content": _to_blocks(rec["text"])},
                 ]
                 prompts.append(tokenizer.apply_chat_template(
                     msg, tokenize=False, add_generation_prompt=True))
 
-            inputs = tokenizer(prompts, return_tensors="pt", padding=True,
+            # Pass text= as kwarg (Gemma4Processor multimodal-arg quirk).
+            inputs = tokenizer(text=prompts, return_tensors="pt", padding=True,
                                 truncation=True, max_length=args.max_seq_length).to("cuda")
+            input_ids = inputs["input_ids"]
+            if input_ids.dim() == 3:
+                input_ids = input_ids.squeeze(1)
+                inputs["input_ids"] = input_ids
+            attention_mask = inputs.get("attention_mask")
+            if attention_mask is not None and attention_mask.dim() == 3:
+                inputs["attention_mask"] = attention_mask.squeeze(1)
 
             with torch.inference_mode():
                 outputs = model.generate(
-                    **inputs,
+                    input_ids=inputs["input_ids"],
+                    attention_mask=inputs.get("attention_mask"),
                     max_new_tokens=args.max_new_tokens,
                     do_sample=False if args.temperature == 0.0 else True,
-                    temperature=max(args.temperature, 0.01),
-                    pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
+                    temperature=max(args.temperature, 0.01) if args.temperature > 0 else None,
+                    pad_token_id=text_tokenizer.pad_token_id or text_tokenizer.eos_token_id,
                 )
 
             # Decode only the generated portion
-            for rec, output_ids, input_ids in zip(batch, outputs, inputs["input_ids"]):
-                gen_ids = output_ids[len(input_ids):]
-                content = tokenizer.decode(gen_ids, skip_special_tokens=True)
+            for rec, output_ids, in_ids in zip(batch, outputs, inputs["input_ids"]):
+                gen_ids = output_ids[len(in_ids):]
+                content = text_tokenizer.decode(gen_ids, skip_special_tokens=True)
                 spans = parse_spans(content)
                 if spans is None:
                     skipped_parse += 1
@@ -181,9 +200,20 @@ def main() -> None:
                 if resolved is None:
                     skipped_offsets += 1
                     continue
+                # Apply v4 regex post-pass — same hybrid path that drove
+                # bench F1 from 0.91 (model raw) to 0.979 (model+regex).
+                # Without this, pseudo-labels lose recall on URL/email/
+                # AMKA/date/IP/AFM/ADT/IBAN classes.
+                augmented = augment_with_regex(rec["text"], resolved)
+                # Strip the diagnostic 'text' field; the consumer schema
+                # is {label, start, end} only.
+                out_label = [
+                    {"label": s["label"], "start": s["start"], "end": s["end"]}
+                    for s in augmented
+                ]
                 out_rec = {
                     "text": rec["text"],
-                    "label": resolved,
+                    "label": out_label,
                     "info": {
                         "source": "v3_pseudo",
                         "teacher": args.base_model,

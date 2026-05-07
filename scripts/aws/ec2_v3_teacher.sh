@@ -39,6 +39,12 @@
 #   MAX_EVAL_SAMPLES      — subset eval set. Default 1000 (full eval = 14k records,
 #                           ~50 min per round on L40S; 1000 = ~3 min, stable loss).
 #   UNSLOTH_IMAGE         — default unsloth/unsloth:latest
+#   RESUME_RUN_PREFIX     — resume from existing s3://BUCKET/<prefix>/artifacts/.
+#                           When set, launcher reuses that prefix instead of
+#                           starting a new TIMESTAMP run; downloads checkpoints
+#                           on boot and passes --resume-from-checkpoint to the
+#                           trainer. Use after a spot interruption.
+#                           Example: RESUME_RUN_PREFIX=v3/teacher/run-20260503T110650Z
 
 set -euo pipefail
 
@@ -52,7 +58,9 @@ V3_DATA_S3_PREFIX="${V3_DATA_S3_PREFIX:-assembled/v3_chat}"
 V3_OUTPUT_S3_PREFIX="${V3_OUTPUT_S3_PREFIX:-v3/teacher}"
 MAX_TRAIN_SAMPLES="${MAX_TRAIN_SAMPLES:-}"
 MAX_EVAL_SAMPLES="${MAX_EVAL_SAMPLES:-1000}"
+MAX_STEPS="${MAX_STEPS:-}"
 UNSLOTH_IMAGE="${UNSLOTH_IMAGE:-unsloth/unsloth:latest}"
+RESUME_RUN_PREFIX="${RESUME_RUN_PREFIX:-}"
 
 : "${BUCKET:?BUCKET env var required}"
 : "${IAM_INSTANCE_PROFILE:?IAM_INSTANCE_PROFILE env var required}"
@@ -62,7 +70,15 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 GIT_COMMIT="$(git -C "${REPO_ROOT}" rev-parse HEAD 2>/dev/null || echo unknown)"
 REPO_KEY="code/gpf-v3-teacher-${TIMESTAMP}.tar.gz"
-RUN_PREFIX="${V3_OUTPUT_S3_PREFIX}/run-${TIMESTAMP}"
+# Reuse existing prefix when resuming so artifacts sync to/from same S3 path.
+if [ -n "${RESUME_RUN_PREFIX}" ]; then
+  RUN_PREFIX="${RESUME_RUN_PREFIX}"
+  # Run timestamp embedded in prefix becomes the trainer's output dir name.
+  RUN_TIMESTAMP="$(basename "${RESUME_RUN_PREFIX}" | sed 's/^run-//')"
+else
+  RUN_PREFIX="${V3_OUTPUT_S3_PREFIX}/run-${TIMESTAMP}"
+  RUN_TIMESTAMP="${TIMESTAMP}"
+fi
 REPO_TAR="/tmp/gpf-v3-teacher-${TIMESTAMP}.tar.gz"
 
 echo "[1/5] Pack repo (scripts/v3 + configs)"
@@ -89,7 +105,7 @@ cat > "${USERDATA_FILE}" <<EOF
 set -euxo pipefail
 exec > /var/log/gpf-v3-teacher.log 2>&1
 
-RUN_TIMESTAMP="${TIMESTAMP}"
+RUN_TIMESTAMP="${RUN_TIMESTAMP}"
 RUN_BUCKET="${BUCKET}"
 RUN_REGION="${REGION}"
 RUN_PREFIX="${RUN_PREFIX}"
@@ -97,7 +113,9 @@ TEACHER_HF_ID="${TEACHER_HF_ID}"
 V3_DATA_S3_PREFIX="${V3_DATA_S3_PREFIX}"
 MAX_TRAIN_SAMPLES="${MAX_TRAIN_SAMPLES}"
 MAX_EVAL_SAMPLES="${MAX_EVAL_SAMPLES}"
+MAX_STEPS="${MAX_STEPS}"
 UNSLOTH_IMAGE="${UNSLOTH_IMAGE}"
+RESUME_RUN_PREFIX="${RESUME_RUN_PREFIX}"
 
 if [ -n "${HF_TOKEN}" ]; then
   export HF_TOKEN="${HF_TOKEN}"
@@ -124,10 +142,50 @@ _v3_log_pump() {
   done
 }
 
+# Periodic checkpoint mirror to S3 — survives any EBS/instance loss.
+# aws s3 sync is idempotent; only new/changed files upload. Runs every 60s.
+_v3_artifact_pump() {
+  while true; do
+    if [ -d /opt/gpf/artifacts/v3/teacher ]; then
+      aws s3 sync /opt/gpf/artifacts/v3/teacher/ \\
+        "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/artifacts/" \\
+        --region "\${RUN_REGION}" --quiet --only-show-errors 2>/dev/null || true
+    fi
+    sleep 60
+  done
+}
+
+# Spot interruption watcher — IMDSv2 polls /spot/instance-action.
+# AWS sets that endpoint ~2 min before forced termination. On detect:
+# stamp the event + fire one final urgent sync. No graceful shutdown of
+# the trainer (Docker --rm + SIGKILL takes everything down anyway), but
+# the artifact pump has been running every 60s so loss <60s of progress.
+_v3_spot_watcher() {
+  while true; do
+    TOKEN="\$(curl -sS --max-time 3 -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' 2>/dev/null || true)"
+    [ -n "\${TOKEN}" ] || { sleep 5; continue; }
+    CODE="\$(curl -sS --max-time 3 -o /dev/null -w '%{http_code}' -H "X-aws-ec2-metadata-token: \${TOKEN}" 'http://169.254.169.254/latest/meta-data/spot/instance-action' 2>/dev/null || echo 000)"
+    if [ "\${CODE}" = "200" ]; then
+      _v3_stamp "SPOT_INTERRUPT"
+      if [ -d /opt/gpf/artifacts/v3/teacher ]; then
+        aws s3 sync /opt/gpf/artifacts/v3/teacher/ \\
+          "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/artifacts/" \\
+          --region "\${RUN_REGION}" --only-show-errors 2>/dev/null || true
+      fi
+      aws s3 cp /var/log/gpf-v3-teacher.log \\
+        "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/logs/gpf-v3-teacher.preempt.log" \\
+        --region "\${RUN_REGION}" --only-show-errors 2>/dev/null || true
+      _v3_stamp "SPOT_PREEMPT_SYNCED"
+      break
+    fi
+    sleep 5
+  done
+}
+
 _v3_finalize() {
   set +e
   _v3_stamp "FINALIZE"
-  kill \$_PUMP_PID 2>/dev/null || true
+  kill \$_PUMP_PID \$_ART_PID \$_SPOT_PID 2>/dev/null || true
   echo "[finalize] uploading artefacts + logs"
   if [ -d /opt/gpf/artifacts/v3/teacher ]; then
     aws s3 sync /opt/gpf/artifacts/v3/teacher/ \\
@@ -146,6 +204,10 @@ _v3_finalize() {
 trap _v3_finalize EXIT INT TERM
 _v3_log_pump &
 _PUMP_PID=\$!
+_v3_artifact_pump &
+_ART_PID=\$!
+_v3_spot_watcher &
+_SPOT_PID=\$!
 
 # STS / IAM diagnostic dump (loud-fail if perms broken).
 {
@@ -220,6 +282,25 @@ fi
 mkdir -p "\${HF_CACHE_DIR}"
 chmod 1777 "\${HF_CACHE_DIR}" /opt/gpf/artifacts /opt/gpf/data/processed
 
+# 4b. If resuming, restore prior artifacts (checkpoints) from S3 to local disk.
+# Trainer auto-detects latest checkpoint in output_dir/checkpoints/ when given
+# --resume-from-checkpoint auto.
+TRAIN_OUTPUT_DIR="/opt/gpf/artifacts/v3/teacher/run-\${RUN_TIMESTAMP}"
+mkdir -p "\${TRAIN_OUTPUT_DIR}"
+RESUME_FLAG=""
+if [ -n "\${RESUME_RUN_PREFIX}" ]; then
+  _v3_stamp "RESUME_DOWNLOAD"
+  aws s3 sync "s3://\${RUN_BUCKET}/\${RUN_PREFIX}/artifacts/run-\${RUN_TIMESTAMP}/" \\
+    "\${TRAIN_OUTPUT_DIR}/" \\
+    --region "\${RUN_REGION}" --only-show-errors || true
+  if ls "\${TRAIN_OUTPUT_DIR}/checkpoints/checkpoint-"* >/dev/null 2>&1; then
+    RESUME_FLAG="--resume-from-checkpoint=auto"
+    _v3_stamp "RESUME_FOUND"
+  else
+    _v3_stamp "RESUME_NO_CHECKPOINT"
+  fi
+fi
+
 # 5. Run training inside the Unsloth container.
 # --entrypoint /opt/venv/bin/python  bypasses the image's default
 #                                    Jupyter-launching entrypoint.sh
@@ -233,6 +314,12 @@ if [ -n "\${MAX_TRAIN_SAMPLES}" ]; then
 fi
 if [ -n "\${MAX_EVAL_SAMPLES}" ]; then
   TRAIN_ARGS+=( --max-eval-samples "\${MAX_EVAL_SAMPLES}" )
+fi
+if [ -n "\${MAX_STEPS}" ]; then
+  TRAIN_ARGS+=( --max-steps "\${MAX_STEPS}" )
+fi
+if [ -n "\${RESUME_FLAG}" ]; then
+  TRAIN_ARGS+=( "\${RESUME_FLAG}" )
 fi
 docker run --rm --gpus all --ipc=host --shm-size=8g \\
   -u 0:0 \\
