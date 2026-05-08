@@ -16,9 +16,9 @@ artefact in the repository:
 - **Documentation** (`docs/`, top-level `*.md`, `NOTICE`,
   `ATTRIBUTION.txt`) — Apache License, Version 2.0.
 - **Reference data samples** (`data/samples/`, `data/seed/`,
-  `data/realworld_benchmark/`) — Apache License, Version 2.0.
+  but not `data/realworld_benchmark/`) — Apache License, Version 2.0.
 - **Public audit evidence** (`artifacts/manifest/`,
-  `artifacts/metrics/`) — Apache License, Version 2.0.
+  aggregate-only `artifacts/metrics/`) — Apache License, Version 2.0.
 
 This is the standard "inbound = outbound" model used by Apache 2.0
 projects. You retain copyright in your contribution; you grant the
@@ -59,6 +59,11 @@ If you cannot agree to the above, please do not submit contributions.
 - Operational identifiers (AWS account IDs, real S3 bucket names, IAM
   user/role names, instance IDs). These belong in `private/` (which is
   gitignored), never in committed files.
+- Private benchmark material, including `data/realworld_benchmark/`,
+  full benchmark traces, per-case predictions, expected spans,
+  redacted text, failure-mining contexts, or benchmark-builder source
+  files. Public benchmark evidence must be aggregate-only; see
+  `public release documentation`.
 
 ## How to contribute
 

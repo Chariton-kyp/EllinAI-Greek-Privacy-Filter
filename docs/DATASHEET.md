@@ -199,6 +199,11 @@ The artefacts are released on three publishing surfaces:
 | Full train, validation, test, and hard-test splits — v1 release is 32,061 records (50 k input, 33 % deduplication ratio); the larger production target remains 100,000 records | HuggingFace Dataset repository, tagged to the git commit that produced them | Apache License 2.0 on the JSONL records; the carrier text inherits its upstream licence as listed in §5. |
 | Fine-tuned model weights | HuggingFace Model repository, tagged to the git commit and to the dataset tag | Greek Privacy Filter Non-Commercial License v1.0 (see `LICENSE-NC`). |
 
+The locked 200-case OOD benchmark is not part of the public dataset
+distribution. It is retained in the non-public audit records for
+held-out model comparison and commercial calibration. Public benchmark
+reporting is aggregate-only; see `public release documentation`.
+
 SHA-256 digests of the full dataset files are recorded in the per-run
 `manifest.json` uploaded to S3 by
 `scripts/aws/ec2_spot_generate.sh` and then committed to

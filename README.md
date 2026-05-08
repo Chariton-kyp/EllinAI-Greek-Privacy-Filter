@@ -4,8 +4,8 @@ A Greek PII detection pipeline shipped in three tiers — a 1.4 B token
 classifier (Lite), a 2 B causal-LM (Mini), and a 31 B teacher (Ultra) —
 built via knowledge distillation from a Gemma 4 31B teacher onto Greek-
 specific PII span detection across **24 classes**. Fine-tuned on a fully
-synthetic Greek corpus, validated on a held-out 200-case OOD benchmark,
-and shipped with audit-grade governance documentation.
+synthetic Greek corpus, validated against a private held-out 200-case
+OOD benchmark, and shipped with audit-grade governance documentation.
 
 | Field            | Value                                              |
 | ---------------- | -------------------------------------------------- |
@@ -17,6 +17,7 @@ and shipped with audit-grade governance documentation.
 | License          | Code: Apache 2.0; weights: non-commercial public release (NC + commercial) — see `LICENSING.md` |
 | Provider         | Chariton Kypraios — `haritos19@gmail.com`          |
 | Companion repo   | Commercial post-processing layer + operational runbooks live in a non-public audit records (commercial license only) — see `maintainer audit records` |
+| Public boundary  | This repo publishes reproducible code, schemas, samples, manifests, and aggregate metrics only — see `public release documentation` |
 
 ## What the model detects
 
@@ -60,8 +61,7 @@ for span in result.detected_spans:
     print(span.label, span.text, span.start, span.end)
 ```
 
-To reproduce the v1 metrics on the realworld test passages bundled with
-the repository:
+To run the public inference container against a downloaded checkpoint:
 
 ```bash
 # Drop the downloaded fine-tuned checkpoint under
@@ -71,12 +71,17 @@ docker compose run --rm gpf-inference \
     --checkpoint /workspace/data/processed/aws-ft-<RUN_ID>/model
 ```
 
-The default path the realworld script expects is
+The default path the inference script expects is
 `data/processed/aws-ft-20260426T135853Z/model` (covered by the compose
 `./data` mount). The fine-tuned checkpoint itself is not bundled with
 this repository (2.6 GB); a deployer either reproduces it via the AWS
 launchers in `scripts/aws/` or downloads it from the project's
 HuggingFace Hub release once published.
+
+The locked 200-case OOD benchmark used for v2.13-vs-v3 comparison is
+not bundled in the public repository. Public benchmark reporting is
+aggregate-only; per-case traces and full benchmark text live in the
+non-public audit records.
 
 ## Repository layout
 
@@ -102,7 +107,7 @@ HuggingFace Hub release once published.
 │   ├── hash_manifest.py                        SHA-256 manifest writer
 │   ├── verify_provenance.py                    Per-record provenance allow-list check
 │   ├── validate_greek_pii_dataset.py           JSONL schema validator
-│   ├── checkpoint inference command             10-case realworld inference test (with P/R/F1)
+│   ├── checkpoint inference command             Local inference smoke test (benchmark data not bundled)
 │   ├── setup_opf_stack.py                      Clone + install upstream OPF at the pinned commit
 │   ├── run_opf_train.py / run_opf_eval.py      Local-host training / evaluation wrappers
 │   ├── aws/
@@ -116,7 +121,7 @@ HuggingFace Hub release once published.
 ├── docs/                                       Audit-ready governance documentation (see below)
 ├── artifacts/
 │   ├── manifest/                               manifest_v1.json (release) + manifest.json (smoke) + samples_manifest.json
-│   ├── metrics/                                curation, provenance, samples_provenance, realworld_inference reports + archive/
+│   ├── metrics/                                aggregate benchmark summary, curation/provenance reports + archive/
 │   ├── logs/, model/, checkpoints/             gitignored run artefacts
 ├── Dockerfile.inference                        Local CUDA inference image (clones upstream OPF)
 ├── docker-compose.yml                          Single-service compose stack
@@ -137,9 +142,40 @@ HuggingFace Hub release once published.
 | `docs/NIST_AI_RMF.md`             | NIST AI RMF 1.0 mapping                                                   |
 | `docs/DPIA_NOTE.md`               | Public DPIA-status note (training stage processes no personal data)       |
 | `docs/GDPR_ART30_ROPA.md`         | Deployer template (provider record kept private per Art. 30 guidance)    |
+| `public release documentation`  | Public/private split for benchmark, commercial, and operational artefacts |
+| `docs/V2_13_V3_COMPARISON.md`     | Aggregate v2.13-vs-v3 same-dataset comparison and metric caveats          |
 | `LICENSING.md`                    | Dual-license rationale + commercial-license procedure                     |
 | `SECURITY.md`                     | Vulnerability disclosure policy                                           |
 | `NOTICE`, `ATTRIBUTION.txt`       | Apache 2.0 notice + per-data-source citations                             |
+
+## Public and private boundary
+
+The public repository is intentionally narrow. It contains the code,
+configs, public samples, manifests, governance documents, and
+aggregate-only benchmark summaries needed to inspect the project and
+reproduce the public pipeline.
+
+It does **not** contain:
+
+- the locked 200-case OOD benchmark JSONL;
+- per-case benchmark traces with raw text, expected spans, predictions,
+  redacted text, or failure-mining contexts;
+- non-public calibration code;
+- filled AWS/account/bucket/IAM/instance identifiers;
+- private v3 training traces, customer calibration assets, or
+  release-candidate artefact pointers.
+
+Those materials live in the non-public audit records described in
+`maintainer audit records`. The authoritative boundary policy is
+`public release documentation`. Because this repository has already
+been published, also read `public release documentation` before
+treating the public history as clean.
+
+Before publishing from this repository, run:
+
+```bash
+python scripts/check_public_boundary.py --check-json
+```
 
 ## Installation
 
@@ -233,13 +269,14 @@ format classes added: `passport`, `license_plate`, `vehicle_vin`,
 `gemi`, `ama`, `card_pan`, `cvv`, `imei`, `ip_address`, `mac_address`,
 `driver_license`, `pcn`).
 
-Each iteration is evaluated on a **locked 200-case real-world Greek
-benchmark** with hand-graded spans across 24 registers: tax-office
+Each iteration is evaluated on a **locked private 200-case real-world
+Greek benchmark** with hand-graded spans across 24 registers: tax-office
 letters, medical referrals, formal legal text, polytonic, Greeklish,
 dialect, dense multi-PII forms, etc. The benchmark is held out — the
 model never sees it during training. The exact benchmark file is
-proprietary (used for commercial calibration); aggregate numbers and
-methodology are reported here, full traces in the non-public audit records.
+proprietary and used for commercial calibration; aggregate numbers and
+methodology are reported here, while full traces stay in the private
+non-public audit records.
 
 | Version | Aggregate F1 | Precision | Recall | Notes |
 | ------- | -----------: | --------: | -----: | ----- |
@@ -250,9 +287,10 @@ methodology are reported here, full traces in the non-public audit records.
 | v2.10 (recall-boost templates) | 0.777 | 0.901 | 0.683 | over-formulaic templates; ama 0.13→0.47 but other classes lost recall |
 | v2.11 (Qwen narrative, 1.5k records) | 0.814 | 0.865 | 0.769 | Qwen3.6-35B-A3B-Q4 served locally; ama 0.13→0.60 (+0.47), gemi 0.59→0.93; private_phone 0.86→0.53 (12 confusions); net F1 −0.012 vs v2.9 |
 | v2.12 (data audit + phone-anchor) | 0.8266 | 0.881 | 0.778 | filtered 118 phone-shape account_number records from base; +300 Qwen phone-anchor records with explicit `τηλ./κιν./📞` markers; ama 0.13→0.78 (+0.65), gemi 0.59→0.97, pcn 0.95→1.00, dl 0.67→0.82; phone confusions 12→7 |
-| v2.13 (Qwen contrastive packs) | **0.8373** | **0.888** | **0.792** | +500 phone_account, +107 email_secret (clean), +291 mac_ip_vin (clean); leakage filter dropped 467 records where Qwen regurgitated label IDs ("secret", "mac_address", "ip_address", "vehicle_vin"); generator patched to use Greek-readable labels ("κλειδί API", "διεύθυνση MAC"); mac_address 0.58→0.88 (+0.30), secret 0.73→0.91, vehicle_vin 1.00, afm 0.98; **new champion** |
+| v2.13 (Qwen contrastive packs) | **0.8373** | **0.888** | **0.792** | +500 phone_account, +107 email_secret (clean), +291 mac_ip_vin (clean); leakage filter dropped 467 records where Qwen regurgitated label IDs ("secret", "mac_address", "ip_address", "vehicle_vin"); generator patched to use Greek-readable labels ("κλειδί API", "διεύθυνση MAC"); mac_address 0.58→0.88 (+0.30), secret 0.73→0.91, vehicle_vin 1.00, afm 0.98; final v2 comparison baseline |
 
-Per-iteration benchmark JSONs at `artifacts/metrics/benchmark_triage_v2_*.json`.
+Public per-iteration benchmark aggregates are kept in
+`artifacts/metrics/benchmark_summary.json`.
 Per-iteration dataset SHA-256 manifests at `artifacts/manifest/manifest_v2_*.json`.
 
 ### Lessons learned (template-only ceiling)
@@ -267,13 +305,13 @@ Per-iteration dataset SHA-256 manifests at `artifacts/manifest/manifest_v2_*.jso
   in the record. Empty-label records collapse recall globally —
   the model learns "when in doubt, predict O".
 - Single-pass token accuracy ≥ 0.999 does **not** imply OOD F1 ≥ 0.85.
-  Validation-set token accuracy is too easy. The 200-case OOD bench
-  is the only signal that correlates with real deployment.
+  Validation-set token accuracy is too easy. The private 200-case OOD
+  bench is the main signal used for v2.13-vs-v3 comparison.
 
-### v3 — distillation pipeline (released 2026-05-07)
+### v3 — latest test line (released 2026-05-07)
 
 v3 is a teacher–student distillation pipeline that breaks the
-single-model 0.83 ceiling without re-training the base from scratch.
+single-model v2.13 ceiling without re-training the base from scratch.
 
 ```text
 Greek corpus (PD/CC0/CC-BY) ─┬─► Gemma 4 31B SFT (teacher) ─┐
@@ -291,6 +329,19 @@ v2.13 gold (111k records,   │   24-class span tagger, OOD   │
 | Lite  | `katanemo/privacy-filter` (1.4B) | OPF token cls + distill | 0.99 | 0.78 |
 | Mini  | `unsloth/gemma-4-E2B-it`         | Unsloth LoRA Q4 + distill | 0.96 | 0.88 |
 | Ultra | Gemma 4 31B (teacher)            | Unsloth LoRA Q4 SFT | n/a | **0.978** |
+
+For public comparison, treat v2.13 as the final v2 baseline and v3 as
+the latest test line. Aggregate-only comparison data is published in
+`artifacts/metrics/benchmark_summary.json`; private per-case traces,
+reviewer notes, and calibration details remain in the non-public audit records.
+
+| Comparison target | Private OOD F1 raw | Notes |
+| --- | ---: | --- |
+| v2.13 OPF eval, same 200 cases | 0.8564 | Final v2 baseline, 24 classes, typed OPF eval, Viterbi, `n_ctx=256`. |
+| v3 Lite OPF eval, same 200 cases | 0.8100 | Same dataset and factors as v2.13; this token tier trails v2.13 before the private additional calibration layer. |
+| v2.13 private triage harness | 0.8373 | Earlier aggregate from the private triage harness; retained for historical continuity. |
+| v3 Mini raw | 0.88 | Distilled causal-LM tier; current public aggregate beats v2.13 raw. |
+| v3 Ultra teacher raw | 0.978 | Teacher tier used for distillation and upper-bound calibration. |
 
 Real-world validation: against an independent reviewer (Anthropic
 Opus 4.7) on 10 hand-crafted Greek documents spanning 10 registers

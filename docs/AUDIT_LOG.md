@@ -348,9 +348,10 @@ Commits introduced on this date, in order:
     boundary-clean (0.3% on `adt`, 0.0% on the rest). Span F1 under
     that convention rewards a model for learning the prefix as part
     of the value, which is wrong in deployment; the v1 realworld
-    test (`artifacts/metrics/realworld_inference.json`) confirmed
-    that the v1 model genuinely produces prefix-included spans for
-    AFM at inference time.
+    smoke test confirmed that the v1 model genuinely produces
+    prefix-included spans for AFM at inference time. The full local
+    per-case JSON trace is now treated as a private trace artefact and
+    is not committed to the public repository.
 
 22. **AFM relabel utility.** `scripts/relabel_afm_spans.py` (new this
     section) takes an OPF-format JSONL split and rewrites every span

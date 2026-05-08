@@ -29,9 +29,9 @@ checkpoints/base/
 
 # Generated artefacts.
 # Large / heavy outputs (model checkpoints, raw logs, .txt debug dumps)
-# stay out of git. Small audit-evidence JSONs (manifests + metrics
-# reports) ARE committed so anyone cloning the repo can verify a
-# downloaded dataset without running the full pipeline.
+# stay out of git. Small audit-evidence JSONs are allow-listed below so
+# anyone cloning the repo can verify public datasets without exposing
+# private benchmark traces.
 artifacts/logs/
 artifacts/model/
 artifacts/checkpoints/
@@ -45,10 +45,22 @@ artifacts/v3/
 artifacts/*.txt
 artifacts/**/*.txt
 artifacts/*.json
+artifacts/**/*.json
+artifacts/metrics/benchmark_triage*.json
+artifacts/metrics/failure_mining*.json
+artifacts/metrics/realworld*.json
 !artifacts/manifest/*.json
-!artifacts/metrics/*.json
+!artifacts/metrics/README.md
+!artifacts/metrics/benchmark_summary.json
+!artifacts/metrics/curation_report.json
+!artifacts/metrics/provenance_report.json
+!artifacts/metrics/provenance_v2_13_*.json
+!artifacts/metrics/samples_provenance_report.json
+!artifacts/metrics/archive/
+!artifacts/metrics/archive/*.json
+!artifacts/metrics/archive/README.md
 
-# Proprietary v3 commercial moat — kept in the non-public audit records
+# Proprietary v3 release artefacts — kept in the non-public audit records
 # `non-public release records`. These files are intentionally
 # untracked here:
 #   - regex_pii_postpass.py  (non-public calibration layer)

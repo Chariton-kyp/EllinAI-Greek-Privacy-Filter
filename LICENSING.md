@@ -11,8 +11,8 @@ parties.
 | Source code (`scripts/`, `configs/`, `src/`) | Apache License, Version 2.0 (see `LICENSE-NC`). |
 | Documentation (`docs/`, top-level `*.md`, `NOTICE`, `ATTRIBUTION.txt`) | Apache License, Version 2.0 (see `LICENSE-NC`). |
 | Reference data samples (`data/samples/*.jsonl`, `data/seed/golden_examples.jsonl`) | Apache License, Version 2.0 (see `LICENSE-NC`). |
-| Real-world OOD evaluation benchmark (`data/realworld_benchmark/cases.jsonl`) | Apache License, Version 2.0. Hand-crafted synthetic Greek cases authored for this project; all PII values are randomly generated and do not reference real persons. |
-| Public audit evidence (`artifacts/manifest/*.json`, `artifacts/metrics/*.json`) | Apache License, Version 2.0. SHA-256 dataset manifests and benchmark-triage metrics; reproducibility evidence containing no copyrighted content. |
+| Private real-world OOD evaluation benchmark (`data/realworld_benchmark/cases.jsonl`, when present locally) | Not released in this public repository. Kept in the non-public audit records for commercial calibration and held-out evaluation. |
+| Public audit evidence (`artifacts/manifest/*.json`, selected `artifacts/metrics/*.json`) | Apache License, Version 2.0. SHA-256 dataset manifests, aggregate-only benchmark summaries, curation reports, and provenance reports. Full benchmark traces are not public artefacts. |
 | Fine-tuned model weights (when released at `artifacts/model/…` and published to HuggingFace) | Greek Privacy Filter Non-Commercial License v1.0 (see `LICENSE-NC`). Commercial rights are reserved by the copyright holder (haritos19@gmail.com). |
 
 As the copyright holder of the fine-tuned weights, the provider
@@ -125,3 +125,14 @@ attach to the processing of personal data do not apply to the training
 pipeline. Obligations on the data processed at inference time are the
 deployer's responsibility; see `docs/DPIA_NOTE.md` §2 and the template
 at `docs/GDPR_ART30_ROPA.md`.
+
+## 9. Public/private boundary
+
+The public repository publishes aggregate-only benchmark summaries.
+The locked OOD benchmark cases, per-case predictions, expected spans,
+failure-mining contexts, non-public calibration code, and filled
+operational records are not released here. They are kept in the
+non-public audit records described in `maintainer audit records`.
+
+See `public release documentation` for the repository boundary used
+when deciding whether an artefact belongs in public git history.
