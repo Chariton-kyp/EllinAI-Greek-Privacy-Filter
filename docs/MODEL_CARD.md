@@ -48,10 +48,9 @@ Part B). The figures repeated here, the SHA-256s in
   evaluation; cost ~$0.27.
 - **Training code:** `scripts/aws/ec2_spot_finetune.sh` (EC2 spot
   launcher) wrapping `python -m opf train` from the upstream package.
-- **Licence of the fine-tuned weights:** Greek Privacy Filter
-  Non-Commercial License v1.0 (`LICENSE-NC`). A separate
-  commercial licence is available from the provider on request
-  (`haritos19@gmail.com`).
+- **Licence of the fine-tuned weights:** non-commercial public release
+  under `LICENSE-NC`; commercial rights reserved by the copyright
+  holder.
 - **Contact:** Chariton Kypraios, `haritos19@gmail.com`.
 
 ## 2. Intended use

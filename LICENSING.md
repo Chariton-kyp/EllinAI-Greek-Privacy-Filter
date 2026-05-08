@@ -1,138 +1,95 @@
 # Licensing
 
-This file records the licence applied to each artefact in the
-repository and the terms on which the artefacts may be used by third
-parties.
+This repository is a non-commercial public release.
 
-## 1. Artefacts released by this project
+## 1. Public-release licence
 
-| Artefact | Licence |
+All project-authored material in this repository is released to third
+parties under `LICENSE-NC`:
+
+| Artefact | Public-release terms |
 |---|---|
-| Source code (`scripts/`, `configs/`, `src/`) | Apache License, Version 2.0 (see `LICENSE-NC`). |
-| Documentation (`docs/`, top-level `*.md`, `NOTICE`, `ATTRIBUTION.txt`) | Apache License, Version 2.0 (see `LICENSE-NC`). |
-| Reference data samples (`data/samples/*.jsonl`, `data/seed/golden_examples.jsonl`) | Apache License, Version 2.0 (see `LICENSE-NC`). |
-| Private real-world OOD evaluation benchmark (`data/realworld_benchmark/cases.jsonl`, when present locally) | Not released in this public repository. Kept in the non-public audit records for commercial calibration and held-out evaluation. |
-| Public audit evidence (`artifacts/manifest/*.json`, selected `artifacts/metrics/*.json`) | Apache License, Version 2.0. SHA-256 dataset manifests, aggregate-only benchmark summaries, curation reports, and provenance reports. Full benchmark traces are not public artefacts. |
-| Fine-tuned model weights (when released at `artifacts/model/…` and published to HuggingFace) | Greek Privacy Filter Non-Commercial License v1.0 (see `LICENSE-NC`). Commercial rights are reserved by the copyright holder (haritos19@gmail.com). |
+| Source code (`scripts/`, `configs/`, `src/`) | Non-commercial use only under `LICENSE-NC`. |
+| Documentation (`docs/`, top-level `*.md`, `NOTICE`, `ATTRIBUTION.txt`) | Non-commercial use only under `LICENSE-NC`. |
+| Reference data samples (`data/samples/*.jsonl`, `data/seed/golden_examples.jsonl`) | Non-commercial use only under `LICENSE-NC`. |
+| Public audit evidence (`artifacts/manifest/*.json`, selected `artifacts/metrics/*.json`) | Non-commercial use only under `LICENSE-NC`; aggregate and provenance evidence only. |
+| Fine-tuned model weights, adapters, or checkpoints produced by this project | Non-commercial use only under `LICENSE-NC`. |
 
-As the copyright holder of the fine-tuned weights, the provider
-retains the right to use those weights commercially in his own
-products and services. The non-commercial licence governs third-party
-use only.
+No commercial license is granted by this public release. All commercial
+rights in project-authored material are reserved by the copyright
+holder, Chariton Kypraios.
 
 ## 2. Third-party components relied on
 
-| Component | Licence |
+Third-party components retain their own licences. This repository does
+not grant rights beyond those provided by the original licensors.
+
+| Component | Licence / terms |
 |---|---|
 | `openai/privacy-filter` — Lite tier base + base for v1/v2 weights | Apache License, Version 2.0. |
-| `google/gemma-4-31B-it` (via `unsloth/gemma-4-31B-it-unsloth-bnb-4bit`) — v3 teacher + Ultra tier base | Apache License, Version 2.0. |
-| `google/gemma-4-E4B-it` (via `unsloth/gemma-4-E4B-it-unsloth-bnb-4bit`) — v3 Pro tier base | Apache License, Version 2.0. |
-| `google/gemma-4-E2B-it` (via `unsloth/gemma-4-E2B-it-unsloth-bnb-4bit`) — v3 Mini tier base | Apache License, Version 2.0. |
+| `google/gemma-4-31B-it` / `unsloth/gemma-4-31B-it-unsloth-bnb-4bit` — v3 teacher + Ultra tier base | Google Gemma terms as published by Google/Unsloth at acquisition time. |
+| `google/gemma-4-E4B-it` / `unsloth/gemma-4-E4B-it-unsloth-bnb-4bit` — v3 Pro tier base | Google Gemma terms as published by Google/Unsloth at acquisition time. |
+| `google/gemma-4-E2B-it` / `unsloth/gemma-4-E2B-it-unsloth-bnb-4bit` — v3 Mini tier base | Google Gemma terms as published by Google/Unsloth at acquisition time. |
 | `Qwen/Qwen3-4B` — v3 Max tier base | Apache License, Version 2.0. |
-| `unsloth/Qwen3.6-35B-A3B-GGUF` — local synthetic-data generator | Apache License, Version 2.0. |
+| `unsloth/Qwen3.6-35B-A3B-GGUF` — local synthetic-data generator | Apache License, Version 2.0, subject to the upstream model card and distribution terms. |
 | `ilsp/Meltemi-7B-Instruct-v1.5` — evaluated as an alternate generator | Apache License, Version 2.0. |
 | `PleIAs/Greek-PD` — Greek public-domain carrier text | Public domain. |
 | Mozilla Common Voice Greek text corpus — carrier text | CC0. |
-| `AI-team-UoA/greek_legal_code` — Greek legal carrier text | CC-BY-4.0 (attribution required). |
-| Rule-based PII generators in `scripts/generate_commercial_safe_greek_pii.py` | Apache License, Version 2.0 (this repository). |
+| `AI-team-UoA/greek_legal_code` — Greek legal carrier text | CC-BY-4.0; attribution required. |
 
-The training-data chain is compatible with commercial reuse end-to-end.
-The CC-BY-4.0 material (`greek_legal_code`) requires the attribution
-shown in §3 below.
+The public provenance chain is designed so that the project can be
+audited without publishing raw operational records or full per-case
+benchmark traces.
 
-## 3. Attribution notice to ship with the weights
+## 3. Attribution notice
 
-The following block is reproduced verbatim in `ATTRIBUTION.txt`. Any
-redistribution of the fine-tuned weights must include it in the
-`USAGE.txt` file emitted by `opf train`, in the HuggingFace model-card
-README, or in a file named `ATTRIBUTION.txt` alongside the weights,
-whichever is appropriate to the distribution channel.
+The following attribution block is reproduced in `ATTRIBUTION.txt` and
+should be retained with redistributed non-commercial copies:
 
-```
+```text
 This model is derived from:
-  • OpenAI Privacy Filter (Apache 2.0)
+  - OpenAI Privacy Filter (Apache 2.0)
     https://huggingface.co/openai/privacy-filter
-  • Qwen3.6-35B-A3B (Apache 2.0, Alibaba Qwen team; Unsloth Dynamic GGUF)
+  - Qwen3.6-35B-A3B (Apache 2.0, Alibaba Qwen team; Unsloth Dynamic GGUF)
     https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF
-  • PleIAs/Greek-PD (public domain)
-  • Mozilla Common Voice Greek text corpus (CC0)
-  • Greek Legal Code corpus (CC-BY-4.0)
+  - PleIAs/Greek-PD (public domain)
+  - Mozilla Common Voice Greek text corpus (CC0)
+  - Greek Legal Code corpus (CC-BY-4.0)
     Papaloukas et al. 2021, AI Team, University of Athens
     https://huggingface.co/datasets/AI-team-UoA/greek_legal_code
 
-Base-model licence: Apache License, Version 2.0 (retained).
-Fine-tuned weights licence: Greek Privacy Filter Non-Commercial
-                            License v1.0, or a separate commercial
-                            licence reserved by request.
+Greek Privacy Filter project-authored material:
+  Non-commercial public release under LICENSE-NC.
+  Commercial rights reserved by the copyright holder.
 ```
 
-The `USAGE.txt` emitted by the upstream `opf train` command is to be
-preserved inside `artifacts/model/finetuned-opf/`.
+## 4. Non-commercial definition
 
-## 4. Commercial licence procedure
+`LICENSE-NC` defines non-commercial use as use that is not primarily
+intended for, or directed toward, commercial advantage or monetary
+compensation. Academic research, classroom teaching, personal
+experimentation, evaluation, and open-source contribution are
+permitted when no paid service, paid product, hosted API, consulting
+deliverable, or other commercial offering is principally powered by the
+project-authored material.
 
-A third party that wishes to use the fine-tuned weights commercially
-must:
+## 5. Training data and GDPR
 
-1. Contact the provider at `haritos19@gmail.com` with a description
-   of the intended use (identity of the commercial entity, scope of
-   deployment, estimated request volume, retention policy).
-2. Sign a written commercial licence agreement supplied by the
-   provider that supersedes `LICENSE-NC` for the licensee only.
-3. Include the attribution notice in §3 in the commercial product's
-   user-facing documentation.
+Training data is fully synthetic. No personal data is processed during
+training; see `docs/DPIA_NOTE.md`. GDPR obligations that attach to the
+processing of personal data are the responsibility of the deployer at
+inference time.
 
-Until a written commercial licence is in place, third-party
-commercial use is prohibited by `LICENSE-NC` §4. Internal
-evaluation by a commercial entity for the purpose of negotiating a
-licence is permitted under `LICENSE-NC` §2 provided no
-production deployment results.
+## 6. Audit evidence
 
-## 5. Non-commercial definition
+The public repository contains:
 
-`LICENSE-NC` §2 defines "non-commercial" in terms substantially
-similar to Creative Commons Attribution-NonCommercial 4.0: use that is
-not primarily intended for or directed toward commercial advantage or
-monetary compensation. Academic research, classroom teaching, personal
-experimentation, open-source contribution, and pre-purchase evaluation
-are non-commercial. Sale of a service principally powered by the model,
-or its inclusion in a paid product, is commercial and requires a
-licence under §4.
+- dataset and sample manifests;
+- curation and provenance reports;
+- aggregate benchmark summaries;
+- governance documentation and reproducibility notes.
 
-## 6. Revocability
-
-`LICENSE-NC` §1 grants a revocable non-commercial licence. The
-revocability is intentional: it allows the provider to publish a
-superseding version of the licence without tracking individual
-downstream users, and to withdraw the licence from a specific party
-that has materially breached `LICENSE-NC` §4 or §3
-(attribution). The provider does not otherwise intend to revoke
-licences granted to compliant users.
-
-## 7. Quarantined data
-
-`data/archive_pre_meltemi_2026-04-23/` contains synthetic data from
-earlier experimental runs that used third-party language-model APIs.
-The directory is excluded from git via `.gitignore`. It must not be
-re-used in training, seeding, or few-shot prompting. Scheduled
-permanent deletion: 2026-05-23.
-
-## 8. Training data and GDPR
-
-Training data is fully synthetic. No personal data is processed
-during training (see `docs/DPIA_NOTE.md` §1). GDPR obligations that
-attach to the processing of personal data do not apply to the training
-pipeline. Obligations on the data processed at inference time are the
-deployer's responsibility; see `docs/DPIA_NOTE.md` §2 and the template
-at `docs/GDPR_ART30_ROPA.md`.
-
-## 9. Public/private boundary
-
-The public repository publishes aggregate-only benchmark summaries.
-The locked OOD benchmark cases, per-case predictions, expected spans,
-failure-mining contexts, non-public calibration code, and filled
-operational records are not released here. They are kept in the
-non-public audit records described in `maintainer audit records`.
-
-See `public release documentation` for the repository boundary used
-when deciding whether an artefact belongs in public git history.
+Raw operational records, filled cloud identifiers, and full per-case
+benchmark traces are not part of this public release. The maintainer
+retains audit-supporting records outside public git history and can
+make them available under an appropriate confidentiality process.

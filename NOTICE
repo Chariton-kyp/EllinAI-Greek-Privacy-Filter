@@ -8,10 +8,11 @@ This product includes software developed at OpenAI:
   Copyright (c) OpenAI
   Licensed under the Apache License, Version 2.0.
 
-The fine-tuned model weights produced by this repository are distributed
-under the Greek Privacy Filter Non-Commercial License v1.0 (see
-LICENSE-NC). Commercial rights for the weights are
-reserved by the copyright holder.
+Project-authored material in this repository, including source code,
+documentation, reference samples, and fine-tuned model weights, is
+distributed under the Greek Privacy Filter Non-Commercial Public License
+v1.1 (see LICENSE-NC). Commercial rights are reserved by the copyright
+holder.
 
 Synthetic training data in this repository was generated with the
 following open-weight tools (all Apache-2.0):

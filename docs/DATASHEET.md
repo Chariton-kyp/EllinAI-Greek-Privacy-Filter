@@ -195,14 +195,13 @@ The artefacts are released on three publishing surfaces:
 
 | Artefact | Hosting | Licence |
 |---|---|---|
-| Source code, configurations, documentation, audit evidence (manifests and reports), and 100-record reference samples per split | GitHub (this repository) | Apache License 2.0. |
-| Full train, validation, test, and hard-test splits — v1 release is 32,061 records (50 k input, 33 % deduplication ratio); the larger production target remains 100,000 records | HuggingFace Dataset repository, tagged to the git commit that produced them | Apache License 2.0 on the JSONL records; the carrier text inherits its upstream licence as listed in §5. |
-| Fine-tuned model weights | HuggingFace Model repository, tagged to the git commit and to the dataset tag | Greek Privacy Filter Non-Commercial License v1.0 (see `LICENSE-NC`). |
+| Source code, configurations, documentation, audit evidence (manifests and reports), and 100-record reference samples per split | GitHub (this repository) | Non-commercial public release under `LICENSE-NC`. |
+| Full train, validation, test, and hard-test splits — v1 release is 32,061 records (50 k input, 33 % deduplication ratio); the larger production target remains 100,000 records | HuggingFace Dataset repository, tagged to the git commit that produced them | Non-commercial public release under `LICENSE-NC`; carrier text retains upstream attribution requirements listed in §5. |
+| Fine-tuned model weights | HuggingFace Model repository, tagged to the git commit and to the dataset tag | Non-commercial public release under `LICENSE-NC`. |
 
 The locked 200-case OOD benchmark is not part of the public dataset
-distribution. It is retained in the non-public audit records for
-held-out model comparison and commercial calibration. Public benchmark
-reporting is aggregate-only; see `public release documentation`.
+distribution. Public benchmark reporting is aggregate-only; full
+per-case traces are retained as non-public audit evidence.
 
 SHA-256 digests of the full dataset files are recorded in the per-run
 `manifest.json` uploaded to S3 by
@@ -211,8 +210,7 @@ SHA-256 digests of the full dataset files are recorded in the per-run
 that any file downloaded from HuggingFace matches the git commit that
 produced it.
 
-Commercial licensing of the fine-tuned weights is described in
-`LICENSING.md` §4.
+Public-release licensing is described in `LICENSING.md`.
 
 ## 8. Maintenance
 

@@ -30,10 +30,10 @@ repository.
 | Annex IV §1 item | Artefact |
 |---|---|
 | (a) Intended purpose, provider, version | `docs/MODEL_CARD.md`, `README.md` |
-| (b) Developer / supplier info | `LICENSE-NC` §5, `README.md` |
+| (b) Developer / supplier info | `LICENSE`, `LICENSE-NC`, `README.md` |
 | (c) Date of system development | `docs/AUDIT_LOG.md` |
 | (d) Versions of software / hardware / firmware used | `configs/fine_tune_config.yaml` (pinned upstream commit `f7f00ca7fb869683eb732c010299d901457f19c3` + HF revision), per-run `run_metadata.json` (git commit, instance ID, hyperparameters, seeds, generator quant, llama.cpp Docker image), `artifacts/manifest/manifest_v1.json` (SHA-256 of the v1 split files; the split files themselves live under `data/processed/aws-v1-20260426T092703Z/` after a clone runs the AWS-pipeline replay documented in `scripts/aws/README.md` Part A), `requirements.txt` and `requirements-aws.txt`. |
-| (e) Where the system is to be placed on the market / put into service | Released under non-commercial public-release terms. |
+| (e) Where the system is to be placed on the market / put into service | Public release under non-commercial terms only. |
 | (f) Hardware on which the system runs | RTX 4080 12 GB / AWS g6e.xlarge (L40S 48 GB) for data generation; `ml.g5.xlarge` (A10G 24 GB) for fine-tune (see `configs/fine_tune_config.yaml` §aws). |
 | (g) Description of the system architecture | `README.md`, `docs/DATASHEET.md`, upstream `openai/privacy-filter` architecture (token classifier). |
 
@@ -89,7 +89,7 @@ published standards and templates informed the development:
   `docs/GDPR_ART30_ROPA.md`.
 - ELOT 743 / ISO 843 Greek-Latin transliteration —
   `src/privacy_filter_ft/transliteration.py`.
-- Apache 2.0 licence compliance workflow — `LICENSE-NC`, `NOTICE`,
+- Third-party notice and attribution workflow — `LICENSING.md`, `NOTICE`,
   `ATTRIBUTION.txt`.
 
 ## Annex IV §6 — Conformity declaration

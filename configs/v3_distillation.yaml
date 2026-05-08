@@ -2,7 +2,7 @@
 # ───────────────────────────────────────
 # 5-tier student ladder distilled from a single teacher.
 # All bases are Apache 2.0 → final weights ship under the project's existing
-# non-commercial public release (NC for third parties, commercial-for-owner).
+# non-commercial public release with commercial rights reserved by the maintainer.
 
 teacher:
   # Pick ONE of:

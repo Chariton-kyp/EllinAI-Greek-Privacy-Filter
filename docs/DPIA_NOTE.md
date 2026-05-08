@@ -52,11 +52,9 @@ deployer, not the provider.
   freedoms of data subjects (for example, large-scale systematic
   monitoring of employees, automated screening of job applicants, or
   categorisation of medical records).
-- The model weights are distributed under
-  [`LICENSE-NC`](../LICENSE-NC), which prohibits commercial
-  third-party commercial deployment. Deployers
-  receive this note together with `ATTRIBUTION.txt` at the time the
-  licence is issued.
+- Project-authored material is distributed under
+  [`LICENSE-NC`](../LICENSE-NC), which prohibits third-party commercial
+  deployment.
 
 ## 3. Automated individual decision-making (Article 22)
 

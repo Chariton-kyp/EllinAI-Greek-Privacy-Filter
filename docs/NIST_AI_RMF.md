@@ -15,11 +15,11 @@ Policies, accountability, and workforce structure for the AI System.
 
 | NIST RMF Govern subcategory | Artefact |
 |---|---|
-| GOVERN 1.1 Legal and regulatory compliance | `LICENSING.md`, `LICENSE-NC`, `LICENSE-NC`, `NOTICE`, `ATTRIBUTION.txt` |
+| GOVERN 1.1 Legal and regulatory compliance | `LICENSING.md`, `LICENSE`, `LICENSE-NC`, `NOTICE`, `ATTRIBUTION.txt` |
 | GOVERN 1.2 Policies, processes, procedures | `docs/AIMS_STATEMENT.md`, `SECURITY.md` |
 | GOVERN 1.5 Accountability structures | `docs/AIMS_STATEMENT.md` §3 (roles) |
 | GOVERN 2.1 Workforce diversity, qualification | Not applicable — solo operator, disclosed in `docs/AIMS_STATEMENT.md` §3 |
-| GOVERN 3 Stakeholder engagement | `SECURITY.md` (vulnerability reporting), commercial-licence channel in `LICENSE-NC` §5 |
+| GOVERN 3 Stakeholder engagement | `SECURITY.md` (vulnerability reporting and issue intake) |
 | GOVERN 4.1 Organizational AI-risk tolerance | `docs/MODEL_CARD.md` §"Ethical considerations" + §"Caveats" |
 | GOVERN 5 Transparent record of AI decisions | `docs/AUDIT_LOG.md`, `artifacts/manifest/*.json` |
 | GOVERN 6 Third-party risks | `LICENSING.md` §2 (third-party component licences) |
@@ -64,8 +64,8 @@ Prioritize risks, mitigate, and document residual risk.
 
 ## 5. Residual items
 
-The following items will be populated only after the first commercial
-release:
+The following items will be populated after additional public releases
+or deployments:
 
 - Historical metrics under MEASURE 4 beyond the baseline currently in
   `artifacts/metrics/`.

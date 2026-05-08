@@ -29,10 +29,8 @@ import time
 from pathlib import Path
 
 # Abbreviated 24-class system prompt suitable for proof-of-concept
-# pseudo-labelling. Production-grade prompt (with class enumeration,
-# Greek-language descriptions, calibrated few-shot examples) lives in
-# the non-public audit records — the abbreviated version below is the
-# minimum that produces parseable JSON output from the teacher.
+# pseudo-labelling. The abbreviated version below is the minimum that
+# produces parseable JSON output from the teacher.
 SYSTEM_PROMPT = (
     "Είσαι Greek PII detector. Επιστρέφεις ΑΥΣΤΗΡΑ JSON λίστα με το format "
     '[{"label": "<class>", "value": "<exact substring>"}, ...]. '
@@ -45,9 +43,8 @@ SYSTEM_PROMPT = (
 
 
 # Optional post-processing hook. The default is identity (return spans
-# unchanged). Commercial deployments may inject a more sophisticated
-# post-processor here; see maintainer audit records for the commercial
-# license that covers the production-grade implementation.
+# unchanged). Public code keeps this hook minimal so benchmark claims
+# remain reproducible from the released sources.
 def augment_with_regex(text: str, spans: list[dict]) -> list[dict]:
     return spans
 

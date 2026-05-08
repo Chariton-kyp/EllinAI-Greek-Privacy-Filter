@@ -9,10 +9,9 @@ Allowed public files:
 - provenance reports;
 - archived aggregate baseline metrics.
 
-Do not commit full private benchmark traces here. Files named
+Do not commit full benchmark traces here. Files named
 `benchmark_triage*.json`, `failure_mining*.json`, and `realworld*.json`
-are ignored because they can contain private OOD case text, expected
+are ignored because they can contain OOD case text, expected
 spans, predictions, redacted text, or failure-mining contexts.
 
-Public releases should remain aggregate-only
-repository.
+Public releases should remain aggregate-only.

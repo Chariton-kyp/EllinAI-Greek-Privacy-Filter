@@ -1,13 +1,13 @@
 # v2.13 vs v3 comparison
 
-This note records the public-safe aggregate comparison between the final
+This note records the public aggregate comparison between the final
 v2 token-classifier baseline and the current v3 line.
 
-The private 200-case OOD benchmark is not committed to the public
-repository. The aggregate results below were produced locally from the
-locked benchmark file `<locked_200_case_ood.jsonl>`, which
-contains 200 OPF-format records and validates against the 24-class
-label space in `configs/label_space_v2.json`.
+The locked 200-case OOD benchmark is not committed to the public
+repository. The aggregate results below were produced locally from a
+non-public OPF-format benchmark file containing 200 records that
+validates against the 24-class label space in
+`configs/label_space_v2.json`.
 
 ## Same-dataset OPF comparison
 
@@ -31,19 +31,19 @@ These two runs use the same factors:
 Result: under identical OPF token-classifier evaluation settings, v2.13
 currently beats v3 Lite on exact span detection. v3 Lite may still be
 useful as a distilled small tier, but it should not be represented as
-better than v2.13 on this exact OPF benchmark without the private
-additional calibration layer.
+better than v2.13 on this exact OPF benchmark without the additional
+non-public calibration layer.
 
 ## v3 causal-LM tiers
 
 v3 Mini and Ultra are causal-LM tiers, so they do not run through
-`python -m opf eval`. Existing private harness results on the same
+`python -m opf eval`. Existing non-public harness results on the same
 200-case benchmark are:
 
 | Model | Harness | F1 |
 |---|---|---:|
-| v3 Mini | private causal-LM JSON-span harness | 0.8796 |
-| v3 Ultra teacher | private causal-LM JSON-span harness | 0.9588 |
+| v3 Mini | causal-LM JSON-span harness | 0.8796 |
+| v3 Ultra teacher | causal-LM JSON-span harness | 0.9588 |
 
 Those figures are useful for product direction, but they are not the
 same OPF token-classifier evaluation as the v2.13 vs v3 Lite table
@@ -81,7 +81,6 @@ OPF_MOE_TRITON=0 python -m opf eval <locked_200_case_ood.jsonl> \
   --window-batch-size 1
 ```
 
-The metrics JSONs and prediction JSONLs above are private trace
-artefacts because they reference the locked benchmark file. Keep them
-under `artifacts/v3/` or the non-public audit records, not in the
-public repository.
+The metrics JSONs and prediction JSONLs above are trace artefacts
+because they reference the locked benchmark file. Keep public releases
+aggregate-only.

@@ -67,15 +67,9 @@ Greek Legal Code corpus (CC-BY-4.0)
   https://huggingface.co/datasets/AI-team-UoA/greek_legal_code
 
 -----------------------------------------------------------------------
-Pipeline code
+Project-authored public-release material
 -----------------------------------------------------------------------
-Greek Privacy Filter fine-tuning pipeline (Apache License 2.0)
+Greek Privacy Filter fine-tuning pipeline, documentation, samples, and
+fine-tuned weights (non-commercial public release)
   Copyright (c) 2026 Chariton Kypraios.
-  See LICENSE-NC.
-
------------------------------------------------------------------------
-Fine-tuned weights
------------------------------------------------------------------------
-Greek Privacy Filter — Non-Commercial License v1.0 (see
-LICENSE-NC). Commercial rights are reserved by the copyright holder.
-request: haritos19@gmail.com.
+  See LICENSE-NC. Commercial rights reserved by the copyright holder.

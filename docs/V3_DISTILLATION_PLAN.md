@@ -51,9 +51,9 @@ Pseudo-labelled corpus (Apache 2.0 derivative; data only, not shipped)
 | trl                                | Apache 2.0  | RL trainer       | no       |
 | bitsandbytes                       | MIT         | Q4 quantisation  | no       |
 | transformers / peft / accelerate   | Apache 2.0  | training stack   | no       |
-| Final fine-tuned weights           | NC public release | shipped | yes (4 tiers under our existing non-commercial public release) |
+| Final fine-tuned weights           | NC public release; commercial rights reserved | shipped | yes |
 
-All bases re-licensable into our non-commercial public-release model. **Zero AGPL, zero non-commercial bases, zero proprietary dependencies.**
+All bases are compatible with the non-commercial public release. **Zero AGPL, zero non-commercial bases, zero proprietary dependencies.**
 
 ### 4.2 Data sources — strict commercial-clean default
 
@@ -67,7 +67,7 @@ All bases re-licensable into our non-commercial public-release model. **Zero AGP
 
 | dataset                          | license          | risk                                                                                             |
 |----------------------------------|------------------|--------------------------------------------------------------------------------------------------|
-| wikimedia/wikipedia 20231101.el | CC-BY-SA-4.0     | share-alike clause may obligate trained weights to inherit SA → conflicts with our NC + commercial scheme |
+| wikimedia/wikipedia 20231101.el | CC-BY-SA-4.0     | share-alike clause may obligate trained weights to inherit SA → conflicts with the public-release licence |
 | allenai/c4 (mC4 Greek subset)    | ODC-BY-1.0       | underlying Common-Crawl content has mixed publisher copyrights; some publishers explicitly opt out |
 
 After de-duplicated chunking (50–600 chars per chunk): ≈ 500 k records from the 3 commercial-safe sources alone.
@@ -78,10 +78,8 @@ The teacher (gemma-4-31B-it Apache 2.0) produces label spans over the corpus abo
 
 ### 4.4 Final fine-tuned weights
 
-All 5 tier weights ship under the project's existing non-commercial public release:
-
-- third parties: **Greek Privacy Filter Non-Commercial v1.0** (`LICENSE-NC`)
-- maintainer: full commercial rights reserved (`LICENSING.md` §1)
+All 5 tier weights ship under `LICENSE-NC` for third-party
+non-commercial use. Commercial rights are reserved by the maintainer.
 
 `ATTRIBUTION.txt` extended to enumerate gemma-4 + Qwen3 base models and their Apache 2.0 licences.
 
@@ -119,11 +117,11 @@ All 5 tier weights ship under the project's existing non-commercial public relea
 4. **Re-pseudo-label** with the trained teacher (replaces step 2's first pass).
 5. **Distill all 4 students in parallel** on AWS g6.xlarge spots.
 6. **Benchmark** all 5 tiers against the locked 200-case OOD harness.
-7. **HF release**: 5 model cards under our non-commercial public-release template.
+7. **HF release**: 5 model cards under the non-commercial public-release template.
 
 ## 8. What we are NOT doing
 
-- **Training on Wikipedia** — share-alike clause too risky for the NC + commercial weight scheme.
+- **Training on Wikipedia** — share-alike clause too risky for the public-release licence.
 - **Training on mC4 / Common Crawl** — uncontrollable underlying publisher copyrights.
 - **Using DeepSeek-V3 / R1 as teacher** — DeepSeek licence has an AUP that could chain to our weights.
 - **Gemma 1/2/3 (older terms)** — gemma-4 changed to standard Apache 2.0.

@@ -22,10 +22,8 @@ case.
 
 The provider of the AI System commits to:
 
-1. Release the AI System under licences that accurately reflect the
-   permitted uses of every component (Apache 2.0 for code; non-
-   non-commercial terms for project-authored material unless superseded by
-   negotiated in writing).
+1. Release project-authored public material under non-commercial terms
+   while preserving third-party component notices.
 2. Train the AI System exclusively on synthetic data so that no
    personal data is processed at the training stage (GDPR Article 5).
 3. Document the data pipeline, model architecture, evaluation
@@ -64,7 +62,7 @@ fine-tuned weights:
 | Per-record provenance is complete | `scripts/verify_provenance.py` | Zero records with unknown `info.strategy` |
 | Test-set class coverage | `artifacts/metrics/curation_report.json` stage-3 span counts | ≥ 30 spans per PII class |
 | Hard-negative ratio in training | same report | 10 %–20 % per split |
-| Licence chain is auditable | Apache 2.0 + NC commit present; SHA-256 manifest current | yes / yes |
+| Licence chain is auditable | NC public-release terms + third-party notices present; SHA-256 manifest current | yes / yes |
 
 ## 5. AI lifecycle approach
 
@@ -133,6 +131,6 @@ duties is not achievable. Instead:
 | `docs/GDPR_ART30_ROPA.md` | Article 30 Record of Processing Activities template for deployers. |
 | `docs/AUDIT_LOG.md` | Chronological build ledger. |
 | `SECURITY.md` | Vulnerability-disclosure process. |
-| `NOTICE`, `ATTRIBUTION.txt` | Apache 2.0 §4(d) and derivative attribution. |
+| `NOTICE`, `ATTRIBUTION.txt` | Third-party notices and derivative attribution. |
 | `artifacts/manifest/*.json` | SHA-256 cryptographic manifest. |
 | `artifacts/metrics/*.json` | Baseline and evaluation records. |

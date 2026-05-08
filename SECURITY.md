@@ -34,8 +34,8 @@ been released.
 - Triage decision (accepted / declined / needs-more-info): within 14
   calendar days.
 - Fix timeline: proportional to severity. High-severity issues that
-  affect the released weights will be addressed before any new
-  commercial licence issuance.
+  affect the released weights will be addressed before any new public
+  release.
 
 ## Scope
 

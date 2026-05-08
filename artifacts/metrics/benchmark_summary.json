@@ -1,15 +1,15 @@
 {
   "schema_version": "aggregate_benchmark_summary_v1",
   "benchmark": {
-    "name": "locked_private_200_case_ood",
+    "name": "locked_200_case_ood",
     "case_count": 200,
     "visibility": "not_in_public_release",
     "public_policy": "aggregate_metrics_only"
   },
   "notes": [
-    "The benchmark cases, per-case predictions, raw text, expected spans, and failure-mining contexts are private.",
+    "The benchmark cases, per-case predictions, raw text, expected spans, and failure-mining contexts are not part of the public release.",
     "This file is safe for the public repository because it contains only aggregate metrics.",
-    "legacy_triage results come from the private triage harness. opf_eval_same_200 results come from fresh OPF eval runs using the same dataset, labels, decoder, context window, and runtime flags."
+    "legacy_triage results come from the triage harness. opf_eval_same_200 results come from fresh OPF eval runs using the same dataset, labels, decoder, context window, and runtime flags."
   ],
   "results": [
     {

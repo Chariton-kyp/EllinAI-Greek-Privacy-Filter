@@ -84,7 +84,7 @@ def has_trace_key(value: object) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Fail if public git state contains private benchmark/release artefacts."
+        description="Fail if public git state contains non-public benchmark or operational artefacts."
     )
     parser.add_argument(
         "--check-json",

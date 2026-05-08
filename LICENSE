@@ -1,33 +1,19 @@
-This repository is non-commercial public release.
+Greek Privacy Filter is a non-commercial public release.
 
-1. SOURCE CODE (everything under src/, scripts/, configs/, and all *.py,
-   *.yaml, *.sh, *.md files authored by this project) is licensed under
-   the Apache License, Version 2.0. See LICENSE-NC for the full text.
+All project-authored source code, scripts, configuration files,
+documentation, reference samples, fine-tuned model weights, adapters,
+and derived checkpoints in this repository are licensed to third
+parties under the Greek Privacy Filter Non-Commercial Public License
+v1.1. See `LICENSE-NC`.
 
-2. FINE-TUNED MODEL WEIGHTS produced by this repository (anything saved
-   under artifacts/model/ or distributed as a .safetensors / .gguf /
-   similar checkpoint) are offered under TWO licenses, at the recipient's
-   choice:
+No commercial license is granted by this public release. All commercial
+rights in project-authored material are reserved by the copyright
+holder, Chariton Kypraios.
 
-     (a) The Greek Privacy Filter Non-Commercial License v1.0
-         (see LICENSE-NC). Free for academic, research, personal,
-         evaluation, and other non-commercial use. Redistribution and
-         modification allowed under the same terms. No fee required.
+Third-party models, datasets, libraries, and tools referenced by this
+repository remain governed by their own licenses. The full provenance
+and attribution chain is recorded in `LICENSING.md`, `NOTICE`, and
+`ATTRIBUTION.txt`.
 
-     (b) A commercial license granted by the copyright holder
-         (Chariton, haritos19@gmail.com) on request. Contact the author
-         for commercial licensing terms.
-
-   The copyright holder themselves retains the right to use the weights
-   commercially without restriction.
-
-3. THIRD-PARTY CONTENT. The base model (`openai/privacy-filter`) is
-   distributed by OpenAI under Apache 2.0; that license continues to
-   apply to the base weights and any derivative weights produced here.
-   Training-data and dataset licenses are enumerated in LICENSING.md.
-
-See LICENSING.md for the full provenance chain and attribution
-requirements.
-
-Copyright (c) 2026 Chariton. All rights reserved to the extent not
-granted by the licenses above.
+Copyright (c) 2026 Chariton Kypraios. All rights reserved except as
+expressly granted in `LICENSE-NC`.

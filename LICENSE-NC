@@ -1,0 +1,74 @@
+Greek Privacy Filter Non-Commercial Public License v1.1
+=======================================================
+
+Copyright (c) 2026 Chariton Kypraios. All rights reserved.
+
+This license applies to all project-authored material in this public
+repository, including source code, scripts, configuration files,
+documentation, reference samples, fine-tuned model weights, adapters,
+and derived checkpoints, except for third-party components that carry
+their own license notices.
+
+1. Grant of Rights
+
+   Subject to the terms below, the copyright holder grants you a
+   worldwide, non-exclusive, royalty-free, revocable license to use,
+   reproduce, modify, publicly display, publicly perform, and
+   redistribute the project-authored material for non-commercial
+   purposes only.
+
+2. Non-Commercial Definition
+
+   "Non-commercial" means use that is not primarily intended for, or
+   directed toward, commercial advantage or monetary compensation. This
+   includes academic research, classroom teaching, personal
+   experimentation, evaluation, and open-source contribution, provided
+   that no fees, subscriptions, paid services, hosted products, or other
+   monetary consideration are received in exchange for the material or
+   for a service principally powered by it.
+
+3. Restrictions
+
+   You may not:
+
+   (a) use the project-authored material, or any derivative of it, for
+       commercial purposes;
+   (b) provide a paid hosted service, paid API, paid integration, paid
+       consulting deliverable, or commercial product principally powered
+       by the project-authored material;
+   (c) sublicense the project-authored material under terms more
+       permissive than this license;
+   (d) remove or obscure copyright, license, provenance, or attribution
+       notices.
+
+4. Commercial Rights Reserved
+
+   No commercial license is granted by this public release. All
+   commercial rights in the project-authored material are reserved by
+   the copyright holder.
+
+5. Third-Party Components
+
+   Third-party models, datasets, libraries, and tools referenced by this
+   repository remain governed by their own licenses. This license does
+   not narrow or expand rights granted directly by those third-party
+   licensors.
+
+6. Attribution
+
+   Any redistribution must retain this license, `NOTICE`,
+   `ATTRIBUTION.txt`, and the provenance notices in `LICENSING.md`.
+
+7. No Warranty / Limitation of Liability
+
+   THE MATERIAL IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE
+   FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OF
+   THE MATERIAL.
+
+8. Termination
+
+   This license terminates automatically if you breach any of its terms.
+   Upon termination, you must cease using and distributing the
+   project-authored material and destroy copies in your possession where
+   legally permitted.

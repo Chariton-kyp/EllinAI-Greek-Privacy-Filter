@@ -4,8 +4,8 @@ A Greek PII detection pipeline shipped in three tiers — a 1.4 B token
 classifier (Lite), a 2 B causal-LM (Mini), and a 31 B teacher (Ultra) —
 built via knowledge distillation from a Gemma 4 31B teacher onto Greek-
 specific PII span detection across **24 classes**. Fine-tuned on a fully
-synthetic Greek corpus, validated against a private held-out 200-case
-OOD benchmark, and shipped with audit-grade governance documentation.
+synthetic Greek corpus, validated against a locked 200-case OOD
+evaluation set, and shipped with audit-grade governance documentation.
 
 | Field            | Value                                              |
 | ---------------- | -------------------------------------------------- |
@@ -14,10 +14,9 @@ OOD benchmark, and shipped with audit-grade governance documentation.
 | Tiers shipped    | **Lite** (1.4 B token classifier) · **Mini** (Gemma 4 2B Q4 LoRA) · **Ultra** (31 B teacher LoRA) |
 | Detection F1     | Lite v3: 0.99 in-dist · 0.78 OOD raw · Mini v3: 0.96 in-dist · 0.88 OOD raw |
 | Languages        | Modern Greek (Latin transliterations, polytonic, dense multi-PII forms) |
-| License          | Code: Apache 2.0; weights: non-commercial public release (NC + commercial) — see `LICENSING.md` |
+| License          | Non-commercial public release; commercial rights reserved by the copyright holder — see `LICENSING.md` |
 | Provider         | Chariton Kypraios — `haritos19@gmail.com`          |
-| Companion repo   | Commercial post-processing layer + operational runbooks live in a non-public audit records (commercial license only) — see `maintainer audit records` |
-| Public boundary  | This repo publishes reproducible code, schemas, samples, manifests, and aggregate metrics only — see `public release documentation` |
+| Public release   | Reproducible code, schemas, samples, manifests, governance docs, and aggregate metrics only |
 
 ## What the model detects
 
@@ -80,8 +79,8 @@ HuggingFace Hub release once published.
 
 The locked 200-case OOD benchmark used for v2.13-vs-v3 comparison is
 not bundled in the public repository. Public benchmark reporting is
-aggregate-only; per-case traces and full benchmark text live in the
-non-public audit records.
+aggregate-only; per-case traces and full benchmark text are not part
+of this public release.
 
 ## Repository layout
 
@@ -127,7 +126,7 @@ non-public audit records.
 ├── docker-compose.yml                          Single-service compose stack
 ├── requirements.txt                            Minimum top-level deps
 ├── requirements-aws.txt                        AWS-only deps (boto3, sagemaker)
-└── (LICENSE, LICENSE-NC, LICENSE-NC, NOTICE, ATTRIBUTION.txt, LICENSING.md, SECURITY.md)
+└── (LICENSE, LICENSE-NC, NOTICE, ATTRIBUTION.txt, LICENSING.md, SECURITY.md)
 ```
 
 ## Documentation
@@ -142,15 +141,14 @@ non-public audit records.
 | `docs/NIST_AI_RMF.md`             | NIST AI RMF 1.0 mapping                                                   |
 | `docs/DPIA_NOTE.md`               | Public DPIA-status note (training stage processes no personal data)       |
 | `docs/GDPR_ART30_ROPA.md`         | Deployer template (provider record kept private per Art. 30 guidance)    |
-| `public release documentation`  | Public/private split for benchmark, commercial, and operational artefacts |
 | `docs/V2_13_V3_COMPARISON.md`     | Aggregate v2.13-vs-v3 same-dataset comparison and metric caveats          |
-| `LICENSING.md`                    | Dual-license rationale + commercial-license procedure                     |
+| `LICENSING.md`                    | Non-commercial public-release terms and provenance guide                   |
 | `SECURITY.md`                     | Vulnerability disclosure policy                                           |
 | `NOTICE`, `ATTRIBUTION.txt`       | Apache 2.0 notice + per-data-source citations                             |
 
-## Public and private boundary
+## Public Release Boundary
 
-The public repository is intentionally narrow. It contains the code,
+This repository is intentionally narrow. It contains the code,
 configs, public samples, manifests, governance documents, and
 aggregate-only benchmark summaries needed to inspect the project and
 reproduce the public pipeline.
@@ -160,16 +158,13 @@ It does **not** contain:
 - the locked 200-case OOD benchmark JSONL;
 - per-case benchmark traces with raw text, expected spans, predictions,
   redacted text, or failure-mining contexts;
-- non-public calibration code;
 - filled AWS/account/bucket/IAM/instance identifiers;
-- private v3 training traces, customer calibration assets, or
+- non-public v3 training traces, calibration assets, or
   release-candidate artefact pointers.
 
-Those materials live in the non-public audit records described in
-`maintainer audit records`. The authoritative boundary policy is
-`public release documentation`. Because this repository has already
-been published, also read `public release documentation` before
-treating the public history as clean.
+Audit-supporting records that are not safe for public release are
+retained by the maintainer outside public git history and can be
+reviewed under an appropriate confidentiality process.
 
 Before publishing from this repository, run:
 
@@ -269,14 +264,14 @@ format classes added: `passport`, `license_plate`, `vehicle_vin`,
 `gemi`, `ama`, `card_pan`, `cvv`, `imei`, `ip_address`, `mac_address`,
 `driver_license`, `pcn`).
 
-Each iteration is evaluated on a **locked private 200-case real-world
+Each iteration is evaluated on a **locked 200-case real-world
 Greek benchmark** with hand-graded spans across 24 registers: tax-office
 letters, medical referrals, formal legal text, polytonic, Greeklish,
 dialect, dense multi-PII forms, etc. The benchmark is held out — the
 model never sees it during training. The exact benchmark file is
-proprietary and used for commercial calibration; aggregate numbers and
-methodology are reported here, while full traces stay in the private
-non-public audit records.
+not included in this public release; aggregate numbers and methodology
+are reported here, while full traces are retained as non-public audit
+evidence.
 
 | Version | Aggregate F1 | Precision | Recall | Notes |
 | ------- | -----------: | --------: | -----: | ----- |
@@ -305,7 +300,7 @@ Per-iteration dataset SHA-256 manifests at `artifacts/manifest/manifest_v2_*.jso
   in the record. Empty-label records collapse recall globally —
   the model learns "when in doubt, predict O".
 - Single-pass token accuracy ≥ 0.999 does **not** imply OOD F1 ≥ 0.85.
-  Validation-set token accuracy is too easy. The private 200-case OOD
+  Validation-set token accuracy is too easy. The locked 200-case OOD
   bench is the main signal used for v2.13-vs-v3 comparison.
 
 ### v3 — latest test line (released 2026-05-07)
@@ -332,14 +327,15 @@ v2.13 gold (111k records,   │   24-class span tagger, OOD   │
 
 For public comparison, treat v2.13 as the final v2 baseline and v3 as
 the latest test line. Aggregate-only comparison data is published in
-`artifacts/metrics/benchmark_summary.json`; private per-case traces,
-reviewer notes, and calibration details remain in the non-public audit records.
+`artifacts/metrics/benchmark_summary.json`; per-case traces,
+reviewer notes, and calibration details are not part of this public
+release.
 
-| Comparison target | Private OOD F1 raw | Notes |
+| Comparison target | OOD F1 raw | Notes |
 | --- | ---: | --- |
 | v2.13 OPF eval, same 200 cases | 0.8564 | Final v2 baseline, 24 classes, typed OPF eval, Viterbi, `n_ctx=256`. |
-| v3 Lite OPF eval, same 200 cases | 0.8100 | Same dataset and factors as v2.13; this token tier trails v2.13 before the private additional calibration layer. |
-| v2.13 private triage harness | 0.8373 | Earlier aggregate from the private triage harness; retained for historical continuity. |
+| v3 Lite OPF eval, same 200 cases | 0.8100 | Same dataset and factors as v2.13; this token tier trails v2.13 before additional non-public calibration. |
+| v2.13 triage harness | 0.8373 | Earlier aggregate from the triage harness; retained for historical continuity. |
 | v3 Mini raw | 0.88 | Distilled causal-LM tier; current public aggregate beats v2.13 raw. |
 | v3 Ultra teacher raw | 0.978 | Teacher tier used for distillation and upper-bound calibration. |
 
@@ -352,8 +348,8 @@ and 91% partial-span agreement** with the reviewer, 24/24 classes
 above F1 0.55, 18/24 classes above F1 0.85.
 
 Per-iteration training metrics for `mini-local` and `lite-v3-local`
-(per-class breakdown, predictions, confusion analysis) are kept in the
-non-public audit records and made available to commercial customers.
+(per-class breakdown, predictions, confusion analysis) are retained as
+non-public audit evidence.
 
 ### Training infrastructure
 
@@ -372,13 +368,11 @@ The full distillation pipeline runs end-to-end on AWS EC2 spot:
   AVAIL_ZONE rotation for capacity, EBS provisioning for fast
   checkpoint I/O.
 
-The post-processing layer that lifts end-to-end Lite F1 from 0.78
-to 0.89 on out-of-distribution Greek text is a hybrid regex/model
-cascade. The cascade sits in the non-public audit records and is part
-of the commercial license — see `LICENSING.md` and `maintainer audit records`.
+Additional calibration and post-processing experiments are not part of
+this public release. Public metrics should be interpreted exactly as
+reported in `artifacts/metrics/benchmark_summary.json`.
 
-Open issues, security questions and security questions go via
-`SECURITY.md`.
+Open issues and security questions go via `SECURITY.md`.
 
 ## Ethics
 

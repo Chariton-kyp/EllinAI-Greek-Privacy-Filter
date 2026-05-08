@@ -16,8 +16,7 @@ history and can be inspected with `git show <hash>`.
 
 - Created the baseline repository structure (`scripts/`, `configs/`,
   `src/`).
-- Drafted the non-commercial public release framework (`LICENSE`, `LICENSE-NC`,
-  `LICENSE-NC`, `LICENSING.md`).
+- Drafted the initial licensing framework (`LICENSE`, `LICENSING.md`).
 - Quarantined earlier experimental data generated with third-party
   APIs into `data/archive_pre_meltemi_2026-04-23/` (excluded from git
   via `.gitignore`). Scheduled permanent deletion: 2026-05-23.
@@ -190,13 +189,12 @@ Commits introduced on this date, in order:
 
 > Operational identifiers below (AWS account ID, S3 bucket name, IAM
 > user / role / inline-policy names, EC2 spot instance IDs, exact S3
-> paths, support-case numbers) are recorded in the controller-private
-> file `private/audit_operational.md` and are reproduced in full to a
-> supervisory authority, notified body, or notarised auditor on
-> documented request. The placeholders used here (`<aws-account-id>`,
-> `<gpf-bucket>`, `<iam-user>`, `<iam-role>`, `<inline-policy>`,
-> `<spot-instance-id>`) refer to those private values one-to-one. See
-> `maintainer audit records` for the public-release rationale.
+> paths, support-case numbers) are not published in this repository.
+> They are retained by the maintainer as non-public audit records and
+> can be reviewed under an appropriate confidentiality process. The
+> placeholders used here (`<aws-account-id>`, `<gpf-bucket>`,
+> `<iam-user>`, `<iam-role>`, `<inline-policy>`,
+> `<spot-instance-id>`) refer to those retained values one-to-one.
 
 11. **AWS account provisioning.** A new AWS account (`<aws-account-id>`)
     was created in the `eu-north-1` (Stockholm) region with a
@@ -211,7 +209,8 @@ Commits introduced on this date, in order:
 
 12. **Service Quotas.** Quota `L-3819A6DF` ("All G and VT Spot
     Instance Requests") was zero by default for the new account. A
-    manual support case (recorded in `private/audit_operational.md`)
+    manual support case (recorded in the maintainer's non-public
+    audit notes)
     was filed in the Service Quotas console; AWS support approved 4
     vCPUs after manual review, enough for a single `g6e.xlarge` (4
     vCPUs, L40S 48 GB).
@@ -219,7 +218,7 @@ Commits introduced on this date, in order:
 13. **v1 generation run.** The launcher
     `scripts/aws/ec2_spot_generate.sh` was invoked at HEAD `e6c8dda`
     requesting 50,000 records at quantisation `UD-Q8_K_XL` (full
-    command line in `private/audit_operational.md`). It launched a
+    command line in the maintainer's non-public audit notes). It launched a
     single spot instance (`<spot-instance-id>`) at 2026-04-26 09:27:12
     UTC. Wall clock 2 h 40 min; cost ~$2.30 spot + ~$0.10 storage.
     Produced under `s3://<gpf-bucket>/generated/run-20260426T092703Z/`
@@ -284,7 +283,7 @@ Commits introduced on this date, in order:
 18. **v1 fine-tune run.** The launcher
     `scripts/aws/ec2_spot_finetune.sh` was invoked at HEAD `e6c8dda`
     against v1 run `20260426T092703Z` (full command line in
-    `private/audit_operational.md`). It launched a single spot
+    the maintainer's non-public audit notes). It launched a single spot
     instance (`<spot-instance-id>`) at 2026-04-26 13:58:53 UTC. Wall
     clock ~19 min total; cost ~$0.27 spot + ~$0.02 storage (and
     ~$0.22 for three prior aborted attempts that surfaced the two
@@ -350,7 +349,7 @@ Commits introduced on this date, in order:
     of the value, which is wrong in deployment; the v1 realworld
     smoke test confirmed that the v1 model genuinely produces
     prefix-included spans for AFM at inference time. The full local
-    per-case JSON trace is now treated as a private trace artefact and
+    per-case JSON trace is now treated as a non-public trace artefact and
     is not committed to the public repository.
 
 22. **AFM relabel utility.** `scripts/relabel_afm_spans.py` (new this
@@ -405,11 +404,9 @@ carrier registers (Phase-2 distribution shift) plus a class-wise
 stratified assembler that merges the relabelled v1.1 base with one
 or more supplementary record packs into a unified training set.
 
-The published material here covers the public utilities. The
-business-strategy framing of the v2 release (cascade architecture,
-Tier-3 contextual extension, roll-out timeline) is held privately
-by the controller per the public-release boundary documented in
-`maintainer audit records`.
+The published material here covers the public utilities. Business
+strategy notes, rollout planning, and detailed operational records are
+not part of this public release.
 
 Commits introduced on this date, in order:
 
