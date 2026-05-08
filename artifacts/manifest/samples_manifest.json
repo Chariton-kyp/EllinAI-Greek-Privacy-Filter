@@ -1,30 +1,30 @@
 {
-  "generated_at_utc": "2026-04-24T15:20:05.958982+00:00",
-  "git_commit": "b0371f236816bade86dc29907c0d758827c214d1",
+  "generated_at_utc": "2026-05-08T14:35:39.960062+00:00",
+  "git_commit": "18014fd26bb9e33682258210b4a779596304e969",
   "git_dirty": false,
   "entries": [
     {
       "path": "data/samples/train_sample_100.jsonl",
-      "size_bytes": 36455,
-      "sha256": "a34606d394664653c28a128d587b650a4d6a672984c62a58c0a3ed7915f7456b",
+      "size_bytes": 36355,
+      "sha256": "27d8874c73a760292484529273ff419a18478184a2c68541dd28f05a42c6cb8e",
       "line_count": 100
     },
     {
       "path": "data/samples/validation_sample_100.jsonl",
-      "size_bytes": 36269,
-      "sha256": "08cfb81d800406fa685d7b97a7305465ae96973e72bad2ee3c389ab107302b22",
+      "size_bytes": 36169,
+      "sha256": "19edacf5df6b31b6131c0128d9e24b14bb0f310942fac5bc8699fb69c8cf9355",
       "line_count": 100
     },
     {
       "path": "data/samples/test_sample_100.jsonl",
-      "size_bytes": 36747,
-      "sha256": "f723654e56dbcb612e4889ed1be57a26e35cf60b001ee4b91a7c11fde98c4ef7",
+      "size_bytes": 36647,
+      "sha256": "495ca4ea1aa92fe207008fb4461357135225a10783961bad50636f5c8fe26645",
       "line_count": 100
     },
     {
       "path": "data/samples/hard_test_sample_100.jsonl",
-      "size_bytes": 40323,
-      "sha256": "1c63ee6832e3bdea3bbc908c4b2e3972b2cad898c00b9e448b2a5cf1af10e1bc",
+      "size_bytes": 40223,
+      "sha256": "aa8594ee477de1f6a839c1012e3ad34dcb70cc448e49001ea1d8a5bd6befdf15",
       "line_count": 100
     }
   ]
