@@ -60,13 +60,11 @@ artifacts/metrics/realworld*.json
 !artifacts/metrics/archive/*.json
 !artifacts/metrics/archive/README.md
 
-# Proprietary v3 release artefacts — kept in the non-public audit records
-# `non-public release records`. These files are intentionally
-# untracked here:
-#   - regex_pii_postpass.py  (non-public calibration layer)
-#   - benchmark_teacher.py   (full prompt με few-shot examples)
+# Non-public release artefacts. These files are intentionally untracked:
+#   - regex_pii_postpass.py  (calibration layer)
+#   - benchmark_teacher.py   (full prompt with few-shot examples)
 #   - ec2_v3_benchmark.sh    (benchmark launcher)
-#   - iam_ssm_teacher_policy.json  (IAM with account ID)
+#   - iam_ssm_teacher_policy.json  (IAM/account-specific policy)
 scripts/v3/regex_pii_postpass.py
 scripts/v3/benchmark_teacher.py
 scripts/aws/ec2_v3_benchmark.sh

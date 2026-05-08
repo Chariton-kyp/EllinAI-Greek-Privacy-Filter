@@ -106,7 +106,6 @@ of this public release.
 │   ├── hash_manifest.py                        SHA-256 manifest writer
 │   ├── verify_provenance.py                    Per-record provenance allow-list check
 │   ├── validate_greek_pii_dataset.py           JSONL schema validator
-│   ├── checkpoint inference command             Local inference smoke test (benchmark data not bundled)
 │   ├── setup_opf_stack.py                      Clone + install upstream OPF at the pinned commit
 │   ├── run_opf_train.py / run_opf_eval.py      Local-host training / evaluation wrappers
 │   ├── aws/
@@ -217,9 +216,8 @@ and the rationale for each is captured in
 `docs/MODEL_CARD.md` §4 and the inline comments of that YAML.
 
 A local-only Linux Docker stack reproduces the same inference path on
-a workstation GPU (`Dockerfile.inference` + `docker-compose.yml`) and
-is the recommended path for running `checkpoint inference command`
-against a downloaded checkpoint.
+a workstation GPU (`Dockerfile.inference` + `docker-compose.yml`) for
+running a downloaded checkpoint.
 
 ## Greek-format augmentation
 

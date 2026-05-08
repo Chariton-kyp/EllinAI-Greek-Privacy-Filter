@@ -25,14 +25,12 @@ To reproduce the full dataset locally from this repository, see
 `README.md` §"End-to-end reproducible build" or run
 `scripts/aws/ec2_spot_generate.sh` for the cloud build.
 
-## Note on `zx-...` strings and other PII-shaped values
+## Note on secret-like strings and other PII-shaped values
 
-Any `zx-...` tokens, 9-digit numbers, 11-digit numbers, `GR...` IBANs,
+Secret-like tokens, 9-digit numbers, 11-digit numbers, `GR...` IBANs,
 Greek-named emails, and street-address strings in these samples are
 **synthetic ground-truth labels** produced by the rule-based generators
 in `scripts/generate_commercial_safe_greek_pii.py`. They are not real
 API keys, real VAT numbers, real identity-card numbers, real IBANs, or
-real personal data. GitHub's automated secret scanning may flag some
-`zx-...` patterns in this file — those are false positives by design
-(the detector being trained on this data looks specifically for
-`secret`-category tokens).
+real personal data. Public samples avoid real provider token prefixes
+so repository secret scanners do not generate avoidable false positives.

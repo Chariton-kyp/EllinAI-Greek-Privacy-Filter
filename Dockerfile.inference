@@ -40,7 +40,6 @@ RUN git clone "${OPF_UPSTREAM_REPO}" /opt/opf-src && \
     git checkout "${OPF_UPSTREAM_COMMIT}" && \
     pip install -e .
 
-# Default to the realworld inference test; override at `docker compose run`
-# time with any other command (e.g. an interactive shell, a different
-# checkpoint path, or a custom inference script).
-CMD ["python", "-u", "checkpoint inference command"]
+# Default to a lightweight import check; override at `docker compose run`
+# time with a checkpoint-specific inference command.
+CMD ["python", "-c", "import opf; print('OPF import ok. Mount a checkpoint and run your inference command.')"]

@@ -147,7 +147,7 @@ pseudo_label:
 
 
 eval:
-  benchmark_jsonl: "data/realworld_benchmark/cases.jsonl"
+  benchmark_jsonl: "<locked_200_case_ood.jsonl>"
   metrics_dir: "artifacts/metrics"
   decoder: "viterbi"
 

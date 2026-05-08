@@ -104,7 +104,6 @@ non-commercial use. Commercial rights are reserved by the maintainer.
 | `scripts/v3/train_teacher.py`                              | Unsloth LoRA Q4 SFT trainer           |
 | `scripts/v3/generate_pseudo_labels.py`                     | teacher → pseudo-labels via OpenAI-compatible endpoint |
 | `scripts/v3/train_student_distill.py`                      | parametrised student trainer          |
-| `aggregate tier evaluation`                            | 5-tier OOD benchmark runner           |
 | `requirements-unsloth.txt`                                 | training dependencies (all Apache 2.0/MIT) |
 | `configs/v3_distillation.yaml`                             | hyperparameters, tier definitions     |
 | `docs/V3_DISTILLATION_PLAN.md`                             | this document                         |

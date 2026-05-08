@@ -19,4 +19,4 @@ services:
       - ./data:/workspace/data
       - ./artifacts:/workspace/artifacts
     working_dir: /workspace
-    command: python checkpoint inference command
+    command: python -c "import opf; print('OPF import ok. Mount a checkpoint and run your inference command.')"
