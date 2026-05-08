@@ -34,6 +34,32 @@ TRACE_KEYS = {
     "context",
 }
 
+LOCAL_WINDOWS_ROOT = "C:" + "\\\\" + "Users" + "\\\\"
+LOCAL_WORKSPACE_MARKER = "Desktop" + "\\\\" + "Business_Projects"
+LOCAL_USER_WORKSPACE_MARKER = "harit" + "\\\\" + "Desktop"
+
+TEXT_BOUNDARY_PATTERNS = {
+    LOCAL_WINDOWS_ROOT: "local Windows user path",
+    LOCAL_WORKSPACE_MARKER: "local project workspace path",
+    LOCAL_USER_WORKSPACE_MARKER: "local username/workspace path",
+}
+
+TEXT_EXTENSIONS = {
+    ".cfg",
+    ".csv",
+    ".ini",
+    ".json",
+    ".jsonl",
+    ".md",
+    ".py",
+    ".ps1",
+    ".sh",
+    ".toml",
+    ".txt",
+    ".yaml",
+    ".yml",
+}
+
 
 def git_ls_files() -> list[str]:
     result = subprocess.run(
@@ -75,6 +101,13 @@ def main() -> int:
             issues.append(f"private path is tracked: {path}")
         if path.startswith(PRIVATE_METRIC_PREFIXES):
             issues.append(f"private benchmark trace metric is tracked: {path}")
+        if Path(path).suffix.lower() in TEXT_EXTENSIONS:
+            full_path = PROJECT_ROOT / path
+            if full_path.is_file():
+                text = full_path.read_text(encoding="utf-8", errors="ignore")
+                for pattern, description in TEXT_BOUNDARY_PATTERNS.items():
+                    if pattern in text:
+                        issues.append(f"{description} found in tracked file: {path}")
 
     if args.check_json:
         for path in tracked:
