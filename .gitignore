@@ -77,6 +77,15 @@ data/realworld_benchmark/cases.jsonl
 scripts/realworld_benchmark/
 scripts/build_realworld_benchmark.py
 
+# Personal AWS billing correspondence (account ID, name, billing details).
+# Archived outside the repo; pattern kept here as a safety net.
+aws_*.txt
+
+# Benchmark per-case traces (synthetic data, but verbose per-case rows).
+# Aggregate .md / .html reports are kept; raw .json / .csv stay local and
+# are fully reproducible by re-running the benchmark harness.
+artifacts/metrics/benchmark_3way_opf*.csv
+
 # OS / IDE
 .DS_Store
 Thumbs.db

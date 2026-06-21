@@ -20,3 +20,24 @@ services:
       - ./artifacts:/workspace/artifacts
     working_dir: /workspace
     command: python -c "import opf; print('OPF import ok. Mount a checkpoint and run your inference command.')"
+
+  gpf-benchmark:
+    image: gpf-inference:local
+    container_name: gpf-benchmark
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./scripts:/workspace/scripts
+      - ./configs:/workspace/configs
+      - ./data:/workspace/data
+      - ./artifacts:/workspace/artifacts
+      - ./benchmarks:/workspace/benchmarks
+      - ./checkpoints:/workspace/checkpoints
+    working_dir: /workspace
+    command: python /workspace/scripts/v3/local_benchmark_opf_3way.py
