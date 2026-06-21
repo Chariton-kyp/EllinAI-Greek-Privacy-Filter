@@ -85,6 +85,7 @@ aws_*.txt
 # Aggregate .md / .html reports are kept; raw .json / .csv stay local and
 # are fully reproducible by re-running the benchmark harness.
 artifacts/metrics/benchmark_3way_opf*.csv
+artifacts/metrics/benchmark_opf_all*.csv
 
 # OS / IDE
 .DS_Store
@@ -106,3 +107,4 @@ Thumbs.db
 # reproductions.
 private/*
 !maintainer audit records
+.hf-cache-docker/

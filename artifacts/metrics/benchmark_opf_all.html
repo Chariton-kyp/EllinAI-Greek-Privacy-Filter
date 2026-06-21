@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<title>Greek PII Public Benchmark v1 — 3-Way Comparison</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+         max-width: 1100px; margin: 2em auto; padding: 0 1em; color: #222; }
+  h1, h2 { border-bottom: 1px solid #ddd; padding-bottom: 0.3em; }
+  table { border-collapse: collapse; margin: 1em 0; width: 100%; }
+  th, td { border: 1px solid #ddd; padding: 6px 12px; text-align: right; }
+  th { background: #f5f5f5; }
+  td:first-child, th:first-child { text-align: left; }
+  .f1 { font-weight: bold; }
+  .f1.high { color: #1a7f37; }
+  .f1.mid  { color: #9a6700; }
+  .f1.low  { color: #cf222e; }
+  .heatmap { display: inline-block; padding: 2px 8px; border-radius: 3px; }
+  .h0 { background: #ffe4e6; } .h1 { background: #fef3c7; }
+  .h2 { background: #fef9c3; } .h3 { background: #ecfccb; }
+  .h4 { background: #d1fae5; } .h5 { background: #a7f3d0; }
+  code { background: #f0f0f0; padding: 2px 5px; border-radius: 3px; font-size: 0.9em; }
+  .summary { background: #f9fafb; padding: 1em; border-radius: 6px; margin: 1em 0; }
+</style>
+</head>
+<body>
+
+<h1>Greek PII Public Benchmark v1 — 3-Way Model Comparison</h1>
+
+<div class="summary">
+  <p><strong>Benchmark:</strong> /workspace/benchmarks/greek_pii_public_v1/cases.jsonl</p>
+  <p><strong>Cases:</strong> 100 | <strong>Total gold spans:</strong> 700 | <strong>Classes:</strong> 24</p>
+</div>
+
+<h2>Aggregate Metrics</h2>
+<table>
+<thead>
+<tr>
+  <th>Model</th>
+  <th>Untyped P</th><th>Untyped R</th><th>Untyped F1</th>
+  <th>Typed P</th><th>Typed R</th><th>Typed F1</th>
+  <th>Boundary</th><th>Confusion</th><th>Missed</th><th>Halluc.</th>
+  <th>Time (s)</th>
+</tr>
+</thead>
+<tbody>
+<tr><td><code>opf_base</code></td><td>0.952</td><td>0.673</td><td class="f1 mid">0.788</td><td>0.444</td><td>0.314</td><td class="f1 low">0.368</td><td>33</td><td>218</td><td>229</td><td>24</td><td>221.8</td></tr>
+<tr><td><code>v2</code></td><td>0.960</td><td>0.820</td><td class="f1 high">0.884</td><td>0.756</td><td>0.646</td><td class="f1 mid">0.696</td><td>33</td><td>89</td><td>126</td><td>24</td><td>261.2</td></tr>
+<tr><td><code>v2_5</code></td><td>0.969</td><td>0.857</td><td class="f1 high">0.910</td><td>0.742</td><td>0.656</td><td class="f1 mid">0.696</td><td>22</td><td>119</td><td>100</td><td>19</td><td>218.6</td></tr>
+<tr><td><code>v2_6</code></td><td>0.974</td><td>0.844</td><td class="f1 high">0.904</td><td>0.825</td><td>0.716</td><td class="f1 mid">0.767</td><td>16</td><td>74</td><td>109</td><td>16</td><td>218.3</td></tr>
+<tr><td><code>v2_7</code></td><td>0.963</td><td>0.783</td><td class="f1 high">0.864</td><td>0.764</td><td>0.621</td><td class="f1 mid">0.686</td><td>17</td><td>96</td><td>152</td><td>21</td><td>257.2</td></tr>
+<tr><td><code>v2_8</code></td><td>0.959</td><td>0.594</td><td class="f1 mid">0.734</td><td>0.848</td><td>0.526</td><td class="f1 mid">0.649</td><td>20</td><td>28</td><td>284</td><td>18</td><td>247.1</td></tr>
+<tr><td><code>v2_9</code></td><td>0.969</td><td>0.749</td><td class="f1 high">0.844</td><td>0.872</td><td>0.674</td><td class="f1 mid">0.761</td><td>15</td><td>37</td><td>176</td><td>17</td><td>238.0</td></tr>
+<tr><td><code>v2_10</code></td><td>0.972</td><td>0.596</td><td class="f1 mid">0.739</td><td>0.888</td><td>0.544</td><td class="f1 mid">0.675</td><td>8</td><td>28</td><td>283</td><td>12</td><td>266.7</td></tr>
+<tr><td><code>v2_11</code></td><td>0.962</td><td>0.723</td><td class="f1 high">0.825</td><td>0.819</td><td>0.616</td><td class="f1 mid">0.703</td><td>19</td><td>56</td><td>194</td><td>20</td><td>247.5</td></tr>
+<tr><td><code>v2_12</code></td><td>0.972</td><td>0.757</td><td class="f1 high">0.851</td><td>0.853</td><td>0.664</td><td class="f1 mid">0.747</td><td>10</td><td>55</td><td>170</td><td>15</td><td>245.2</td></tr>
+<tr><td><code>v2_13</code></td><td>0.962</td><td>0.797</td><td class="f1 high">0.872</td><td>0.862</td><td>0.714</td><td class="f1 mid">0.781</td><td>13</td><td>45</td><td>142</td><td>22</td><td>184.1</td></tr>
+<tr><td><code>lite</code></td><td>0.972</td><td>0.836</td><td class="f1 high">0.899</td><td>0.623</td><td>0.536</td><td class="f1 mid">0.576</td><td>41</td><td>169</td><td>115</td><td>17</td><td>184.5</td></tr>
+<tr><td><code>lite_v3</code></td><td>0.974</td><td>0.643</td><td class="f1 mid">0.775</td><td>0.866</td><td>0.571</td><td class="f1 mid">0.688</td><td>16</td><td>34</td><td>250</td><td>12</td><td>173.0</td></tr>
+</tbody>
+</table>
+
+<h2>Per-Class Typed F1 (Heatmap)</h2>
+<table>
+<thead>
+<tr>
+  <th>Class</th>
+  <th><code>opf_base</code></th>
+  <th><code>v2</code></th>
+  <th><code>v2_5</code></th>
+  <th><code>v2_6</code></th>
+  <th><code>v2_7</code></th>
+  <th><code>v2_8</code></th>
+  <th><code>v2_9</code></th>
+  <th><code>v2_10</code></th>
+  <th><code>v2_11</code></th>
+  <th><code>v2_12</code></th>
+  <th><code>v2_13</code></th>
+  <th><code>lite</code></th>
+  <th><code>lite_v3</code></th>
+</tr>
+</thead>
+<tbody>
+<tr><td><code>account_number</code></td><td><span class="heatmap h0">0.068</span></td><td><span class="heatmap h0">0.033</span></td><td><span class="heatmap h0">0.126</span></td><td><span class="heatmap h0">0.092</span></td><td><span class="heatmap h0">0.091</span></td><td><span class="heatmap h0">0.074</span></td><td><span class="heatmap h1">0.294</span></td><td><span class="heatmap h0">0.167</span></td><td><span class="heatmap h0">0.115</span></td><td><span class="heatmap h0">0.157</span></td><td><span class="heatmap h0">0.140</span></td><td><span class="heatmap h0">0.038</span></td><td><span class="heatmap h0">0.182</span></td></tr>
+<tr><td><code>adt</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h2">0.533</span></td><td><span class="heatmap h4">0.756</span></td><td><span class="heatmap h4">0.833</span></td><td><span class="heatmap h2">0.523</span></td><td><span class="heatmap h2">0.464</span></td><td><span class="heatmap h3">0.638</span></td><td><span class="heatmap h2">0.586</span></td><td><span class="heatmap h3">0.627</span></td><td><span class="heatmap h4">0.805</span></td><td><span class="heatmap h4">0.833</span></td><td><span class="heatmap h1">0.298</span></td><td><span class="heatmap h1">0.400</span></td></tr>
+<tr><td><code>afm</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h5">0.909</span></td><td><span class="heatmap h5">0.908</span></td><td><span class="heatmap h5">0.940</span></td><td><span class="heatmap h4">0.870</span></td><td><span class="heatmap h2">0.557</span></td><td><span class="heatmap h4">0.774</span></td><td><span class="heatmap h3">0.610</span></td><td><span class="heatmap h3">0.690</span></td><td><span class="heatmap h4">0.821</span></td><td><span class="heatmap h5">0.922</span></td><td><span class="heatmap h3">0.681</span></td><td><span class="heatmap h3">0.736</span></td></tr>
+<tr><td><code>ama</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h1">0.222</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h3">0.667</span></td><td><span class="heatmap h2">0.400</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h1">0.222</span></td><td><span class="heatmap h1">0.364</span></td><td><span class="heatmap h3">0.667</span></td><td><span class="heatmap h3">0.667</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h1">0.364</span></td></tr>
+<tr><td><code>amka</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h5">0.984</span></td><td><span class="heatmap h4">0.882</span></td><td><span class="heatmap h5">0.969</span></td><td><span class="heatmap h5">0.903</span></td><td><span class="heatmap h1">0.278</span></td><td><span class="heatmap h3">0.708</span></td><td><span class="heatmap h0">0.171</span></td><td><span class="heatmap h3">0.654</span></td><td><span class="heatmap h3">0.706</span></td><td><span class="heatmap h5">0.921</span></td><td><span class="heatmap h4">0.795</span></td><td><span class="heatmap h2">0.545</span></td></tr>
+<tr><td><code>card_pan</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h3">0.625</span></td><td><span class="heatmap h2">0.462</span></td><td><span class="heatmap h4">0.842</span></td><td><span class="heatmap h2">0.533</span></td><td><span class="heatmap h3">0.706</span></td><td><span class="heatmap h4">0.824</span></td><td><span class="heatmap h3">0.706</span></td><td><span class="heatmap h4">0.778</span></td><td><span class="heatmap h3">0.667</span></td><td><span class="heatmap h4">0.824</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h2">0.571</span></td></tr>
+<tr><td><code>cvv</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h4">0.800</span></td><td><span class="heatmap h3">0.667</span></td><td><span class="heatmap h1">0.222</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h3">0.667</span></td><td><span class="heatmap h2">0.500</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h2">0.500</span></td></tr>
+<tr><td><code>driver_license</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h2">0.444</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h0">0.154</span></td><td><span class="heatmap h2">0.500</span></td><td><span class="heatmap h3">0.737</span></td><td><span class="heatmap h4">0.800</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h1">0.375</span></td></tr>
+<tr><td><code>gemi</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h0">0.154</span></td><td><span class="heatmap h0">0.154</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h0">0.154</span></td><td><span class="heatmap h0">0.154</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h1">0.375</span></td><td><span class="heatmap h3">0.632</span></td><td><span class="heatmap h4">0.857</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h2">0.400</span></td></tr>
+<tr><td><code>iban_gr</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h4">0.840</span></td><td><span class="heatmap h4">0.851</span></td><td><span class="heatmap h5">0.933</span></td><td><span class="heatmap h5">0.909</span></td><td><span class="heatmap h5">0.927</span></td><td><span class="heatmap h4">0.875</span></td><td><span class="heatmap h5">0.930</span></td><td><span class="heatmap h4">0.800</span></td><td><span class="heatmap h5">0.913</span></td><td><span class="heatmap h4">0.884</span></td><td><span class="heatmap h5">0.933</span></td><td><span class="heatmap h4">0.837</span></td></tr>
+<tr><td><code>imei</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h4">0.800</span></td><td><span class="heatmap h3">0.667</span></td><td><span class="heatmap h4">0.800</span></td><td><span class="heatmap h4">0.800</span></td><td><span class="heatmap h4">0.800</span></td><td><span class="heatmap h3">0.667</span></td><td><span class="heatmap h4">0.800</span></td><td><span class="heatmap h4">0.800</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h2">0.500</span></td></tr>
+<tr><td><code>ip_address</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h4">0.800</span></td><td><span class="heatmap h3">0.714</span></td><td><span class="heatmap h4">0.842</span></td><td><span class="heatmap h3">0.615</span></td><td><span class="heatmap h3">0.706</span></td><td><span class="heatmap h4">0.800</span></td><td><span class="heatmap h3">0.727</span></td><td><span class="heatmap h3">0.714</span></td><td><span class="heatmap h3">0.632</span></td><td><span class="heatmap h5">0.933</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h5">1.000</span></td></tr>
+<tr><td><code>license_plate</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h3">0.615</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h4">0.759</span></td><td><span class="heatmap h2">0.444</span></td><td><span class="heatmap h1">0.300</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h2">0.455</span></td><td><span class="heatmap h1">0.200</span></td><td><span class="heatmap h2">0.583</span></td><td><span class="heatmap h2">0.500</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h2">0.455</span></td></tr>
+<tr><td><code>mac_address</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h4">0.833</span></td><td><span class="heatmap h1">0.222</span></td><td><span class="heatmap h3">0.600</span></td><td><span class="heatmap h3">0.600</span></td><td><span class="heatmap h1">0.250</span></td><td><span class="heatmap h2">0.400</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h2">0.444</span></td><td><span class="heatmap h1">0.250</span></td><td><span class="heatmap h4">0.769</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h3">0.667</span></td></tr>
+<tr><td><code>passport</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h2">0.500</span></td><td><span class="heatmap h5">1.000</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h2">0.400</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h2">0.400</span></td><td><span class="heatmap h1">0.250</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h1">0.286</span></td></tr>
+<tr><td><code>pcn</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h4">0.800</span></td><td><span class="heatmap h2">0.500</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h1">0.286</span></td><td><span class="heatmap h5">0.909</span></td><td><span class="heatmap h4">0.800</span></td><td><span class="heatmap h5">0.909</span></td><td><span class="heatmap h5">1.000</span></td><td><span class="heatmap h5">0.909</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h2">0.500</span></td></tr>
+<tr><td><code>private_address</code></td><td><span class="heatmap h1">0.377</span></td><td><span class="heatmap h4">0.809</span></td><td><span class="heatmap h4">0.899</span></td><td><span class="heatmap h4">0.847</span></td><td><span class="heatmap h3">0.748</span></td><td><span class="heatmap h4">0.889</span></td><td><span class="heatmap h5">0.953</span></td><td><span class="heatmap h4">0.870</span></td><td><span class="heatmap h5">0.966</span></td><td><span class="heatmap h5">0.932</span></td><td><span class="heatmap h5">0.943</span></td><td><span class="heatmap h4">0.871</span></td><td><span class="heatmap h4">0.870</span></td></tr>
+<tr><td><code>private_date</code></td><td><span class="heatmap h4">0.833</span></td><td><span class="heatmap h4">0.848</span></td><td><span class="heatmap h4">0.888</span></td><td><span class="heatmap h4">0.871</span></td><td><span class="heatmap h4">0.886</span></td><td><span class="heatmap h4">0.822</span></td><td><span class="heatmap h5">0.921</span></td><td><span class="heatmap h4">0.824</span></td><td><span class="heatmap h4">0.797</span></td><td><span class="heatmap h5">0.900</span></td><td><span class="heatmap h5">0.920</span></td><td><span class="heatmap h4">0.854</span></td><td><span class="heatmap h5">0.914</span></td></tr>
+<tr><td><code>private_email</code></td><td><span class="heatmap h5">0.961</span></td><td><span class="heatmap h5">0.929</span></td><td><span class="heatmap h5">0.967</span></td><td><span class="heatmap h5">0.949</span></td><td><span class="heatmap h5">0.961</span></td><td><span class="heatmap h4">0.890</span></td><td><span class="heatmap h5">0.974</span></td><td><span class="heatmap h5">0.932</span></td><td><span class="heatmap h5">0.955</span></td><td><span class="heatmap h5">0.947</span></td><td><span class="heatmap h5">0.953</span></td><td><span class="heatmap h5">0.968</span></td><td><span class="heatmap h4">0.865</span></td></tr>
+<tr><td><code>private_person</code></td><td><span class="heatmap h1">0.368</span></td><td><span class="heatmap h2">0.456</span></td><td><span class="heatmap h3">0.625</span></td><td><span class="heatmap h3">0.611</span></td><td><span class="heatmap h2">0.527</span></td><td><span class="heatmap h3">0.690</span></td><td><span class="heatmap h3">0.703</span></td><td><span class="heatmap h3">0.604</span></td><td><span class="heatmap h4">0.752</span></td><td><span class="heatmap h3">0.705</span></td><td><span class="heatmap h3">0.735</span></td><td><span class="heatmap h2">0.575</span></td><td><span class="heatmap h3">0.602</span></td></tr>
+<tr><td><code>private_phone</code></td><td><span class="heatmap h1">0.319</span></td><td><span class="heatmap h4">0.779</span></td><td><span class="heatmap h2">0.421</span></td><td><span class="heatmap h3">0.712</span></td><td><span class="heatmap h2">0.571</span></td><td><span class="heatmap h2">0.409</span></td><td><span class="heatmap h4">0.806</span></td><td><span class="heatmap h2">0.585</span></td><td><span class="heatmap h1">0.337</span></td><td><span class="heatmap h2">0.442</span></td><td><span class="heatmap h2">0.433</span></td><td><span class="heatmap h0">0.178</span></td><td><span class="heatmap h3">0.617</span></td></tr>
+<tr><td><code>private_url</code></td><td><span class="heatmap h1">0.240</span></td><td><span class="heatmap h1">0.222</span></td><td><span class="heatmap h3">0.741</span></td><td><span class="heatmap h3">0.636</span></td><td><span class="heatmap h3">0.733</span></td><td><span class="heatmap h2">0.500</span></td><td><span class="heatmap h2">0.571</span></td><td><span class="heatmap h2">0.571</span></td><td><span class="heatmap h3">0.640</span></td><td><span class="heatmap h2">0.571</span></td><td><span class="heatmap h1">0.300</span></td><td><span class="heatmap h3">0.733</span></td><td><span class="heatmap h2">0.500</span></td></tr>
+<tr><td><code>secret</code></td><td><span class="heatmap h3">0.727</span></td><td><span class="heatmap h2">0.444</span></td><td><span class="heatmap h2">0.500</span></td><td><span class="heatmap h2">0.588</span></td><td><span class="heatmap h3">0.600</span></td><td><span class="heatmap h3">0.727</span></td><td><span class="heatmap h2">0.533</span></td><td><span class="heatmap h3">0.700</span></td><td><span class="heatmap h4">0.818</span></td><td><span class="heatmap h2">0.571</span></td><td><span class="heatmap h2">0.560</span></td><td><span class="heatmap h1">0.333</span></td><td><span class="heatmap h3">0.667</span></td></tr>
+<tr><td><code>vehicle_vin</code></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h5">0.917</span></td><td><span class="heatmap h3">0.600</span></td><td><span class="heatmap h4">0.880</span></td><td><span class="heatmap h3">0.667</span></td><td><span class="heatmap h3">0.720</span></td><td><span class="heatmap h5">0.917</span></td><td><span class="heatmap h4">0.769</span></td><td><span class="heatmap h5">0.923</span></td><td><span class="heatmap h4">0.833</span></td><td><span class="heatmap h4">0.857</span></td><td><span class="heatmap h0">0.000</span></td><td><span class="heatmap h4">0.880</span></td></tr>
+</tbody>
+</table>
+
+<h2>Notes</h2>
+<ul>
+  <li><strong>Untyped F1</strong> measures span detection only (any overlapping pair counts) — fair across all 3 models since the OPF base uses an English label space.</li>
+  <li><strong>Typed F1</strong> requires exact label match — only meaningful for v2.13 / v3 Lite which share the 24-class taxonomy.</li>
+  <li>Boundary errors = correct label, slightly different offsets. Confusion = wrong label on overlapping span.</li>
+</ul>
+
+</body>
+</html>
