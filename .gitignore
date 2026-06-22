@@ -108,3 +108,16 @@ Thumbs.db
 private/*
 !maintainer audit records
 .hf-cache-docker/
+
+# v3.0 commercial IP — keep private (only the public 100-case benchmark
+# greek_pii_public_v1 and the safe benchmark-scoring scripts stay public).
+#  - training pack + the realistic benchmark (980-case eval moat + agent
+#    generation/validation pipeline under raw/ and verdicts/)
+#  - the finetune recipe (data prep, sharding, chained training)
+#  - the hybrid harness (imports/reveals the private regex post-pass moat)
+benchmarks/greek_pii_train_v3/
+benchmarks/greek_pii_realistic_v1/
+scripts/v3/prep_v3_training.py
+scripts/v3/shard_train_v3.py
+scripts/v3/train_chained_v3.sh
+scripts/v3/local_benchmark_hybrid_v213.py
