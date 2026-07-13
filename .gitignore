@@ -116,8 +116,27 @@ private/*
 #  - the finetune recipe (data prep, sharding, chained training)
 #  - the hybrid harness (imports/reveals the private regex post-pass moat)
 benchmarks/greek_pii_train_v3/
+benchmarks/greek_pii_train_v31/
+benchmarks/greek_pii_holdout_v1/
 benchmarks/greek_pii_realistic_v1/
 scripts/v3/prep_v3_training.py
+scripts/v3/prep_v31_training.py
+scripts/v3/assemble_gold_v11.py
 scripts/v3/shard_train_v3.py
 scripts/v3/train_chained_v3.sh
 scripts/v3/local_benchmark_hybrid_v213.py
+scripts/v3/failure_mining_v30.py
+scripts/v3/failure_mining_v31.py
+scripts/v3/relabel_rulebook_v11.py
+scripts/v3/make_allcaps_augmentation.py
+scripts/v3/gpf_anonymize.py
+scripts/v3/gates_eval.py
+scripts/v3/measure_production_config.py
+scripts/v3/measure_ensemble*.py
+scripts/v3/make_soup.py
+scripts/v3/dump_last_misses.py
+scripts/v3/dump_last_misses_soup.py
+scripts/v3/measure_final_honest.py
+scripts/v3/serve_api.py
+scripts/v3/greek_first_names.txt
+scripts/v3/failure_mining_v31.py
