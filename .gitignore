@@ -138,5 +138,11 @@ scripts/v3/dump_last_misses.py
 scripts/v3/dump_last_misses_soup.py
 scripts/v3/measure_final_honest.py
 scripts/v3/serve_api.py
+scripts/v3/serving_selftest.py
+scripts/v3/serving_hardening_test.py
+scripts/v3/cpu_benchmark.py
+scripts/v3/cpu_moe_patch.py
+scripts/v3/cpu_moe_patch_test.py
+scripts/v3/cpu_moe_mismatch_diag.py
 scripts/v3/greek_first_names.txt
 scripts/v3/failure_mining_v31.py
