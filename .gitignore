@@ -79,8 +79,10 @@ data/realdocs/
 scripts/v3/fetch_diavgeia_realdocs.py
 scripts/v3/realdoc_*.py
 scripts/v3/make_pdf_layout_pack.py
+scripts/v3/make_soup_v34.py
 benchmarks/greek_pii_train_v34/
 docker-compose.serve.yml
+data/llm/
 scripts/realworld_benchmark/
 scripts/build_realworld_benchmark.py
 
